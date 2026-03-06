@@ -1,0 +1,127 @@
+General guidelines for the Peer Review process: 
+
+Artificial Intelligence (AI) generated or assisted review comments are strictly prohibited during peer review.
+
+This journal’s peer review policy states that NO manuscript should be rejected only on the basis of ‘lack of Novelty’, provided the manuscript is scientifically robust and technically sound.
+To know the complete guidelines for the Peer Review process, reviewers are requested to visit this link:
+
+https://r1.reviewerhub.org/general-editorial-policy/
+
+
+Important Policies Regarding Peer Review
+
+Peer review Comments Approval Policy: https://r1.reviewerhub.org/peer-review-comments-approval-policy/  
+Benefits for Reviewers: https://r1.reviewerhub.org/benefits-for-reviewers 
+
+
+
+
+
+ 
+
+PART  1: Comments
+
+	Reviewer’s comment
+Artificial Intelligence (AI) generated or assisted review comments are strictly prohibited during peer review.
+	Author’s Feedback (It is mandatory that authors should write his/her feedback here)
+
+Please write a few sentences regarding the importance of this manuscript for the scientific community. A minimum of 3-4 sentences may be required for this part.
+	This manuscript examines how demonetization in India influenced the shift toward electronic banking and transformed consumer habits. The topic is significant because it demonstrates how a major government policy changed the everyday financial lives of millions, encouraging both urban and rural populations to adopt digital banking more frequently. The findings can assist bankers, policymakers, and technology providers in understanding consumer needs and the challenges they face in adopting new banking methods. It also offers insights into how future efforts toward a cashless society in India might unfold, which could be valuable for other countries experiencing similar transitions.	
+Is the title of the article suitable?
+(If not please suggest an alternative title)
+	The title "E-Banking Trends in India's Retail Banking: Impact of Demonetization on Consumer Behavior" is suitable and clearly reflects the study’s focus.	
+Is the abstract of the article comprehensive? Do you suggest the addition (or deletion) of some points in this section? Please write your suggestions here.
+	The abstract gives a clear summary of the paper. It covers demonetization, its effects, the rise of digital banking, and the challenges faced by people. Adding a line like “Digital payments grew fast after demonetization and are now a major part of banking in India” will make the key result stand out.	
+Is the manuscript scientifically, correct? Please write here.	The study uses both data and surveys, along with past research. The methods are clear, and the findings fit the goals of the study. Tables and comparisons before and after demonetization make the results easy to understand, supported by known theories like the Technology Acceptance Model.	
+Are the references sufficient and recent? If you have suggestions of additional references, please mention them in the review form.	The references are recent and relevant, ranging from 2017 to 2025, and include journals, government reports, and surveys. They fit well with the study. Adding a few sources on how e-banking was shaped during and after COVID-19 could make it even stronger.	
+Is the language/English quality of the article suitable for scholarly communications?
+	The language is clear and formal, good for academic writing. Some long paragraphs could be split into shorter sentences for easier reading. A bit of minor editing would make it smoother, especially for readers who are not experts.	
+Optional/General comments
+	The paper is strong because it examines both urban and rural perspectives. Tables and figures clearly show adoption rates and transaction volumes. Adding short stories or quotes from consumers about moving from cash to digital could make the study more lively.	
+
+
+
+
+
+
+
+
+
+
+
+
+
+PART  2: 
+
+	Reviewer’s comment	Author’s Feedback (It is mandatory that authors should write his/her feedback here)
+
+Are there ethical issues in this manuscript? 
+	(If yes, Kindly please write down the ethical issues here in detail)
+
+	
+
+
+
+Are there competing interest issues in this manuscript?	No	
+
+
+If plagiarism is suspected, please provide related proofs or web links.	There is no evidence of plagiarism.	
+
+
+
+
+PART  3: Declaration of Competing Interest of the Reviewer:
+
+I declare that I have no competing interest as a reviewer.
+
+
+PART  4: Objective Evaluation:
+
+Guideline	MARKS of this  manuscript
+Give OVERALL MARKS you want to give to this manuscript 
+( Highest: 10  Lowest: 0 )
+
+Guideline: 
+Accept As It Is: (>9-10)
+Minor Revision: (>8-9)
+Major Revision: (>7-8)
+Serious Major revision: (>5-7)
+Rejected (with repairable deficiencies and may be reconsidered): (>3-5)
+Strongly rejected (with irreparable deficiencies.): (>0-3)	9
+
+
+ 
+
+Editorial Comments (This section is reserved for the comments from journal editorial office and editors):
+
+	Author’s Feedback
+
+
+
+
+
+
+
+	
+
+
+
+
+
+
+Reviewer Details:
+This section is mandatory to prepare the Reviewer Certificate. 
+Please complete this section carefully. Reviewer Certificate will be generated by using this information only. 
+Your Certificate will be wrong, if you provide incorrect information. 
+Please note modification of certificate will not be possible after generation. 
+Certificate will not be issued if incomplete information is provided.
+
+
+Name of the Reviewer	KALAIARASAN C
+Department of Reviewer	B.COM COMPUTER APPLICATIONS
+University or Institution of Reviewer	LOYOLA COLLEGE (AUTONOMOUS)
+Country of Reviewer	INDIA
+Position: (Professor/lecturer, etc.) of Reviewer	ASSISTANT PROFESSOR
+Email ID of Reviewer	Prof.klirsn@gmail.com
+WhatsApp Number of Reviewer (Optional)	9688650939
+Write 5-8 Keywords regarding expertise of Reviewer	Inclusive Growth, Financial Inclusion, Digital marketing, Entrepreneurship, Inclusive development

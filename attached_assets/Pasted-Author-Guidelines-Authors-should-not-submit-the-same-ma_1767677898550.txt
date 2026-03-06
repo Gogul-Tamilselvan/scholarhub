@@ -1,0 +1,179 @@
+Author Guidelines
+Authors should not submit the same manuscript in the same language simultaneously to more than one journal. The rationale for this standard is the potential for disagreement when two (or more) journals claim the right to publish a manuscript that has been submitted simultaneously to more than one journal, and the possibility that two or more journals will unknowingly and unnecessarily undertake the work of peer review, edit the same manuscript, and publish the same research paper.
+Preparing or manipulating of data and results, intellectual property theft, and plagiarism are highly unacceptable, as it is beyond the ethics of an author. Information obtained from various media can be provided in the manuscript only with prior permission from the owner of the source of information or data.
+Authors and coauthors are requested to review and ensure the accuracy and validity of all the results prior to submission. Any potential conflict of interest should be informed to the editor well in advance.
+All authors are requested to submit the Author Declaration Form while submitting the manuscript and the Licence to Publish Agreement without failure once they receive the acceptance of their research paper for publication.
+Sharing with public media, government agencies, or manufacturers the scientific information described in a paper or a letter to the editor that has been accepted but not yet published violates the policy of our journals.
+Authors should declare that all work in their submitted paper is original, and cite content from other sources appropriately to avoid plagiarism.
+Authors must ensure their contribution does not contain any defamatory matter or infringe any copyright or other intellectual property rights or any other rights of any third party.
+Authors should ensure that their manuscript as submitted is not under consideration (or accepted for publication) elsewhere. Where sections of the manuscript overlap with published or submitted content, this should be acknowledged and cited. Authors should cite publications that have been influential in determining the nature of the reported work. Proper acknowledgment of the work of others must always be given. Authors should declare any potential conflicts of interest relating to a specific research paper. Authors should inform the editor or publisher if there is a significant error in their published piece, and work with the editor to publish an erratum, addendum, or retraction where necessary.
+In accordance with the position statement of the Committee on Publication Ethics, the BOHR publishers  policy with regard to artificial intelligence (AI) tools and large language models such as ChatGPT is as follows:
+
+An AI tool cannot be listed as an author of a paper as they are not legal entities
+Authors who use AI tools in the writing of a manuscript, production of images or graphical elements, or collection and analysis of data must disclose this use in the Methods or Acknowledgments section of the paper
+This disclosure must transparently and specifically state how the AI tool was used, which tool was used, and which sections of the paper are affected. Authors are fully responsible for the content of their manuscripts, even the parts produced by an AI tool, and are therefore liable for any breach of publication ethics and for any inaccuracies
+Before submitting a manuscript, an author is requested to read the policies and guidelines (https://bohrpub.com/Forms_Submission/BOHR_Paper_Template.pdf) section of the journal website. The author has the right to complaint and ask for the explanation if he perceives any misconduct in any applicable policies and ethical guidelines.
+
+This Journal is an open access journal and does not charge readers or their institutions for access to the journal articles. The open access supports the rights of users to read, download, copy, distribute, print, search, or link to the full texts of these articles provided they are properly acknowledged and cited. There is no article processing fee charged to the authors and all articles are immediately available on the journal website once published. Permitted reuse is defined by the following user license: Creative Commons Attribution-4.0 (https://creativecommons.org/licenses/by/4.0/) The authors retain the copyright in addition to the scholarly usage rights and the BOHR publishers receives the publication and distribution rights.
+
+All the published articles are rigorously double-blind peer-reviewed and screened with plagiarism detection tools (Turnitin); content match of less than 20% is considered acceptable. Reviews are delivered promptly. Accepted papers are published in approximately three to six months from submission.
+
+To connect authors to their contributions and prevent fake research in scholarly publishing, The journal encourages authors to update their personal data and assign ORCID number to their profiles. This makes publishing more transparent and trustworthy.
+
+Correction, Retraction, and Removal of Articles
+
+Correction. The journal will publish a correction if the scholarly record is seriously affected (e.g., if accuracy/intended meaning, scientific reproducibility, author reputation, or journal reputation is judged to be compromised. Corrections that do not affect the contribution in a material way or significantly alter the reader's understanding of the contribution, such as misspellings or grammatical errors, will not be published. When a correction is published, it will link to and from the work. The correction will be added to the original work so that readers will receive the original work and the correction. All corrections will be as concise as possible.
+
+Retraction. The journal reserves the right to retract items. Retractions will occur if the editors and editorial board finds that the main conclusion of the work is undermined or if subsequent information about the work comes to light of which the authors or the editors were not aware at the time of publication. Infringements of professional ethical codes, such as multiple submission, inaccurate claims of authorship, plagiarism, fraudulent use of data will also result in retraction of the work.
+
+Removal. Some circumstances may necessitate removal of a work from the journal. This will occur when the article is judged by the editors and editorial board to be defamatory, if it infringes on legal rights, or if there is a reasonable expectation that it will be subject to a court order. The bibliographic information about the work will be retained online, but the work will no longer be available in the journal website. A note will be added to indicate that the item was removed for legal reasons.
+
+Name Change Policy
+
+The journal is committed to supporting requests for author name changes and/or pronoun changes, with as few barriers as possible. Name changes and/or pronoun changes are available to authors upon request, with no legal documentation required. Upon receiving a name change request, the journal will update all metadata, published content, and associated records under our control to reflect the requested name change. Authors who wish to update or change their name should contact "bijsshr@bohrpub.com". Requests will be treated with respect and confidentiality, and addressed as quickly as possible.
+
+Manuscript Preparation Guidelines
+
+Article Structure
+Use line numbering throughout your paper.
+
+Please ensure your submission meets the recommended word limits. A short, concise article is more likely to attract readers. In general, a research article should contain:
+
+Figures: 6-8
+Tables: 1-3
+References: 25 – 50
+Additional figures and tables may be added to Supplementary Material.
+
+Papers should be well structured; they must comprise:
+- Title
+- Short title of no more than 80 characters
+- Author name(s), full email addresses for each author. Please indicate who the corresponding author is.
+- Abstract: No more than 200 words briefly specifying the aims of the work, the main results obtained, and the conclusions drawn. Citations must not be included in the Abstract.
+- Keywords: Up to 6 keywords (in alphabetical order) which will enable subsequent abstracting or information retrieval systems to locate the paper.
+
+- Main text: For clarity this should be subdivided into:
+i. Introduction: Describing the background of the work and its aims.
+ii. Methods: A brief description of the methods/techniques used (the principles of these methods should not be described if readers can be directed to easily accessible references or standard texts).
+iii. Results and Discussion: A clear presentation of experimental results obtained, highlighting any trends or points of interest. (Results and discussion can be separate sections, if needed).
+Conclusions: A brief explanation of the significance and implications of the work reported.
+iv. References: These should be to accessible sources. Please ensure that all work cited in the text is included in the reference list, and that the dates and authors given in the text match those in the reference list. References must always be given in sufficient detail for the reader to locate the work cited. Please note that your paper is at risk of rejection if a disproportionate share of the references cited are your own.
+
+- Supplementary Material: Appendices and other Supplementary Material are permitted, and will be published online only.
+
+- Data: We encourage authors to make the dataset on which their paper is based available to access. Authors may upload all data related to the results reported in the manuscript as supplementary materials with the submission, or provided via a URL to a public repository. Data should be presented in a format that facilitates readability and reuse.
+Where restrictions apply, submissions should be accompanied by a statement of the conditions of access and permitted reuse of the data.
+For Review Papers the organisation of the paper can be different. It is however important that a review is more than a summary of the literature; an in-depth critical discussion is essential for acceptance of a review paper.
+
+Nomenclature and Units
+All terminology and notation used will be widely understood. Abbreviations and acronyms should be spelled out in full at their first occurrence in the text.
+
+SI units are strongly recommended. If non-SI units must be used, SI equivalents (or conversion factors) must also be given. Please use the spellings 'litre' and 'metre' (a 'meter' is a measuring instrument).
+
+Artwork. Figures should appear in numerical order, be described in the body of the text and be positioned close to where they are first cited. Each figure should have a caption which describes the illustration, and that can be understood independently of the main text. The caption should be given in the text, and not on the figure itself.
+
+Tables
+Tables should be inserted at the end of the manuscript. Tables must be provided in an editable format e.g., Word, Excel. Tables provided as jpeg/tiff files will not be accepted.
+
+Language
+Papers must be in good, grammatically correct English. If your paper cannot be understood, it will be rejected before peer review. If English is not your native language, please seek the assistance of a colleague or professional translator.
+
+References
+Citations in text:
+- Use surname of author and year of publication: Jones (2002) . Insert initials only if there are two different authors with the same surname and same year of publication.
+- Two or more years in parentheses following an author's name are cited in ascending order of year, and two or more references published in the same year by the same author are differentiated by letters a, b, c, etc. For example: Brown (1999, 2002, 2003a, b).
+- Different references cited together should be in date order, for example: (Smith 1959; Thomson & Jones 2008; Green 2015).
+- If a paper has been accepted for publication but has not been published the term "(in press)" should be used instead of a date.
+- If a paper has been submitted but not definitely accepted the term "(submitted)" should be used. If the paper is still being prepared the term "(in preparation)" should be used.
+- The abbreviation "et al." should be used in the text when there are more than two co-authors of a cited paper.
+
+If you decide to use online referencing software, then you can use the Harvard referencing option.
+Please double-check: every citation in the text must match up to an entry in the reference list and vice-versa.
+
+Reference Links
+We use digital object identifiers (DOIs) to link references to the source material. This can only be done if the data provided in the references are correct. Please be very careful, especially when copying references, to ensure that surnames, journal/book titles, publication year and pagination are all correct. Please include DOIs where available.
+
+List of References
+References should be listed alphabetically at the end of the paper. Although "et al." is preferable in the text, in the list of references all authors should be given.
+
+Reference styles
+
+Journal articles
+
+Author, A., Author, B., Author, C., et al. (2019). The title of the paper. Jour. Tit. 2(2), 121–127.
+
+Conference Paper
+
+Author, A., Author, B., Author, C., et al. (2008). The title of the conference paper. Proc. Int. Conf. Systems, City Name, Country, May 2008, pp. 121–127.
+
+Book, book chapter and manual
+
+Author., A. and Author, B. (2004). The title of the book chapter, in Editor Name, A. (Ed.): The Title of the Book, pp. 121–127. Cambridge, MA: XYZ Press.
+
+Author A., Author B., and Author, C. (2005). The Title of the Book. Cambridge, MA: XYZ Press.
+
+Websites
+
+Article title, http://www.bohrpub.com/journals/IJRNLC.html, accessed 27 November 2014.
+
+Thesis
+
+Author, A. (2005). The title of the thesis. PhD thesis, XYZ University.
+
+
+References in languages other than English
+These should be accompanied by an English translation of the article title:
+
+
+Identifying products
+When mentioning a drug, product, hardware, or software program in a manuscript, it is important to provide detailed information about the product in parentheses. This should include the name of the product, the producer of the product, and the city and country of the company. For example, if mentioning a Discovery St PET/CT scanner produced by General Electric in Milwaukee, Wisconsin, USA, the information should be presented in the following format: "Discovery St PET/CT scanner (General Electric, Milwaukee, WI, USA)." Providing this information helps to ensure that the product is properly identified and credited.
+
+Supplementary Materials
+Supplementary materials, including audio files, videos, datasets, and additional documents (e.g., appendices, additional figures, tables), are intended to complement the main text of the manuscript. These supplementary materials should be submitted as a separate section after the references list. Concise descriptions of each supplementary material should be included to explain their relevance to the manuscript. Page numbers are not required for supplementary materials.
+
+Author Contributions
+Please identify each author’s contribution(s) to the submission, using the guidelines of the Contributor Roles Taxonomy Project (CRediT), should be provided. Categories include Conceptualization; Methodology; Software; Validation; Formal analysis; Investigation; Resources; Data Curation; Writing - Original Draft; Writing - Review & Editing; Visualization; Supervision; Project administration; Funding acquisition; Other. See the CRediT website for more details.
+
+The corresponding author is responsible for ensuring that the descriptions are accurate and agreed by all authors.
+
+Acknowledgments
+
+Include individuals or companies which have assisted with your study, including advisors, administrative support and suppliers who may have donated or given materials used in the study. If there are no acknowledgments, then still include this section and insert: “The authors have no acknowledgments to report.”
+
+Funding
+
+Include all funding sources for the study. If there is no funding involved, then still include this section and insert: “The authors have no funding to report.”
+
+Conflict of Interest
+
+All affiliations or financial involvement (e.g., employment, consultancies, honoraria, stock ownership or options, expert testimony, grants, patents received or pending, royalties) with any organization or entity with a financial interest in, or in financial competition with, the subject matter or materials discussed in the manuscript must be completely disclosed in the submitted manuscript.
+
+All financial and material support for the research and work must be clearly identified in the manuscript including listing of support that might constitute or give the appearance of influencing the findings. Please report all support for the work reported in your manuscript without time limit. For all other items, the time frame for disclosure is the past 36 months.
+
+All authors are expected to provide disclosures to the corresponding author before submission for inclusion in the “Conflict of Interest” statement. Items included in the disclosure statement should cover: consulting fees or paid advisory boards (for the past three years or the known future), equity ownership/stock options (publicly or privately traded firms, excluding mutual funds), lecture fees when speaking at the invitation of a commercial sponsor (for the past three years or the known future), employment by the commercial entity that sponsored the study, grant support from industry, patents and/or royalties, expert witness, and other activities performed for a commercial sponsor.
+
+Additionally, authors who are Editorial board members of the journal must include this information in the Conflict of Interest section using the following format: “[AUTHOR] is an Editorial Board Member of this journal but was not involved in the peer-review process of this article nor had access to any information regarding its peer-review."
+
+If there is no conflict of interest to declare, include the statement "The authors have no conflict of interest to report."
+
+Data availability statement 
+
+Authors must provide a data availability statement in their article that details whether data are available and, if so, where they can be found.
+
+Choose one of the following five options:
+
+The data that support the findings of this study are openly available.
+The data that support the findings of this study will be openly available following a delay.
+The data that support the findings of this study are available upon request from the authors.
+Any data that support the findings of this study are included within the article.
+No new data were created or analysed in this study.
+Citing data
+Any data assigned a digital object identifier (DOI) by a data repository should be cited in an article’s reference list. Data citations should include the following minimum information: author(s), title, publisher (repository name), DOI.
+
+Diversity & Inclusivity (use of inclusive language)
+Incorporating inclusive language in manuscripts recognizes the array of differences among individuals, demonstrates respect for all individuals, displays sensitivity to varying perspectives, and fosters equal prospects.
+
+Articles should steer clear of any insinuation of one person's superiority over another based-on factors like age, gender, race, ethnicity, culture, sexual orientation, disability, or health status. Utilizing inclusive language consistently throughout is of paramount importance. Authors must ensure their writing is void of partiality, clichés, slang, and allusions that assume a dominant culture or cultural presumptions.
+
+To attain gender neutrality, it's recommended Authors employ plural nouns ("clinicians, patients/clients") as the default whenever feasible, rather than resorting to gender-specific pronouns ("he," "she," or "he/she"). Descriptors tied to personal characteristics like age, gender, cultural backgrounds, culture, sexual orientation, disability, or health status should only be included if they hold relevance and validity.
+
+ 

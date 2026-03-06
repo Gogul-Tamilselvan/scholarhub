@@ -1,0 +1,59 @@
+modules = ["nodejs-20", "web", "postgresql-16"]
+run = "npm run dev"
+hidden = [".config", ".git", "generated-icon.png", "node_modules", "dist"]
+
+[nix]
+channel = "stable-24_05"
+packages = ["zip"]
+
+[deployment]
+deploymentTarget = "autoscale"
+build = ["npm", "run", "build"]
+run = ["npm", "run", "start"]
+
+[[ports]]
+localPort = 5000
+externalPort = 80
+
+[env]
+PORT = "5000"
+
+[workflows]
+runButton = "Project"
+
+[[workflows.workflow]]
+name = "Project"
+mode = "parallel"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Start application"
+
+[[workflows.workflow]]
+name = "Start application"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npm run dev"
+waitForPort = 5000
+
+[agent]
+integrations = ["google-drive:1.0.0", "google-sheet:1.0.0"]
+
+[objectStorage]
+defaultBucketID = "replit-objstore-07d551c4-0da6-4bc2-944f-703cad364077"
+
+[userenv]
+
+[userenv.shared]
+PAYMENT_UPI_ID = "PPQR01.HNZMKU@iob"
+PAYMENT_BANK_DETAILS = """
+Bank Name: Indian Overseas Bank
+Account Name: Scholar India Publishers
+Account Type: Current Account
+Account Number: 171202000000231
+IFSC Code: IOBA0001712
+Branch: Loyola College"""
+GOOGLE_INVOICE_FOLDER_ID = "https://drive.google.com/drive/u/3/folders/1GNGF14sMFsOD0lg80Bsh5F4ILAxVMlQJ"

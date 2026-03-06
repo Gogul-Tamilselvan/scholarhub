@@ -1,0 +1,54 @@
+SIP - Admin Portal of Scholar India Publishers (side by side view)  create clean, professional, single-page layouts
+✓ Approvals & Workflow
+Approve Reviewers & Board	•	Fetch the data from “Reviewers sheet” in forms worksheet, admin has the power to Approve, Reject, Hold the Reviewers / Board (Editorial Board Member)
+•	As soon as the admin approves, rejects, holds – the sheet has to update the status under the “status column” T column in the sheet. 
+•	Don’t Delete any data in the sheet (you can update) but all activities should be recorded in sheet
+•	Approved reviewer/board members can be allowed to login to their respective portal
+Assign Work	•	from the data in “Manuscript Sheet”, admin can assign the work to “active” reviewers/editors. 
+•	Only manuscripts which are “under review” can be assigned
+•	A manuscript can be assigned to 3 different reviewers/board members, beyond that admin can not do. Due date should be fixed by the admin.
+•	Once the manuscript is assigned to any users, it should reflect in their respective portal, and all functions including submit review should be enabled.
+•	Reviewers/editors can access assigned work in their portal including the doc link.
+•	Once the reviewer/editor submits the review for a particular manuscript, then the doc link and other particulars should be disabled, if there is any pending work it should show.
+Approve Reviews	•	After editor/reviewer submits his review, admin can approve it with note or reject it with note.
+📊 Tracking & Management
+Assignments	•	All assigned work should be listed with status (pending), show overall ranking.
+•	Approved works can be recorded in google sheet “assignemts” update the status and record all responses of reviewer/editor. 
+•	Give a provision for reminder/revoke the assigned work.
+•	If revoke is done, then disappear the details under this assignemts (don’t delete the data in sheet)
+•	Admin can download all list including details in csv format
+Reviewers	•	List all reviewers details (reviewer id, name, mail id, journal name) from “reviewers sheet” filter only reviewers
+•	Admin can “activate, reject, hold,” and change the password of the reviewers. These activities should be recorded in the sheet “Reviewers” including the password
+•	Admin can also deactivate the users (do not delete the data)
+•	Admin can download all list including details in csv format
+Board Members	•	List all board members details (reviewer id, name, mail id, journal name) form “reviewers sheet” filter only Editorial board members
+•	Admin can “activate, reject, hold,” and change the password of the board members. These activities should be recorded in the sheet “Reviewers” including the password
+•	Admin can download all list including details in csv format
+Manuscripts	•	List all submitted manuscripts from “manuscript sheet”.
+•	Admin can change the status manually, “under review, rejected, accepted, published”, the same should be (changes) recorded in the Google sheet. 
+•	Once the manuscript is published in status, it need not be shown here (don’t delete it). Just apply the filter option. After published there is no further work is needed for that manuscript
+•	Admin can download all list including details in csv format
+Messages	•	Admin can message to editors/reviewers and editors/ reviewrs can message admin
+•	It should be real time messaging, do not logout any user when the hit on send message button
+•	Notification should show in all users if they have received any messages
+•	Unread messages only should have notification, once the message it read – notification buttion should turn off.
+•	Keep all history of messages in all users, record it in google sheet
+Payments	•	All payment details from “payment sheet” should be reflected here
+•	Admin can approve the payment, update the status approved, under review in sheet
+•	Admin can download all list including details in csv format
+Newsletter	•	All newsletter subscribers should be listed here 
+•	Admin can download all list including details in csv format
+📋 Activity & Audit
+Login Activity	•	Login activities of all users should be recorded, not every click – every actions only be recoreded
+Popup Messages	•	Admin can use this fuction
+•	Admin can send popup messages to all users or particular users (editor /reviewers)
+•	Time line to show this message should be fixed by the admin
+Performance	•	Editor / reviewers performance will be shouwn here
+•	Assigned wor/completed work/ pending work etc
+Deadline Calendar	•	Admin can see upcoming ded lines fixed by the admin
+Email Templates	•	Delete it I don’t want it
+General Instructions:
+•	Do not logout the users when admin assign or perform anything
+•	Make it professional platform simple and user friendly design, effective work flow (all devices)
+•	Do not delete any data, you can update the status and activities alone
+•	Admin can change password for his login as well as for all users “record the same in google sheet”

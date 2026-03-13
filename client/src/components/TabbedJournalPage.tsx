@@ -749,7 +749,7 @@ export default function TabbedJournalPage({
                             <div>
                               <h3 className="text-2xl font-serif font-bold">
                                 Volume {volNum}, Issue {currentIssueData.num}
-                              </h2>
+                              </h3>
                               <p className="text-blue-2 text-sm mt-1">{currentIssueData.period}</p>
                             </div>
                           </div>
@@ -780,7 +780,7 @@ export default function TabbedJournalPage({
                                       <Link href={`/article/${article.articleId}`} className="block group">
                                         <h3 className="text-sm md:text-base font-serif font-bold text-[#213361] dark:text-blue-3 group-hover:text-blue-7 dark:group-hover:text-blue-4 transition-colors cursor-pointer leading-snug uppercase tracking-wide">
                                           {article.title}
-                                        </h4>
+                                        </h3>
                                       </Link>
                                       <div className="flex flex-wrap items-center gap-y-1 text-gray-6 dark:text-gray-4">
                                         <Users className="h-3.5 w-3.5 mr-2 text-blue-6 dark:text-blue-4 shrink-0" />
@@ -919,7 +919,7 @@ export default function TabbedJournalPage({
                       <div className="space-y-6">
                         <h3 className="text-xl font-serif font-bold text-blue-9 dark:text-blue-3 flex items-center gap-2 underline decoration-blue-2 underline-offset-8">
                           Why Review for Us?
-                        </h4>
+                        </h3>
                         <div className="grid gap-6">
                           <div className="flex gap-4 items-start">
                             <div className="h-8 w-8 rounded-full bg-green-5 dark:bg-green-900/2 flex items-center justify-center shrink-0">
@@ -963,7 +963,7 @@ export default function TabbedJournalPage({
                       <div className="space-y-6">
                         <h3 className="text-xl font-serif font-bold text-blue-9 dark:text-blue-3 flex items-center gap-2 underline decoration-blue-2 underline-offset-8">
                           Requirements
-                        </h4>
+                        </h3>
                         <ul className="space-y-4">
                           <li className="flex gap-3 text-gray-7 dark:text-gray-3 items-center">
                             <div className="h-2 w-2 rounded-full bg-blue-6 shrink-0"></div>

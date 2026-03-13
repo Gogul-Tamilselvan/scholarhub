@@ -148,7 +148,7 @@ export default function TabbedJournalPage({
       <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Left Sidebar Menu */}
-          <aside className="w-full lg:w-7 flex-shrink-0">
+          <aside className="w-full lg:w-72 flex-shrink-0">
             <div className="sticky top-2 space-y-6">
               {/* Journal Menu */}
               <div className="bg-white dark:bg-gray-9 rounded-xl shadow-lg border border-gray-1 dark:border-gray-8 overflow-hidden">

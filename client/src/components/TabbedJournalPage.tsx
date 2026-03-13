@@ -1026,7 +1026,7 @@ export default function TabbedJournalPage({
                         ].map((item) => (
                           <div key={item.step} className="bg-white dark:bg-gray-9 p-6 rounded-lg border border-blue-1 dark:border-blue-9 shadow-sm relative pt-1 group hover:border-blue-4 transition-colors">
                             <div className="absolute top-0 left-6 -translate-y-1/2 h-1 w-1 bg-blue-9 text-white rounded-full flex items-center justify-center font-bold text-xl border-4 border-white dark:border-gray-9 group-hover:scale-1 transition-transform">{item.step}</div>
-                            <h3 className="font-bold text-blue-9 dark:text-blue-3 mb-2">{item.title}</h5>
+                            <h3 className="font-bold text-blue-9 dark:text-blue-3 mb-2">{item.title}</h3>
                             <p className="text-sm text-gray-6 dark:text-gray-4 leading-relaxed">{item.desc}</p>
                           </div>
                         ))}

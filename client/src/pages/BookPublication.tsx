@@ -76,7 +76,7 @@ export default function BookPublication() {
             onClick={() => setShowForm(!showForm)}
             size="lg"
             data-testid="button-show-form"
-            className="text-xl px-12 py-8 bg-gradient-to-r from-blue-600 to-blue-100 hover:from-blue-50 hover:to-blue-900 text-white shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+            className="text-xl px-12 py-8 bg-[#213361] hover:bg-[#2a4078] text-white shadow-md transition-colors duration-200"
           >
             {showForm ? "✕ Hide Form" : "📝 Book Publication Submission Form"}
           </Button>

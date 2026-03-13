@@ -238,13 +238,13 @@ export default function PublicationPayment() {
         {step === "verify" && (
           <div className="mb-12 space-y-8">
             <div className="grid md:grid-cols-2 gap-8">
-              <Card className="border-2 border-blue-200 dark:border-blue-800 bg-gradient-to-br from-blue-50 to-white dark:from-blue-950/20 dark:to-background overflow-hidden">
+              <Card className="border border-gray-200 dark:border-gray-700 overflow-hidden">
                 <CardHeader className="bg-[#213361] text-white">
                   <CardTitle className="text-2xl text-white">Indian Authors</CardTitle>
                   <CardDescription className="text-blue-100">Domestic Publication Fee</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4 pt-6">
-                  <div className="text-4xl font-bold text-blue-600 dark:text-blue-400">₹1,180</div>
+                  <div className="text-4xl font-bold text-[#213361] dark:text-blue-300">₹1,180</div>
                   <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
                     <li className="flex items-center gap-2">
                       <CheckCircle2 className="w-4 h-4 text-green-500" />
@@ -286,33 +286,33 @@ export default function PublicationPayment() {
               </CardHeader>
               <CardContent className="grid md:grid-cols-2 gap-6">
                 <div className="space-y-4">
-                  <div className="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+                  <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
                     <div className="grid grid-cols-2 gap-2 text-sm">
-                      <span className="font-semibold text-blue-900 dark:text-blue-300">Bank Name:</span>
-                      <span className="text-blue-800 dark:text-blue-400">Indian Overseas Bank</span>
-                      <span className="font-semibold text-blue-900 dark:text-blue-300">Account Name:</span>
-                      <span className="text-blue-800 dark:text-blue-400">Scholar India Publishers</span>
-                      <span className="font-semibold text-blue-900 dark:text-blue-300">Account Type:</span>
-                      <span className="text-blue-800 dark:text-blue-400">Current Account</span>
-                      <span className="font-semibold text-blue-900 dark:text-blue-300">Account Number:</span>
-                      <span className="text-blue-800 dark:text-blue-400 font-mono">171202000000231</span>
-                      <span className="font-semibold text-blue-900 dark:text-blue-300">IFSC Code:</span>
-                      <span className="text-blue-800 dark:text-blue-400 font-mono">IOBA0001712</span>
-                      <span className="font-semibold text-blue-900 dark:text-blue-300">Branch:</span>
-                      <span className="text-blue-800 dark:text-blue-400">Loyola College</span>
+                      <span className="font-semibold text-gray-800 dark:text-gray-200">Bank Name:</span>
+                      <span className="text-gray-700 dark:text-gray-300">Indian Overseas Bank</span>
+                      <span className="font-semibold text-gray-800 dark:text-gray-200">Account Name:</span>
+                      <span className="text-gray-700 dark:text-gray-300">Scholar India Publishers</span>
+                      <span className="font-semibold text-gray-800 dark:text-gray-200">Account Type:</span>
+                      <span className="text-gray-700 dark:text-gray-300">Current Account</span>
+                      <span className="font-semibold text-gray-800 dark:text-gray-200">Account Number:</span>
+                      <span className="text-gray-700 dark:text-gray-300 font-mono">171202000000231</span>
+                      <span className="font-semibold text-gray-800 dark:text-gray-200">IFSC Code:</span>
+                      <span className="text-gray-700 dark:text-gray-300 font-mono">IOBA0001712</span>
+                      <span className="font-semibold text-gray-800 dark:text-gray-200">Branch:</span>
+                      <span className="text-gray-700 dark:text-gray-300">Loyola College</span>
                     </div>
                   </div>
                 </div>
                 <div className="flex flex-col md:flex-row items-center gap-6">
                   <div className="flex-shrink-0 bg-white p-2 rounded-lg border border-gray-200 shadow-sm">
                     <img src={upiQrPath} alt="UPI QR Code" className="w-32 h-32 object-contain" />
-                    <p className="text-[10px] text-center mt-1 font-bold text-blue-900">Scan & Pay</p>
+                    <p className="text-[10px] text-center mt-1 font-bold text-[#213361]">Scan & Pay</p>
                   </div>
                   <div className="flex flex-col justify-center space-y-2">
                     <p className="text-sm text-gray-600 dark:text-gray-400">
                       Please make the payment using the details above or scan the QR code and save the transaction screenshot. You will need to upload it in the next step to verify your payment.
                     </p>
-                    <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400">
+                    <div className="flex items-center gap-2 text-[#213361] dark:text-blue-300">
                       <Lock className="w-4 h-4" />
                       <span className="text-xs font-medium">Secure Payment Options</span>
                     </div>
@@ -333,7 +333,7 @@ export default function PublicationPayment() {
                   <div className="flex flex-col items-center text-center space-y-4">
                     <div className="bg-white p-3 rounded-xl shadow-md border border-blue-100">
                       <img src={upiQrPath} alt="UPI QR Code" className="w-48 h-40 object-contain mx-auto" />
-                      <p className="text-[10px] mt-1 font-bold text-blue-900 uppercase">Scholar India Publishers</p>
+                      <p className="text-[10px] mt-1 font-bold text-[#213361] uppercase">Scholar India Publishers</p>
                     </div>
                     <div className="space-y-2">
                       <p className="text-xs text-muted-foreground">Scan this QR code using any UPI app (GPay, PhonePe, Paytm) to make your payment instantly.</p>
@@ -362,32 +362,32 @@ export default function PublicationPayment() {
                 </p>
                 <div className="grid md:grid-cols-2 gap-8 mt-6">
                   <div className="space-y-4">
-                    <h4 className="font-semibold text-blue-900 dark:text-blue-300">APC Includes:</h4>
+                    <h4 className="font-semibold text-gray-900 dark:text-gray-100">APC Includes:</h4>
                     <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
                       <li className="flex items-center gap-2">
-                        <span className="text-blue-600 font-bold">✓</span> Crossref DOI
+                        <span className="text-[#213361] dark:text-blue-300 font-bold">✓</span> Crossref DOI
                       </li>
                       <li className="flex items-center gap-2">
-                        <span className="text-blue-600 font-bold">✓</span> Peer Review
+                        <span className="text-[#213361] dark:text-blue-300 font-bold">✓</span> Peer Review
                       </li>
                       <li className="flex items-center gap-2">
-                        <span className="text-blue-600 font-bold">✓</span> Professional Editing
+                        <span className="text-[#213361] dark:text-blue-300 font-bold">✓</span> Professional Editing
                       </li>
                       <li className="flex items-center gap-2">
-                        <span className="text-blue-600 font-bold">✓</span> Open Access
+                        <span className="text-[#213361] dark:text-blue-300 font-bold">✓</span> Open Access
                       </li>
                       <li className="flex items-center gap-2">
-                        <span className="text-blue-600 font-bold">✓</span> Academic Indexing
+                        <span className="text-[#213361] dark:text-blue-300 font-bold">✓</span> Academic Indexing
                       </li>
                     </ul>
                   </div>
                   <div className="grid grid-cols-1 gap-4">
                     <div className="space-y-2">
-                      <h4 className="font-semibold text-blue-800 dark:text-blue-300">Technical Infrastructure</h4>
+                      <h4 className="font-semibold text-gray-900 dark:text-gray-100">Technical Infrastructure</h4>
                       <p className="text-xs text-gray-500">Supports permanent hosting, Crossref DOI registration, XML conversion, and archival in global databases.</p>
                     </div>
                     <div className="space-y-2">
-                      <h4 className="font-semibold text-blue-800 dark:text-blue-300">Global Visibility</h4>
+                      <h4 className="font-semibold text-gray-900 dark:text-gray-100">Global Visibility</h4>
                       <p className="text-xs text-gray-500">Ensures your research is discoverable through Google Scholar, ResearchGate, and major indexing services.</p>
                     </div>
                   </div>
@@ -411,8 +411,8 @@ export default function PublicationPayment() {
                 </CardHeader>
                 <CardContent className="pt-8">
                   <div className="space-y-6">
-                    <div className="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
-                      <p className="text-sm text-blue-900 dark:text-blue-300">
+                    <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
+                      <p className="text-sm text-gray-800 dark:text-gray-200">
                         Only manuscripts with <strong>"Accepted"</strong> status can proceed to payment. Please enter your manuscript ID to verify its status.
                       </p>
                     </div>
@@ -432,7 +432,7 @@ export default function PublicationPayment() {
                     <Button 
                       onClick={handleVerifyManuscript}
                       disabled={verifyingManuscript || !manuscriptId.trim()}
-                      className="w-full bg-blue-600 hover:bg-blue-700 h-12 text-lg"
+                      className="w-full bg-[#213361] hover:bg-[#2a4078] h-12 text-lg"
                       data-testid="button-verify-manuscript"
                     >
                       {verifyingManuscript ? (
@@ -449,17 +449,17 @@ export default function PublicationPayment() {
                     </Button>
 
                     {verificationError && isUnderReview && (
-                      <div className="bg-blue-50 dark:bg-blue-950/30 border-2 border-blue-200 dark:border-blue-700 p-6 rounded-lg">
+                      <div className="bg-[#213361]/5 dark:bg-[#213361]/10 border border-[#213361]/20 dark:border-[#213361]/30 p-6 rounded-lg">
                         <div className="flex gap-3">
                           <div className="flex-shrink-0 mt-0.5">
-                            <CheckCircle2 className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                            <CheckCircle2 className="w-6 h-6 text-[#213361] dark:text-blue-300" />
                           </div>
                           <div className="space-y-2">
-                            <h3 className="font-semibold text-blue-900 dark:text-blue-300">Manuscript Under Review</h3>
-                            <p className="text-sm text-blue-800 dark:text-blue-200 leading-relaxed">
+                            <h3 className="font-semibold text-gray-900 dark:text-gray-100">Manuscript Under Review</h3>
+                            <p className="text-sm text-gray-800 dark:text-gray-200 leading-relaxed">
                               {verificationError}
                             </p>
-                            <p className="text-xs text-blue-700 dark:text-blue-300 mt-3 font-medium">
+                            <p className="text-xs text-gray-700 dark:text-gray-300 mt-3 font-medium">
                               We'll notify you via email once the review is complete. Thank you for your patience!
                             </p>
                           </div>
@@ -511,9 +511,9 @@ export default function PublicationPayment() {
                 )}
 
                 {/* Why Do We Charge APC Section */}
-                <Card className="mb-8 border-blue-200 dark:border-blue-800 bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-950/20 dark:to-blue-900/10">
+                <Card className="mb-8 border border-gray-200 dark:border-gray-700">
                   <CardHeader>
-                    <CardTitle className="text-xl text-blue-900 dark:text-blue-300">Why Do We Charge Article Processing Charges?</CardTitle>
+                    <CardTitle className="text-xl text-foreground">Why Do We Charge Article Processing Charges?</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <p className="text-sm text-gray-700 dark:text-gray-300">
@@ -522,8 +522,8 @@ export default function PublicationPayment() {
                     <div className="grid md:grid-cols-2 gap-4">
                       <div className="flex items-start gap-3">
                         <div className="flex-shrink-0">
-                          <div className="flex items-center justify-center h-8 w-8 rounded-md bg-blue-100 dark:bg-blue-900/30">
-                            <span className="text-blue-600 dark:text-blue-400 text-sm font-semibold">✓</span>
+                          <div className="flex items-center justify-center h-8 w-8 rounded-md bg-[#213361]/10 dark:bg-[#213361]/30">
+                            <span className="text-[#213361] dark:text-blue-300 text-sm font-semibold">✓</span>
                           </div>
                         </div>
                         <div>
@@ -533,8 +533,8 @@ export default function PublicationPayment() {
                       </div>
                       <div className="flex items-start gap-3">
                         <div className="flex-shrink-0">
-                          <div className="flex items-center justify-center h-8 w-8 rounded-md bg-blue-100 dark:bg-blue-900/30">
-                            <span className="text-blue-600 dark:text-blue-400 text-sm font-semibold">✓</span>
+                          <div className="flex items-center justify-center h-8 w-8 rounded-md bg-[#213361]/10 dark:bg-[#213361]/30">
+                            <span className="text-[#213361] dark:text-blue-300 text-sm font-semibold">✓</span>
                           </div>
                         </div>
                         <div>
@@ -544,8 +544,8 @@ export default function PublicationPayment() {
                       </div>
                       <div className="flex items-start gap-3">
                         <div className="flex-shrink-0">
-                          <div className="flex items-center justify-center h-8 w-8 rounded-md bg-blue-100 dark:bg-blue-900/30">
-                            <span className="text-blue-600 dark:text-blue-400 text-sm font-semibold">✓</span>
+                          <div className="flex items-center justify-center h-8 w-8 rounded-md bg-[#213361]/10 dark:bg-[#213361]/30">
+                            <span className="text-[#213361] dark:text-blue-300 text-sm font-semibold">✓</span>
                           </div>
                         </div>
                         <div>
@@ -555,8 +555,8 @@ export default function PublicationPayment() {
                       </div>
                       <div className="flex items-start gap-3">
                         <div className="flex-shrink-0">
-                          <div className="flex items-center justify-center h-8 w-8 rounded-md bg-blue-100 dark:bg-blue-900/30">
-                            <span className="text-blue-600 dark:text-blue-400 text-sm font-semibold">✓</span>
+                          <div className="flex items-center justify-center h-8 w-8 rounded-md bg-[#213361]/10 dark:bg-[#213361]/30">
+                            <span className="text-[#213361] dark:text-blue-300 text-sm font-semibold">✓</span>
                           </div>
                         </div>
                         <div>
@@ -566,8 +566,8 @@ export default function PublicationPayment() {
                       </div>
                       <div className="flex items-start gap-3">
                         <div className="flex-shrink-0">
-                          <div className="flex items-center justify-center h-8 w-8 rounded-md bg-blue-100 dark:bg-blue-900/30">
-                            <span className="text-blue-600 dark:text-blue-400 text-sm font-semibold">✓</span>
+                          <div className="flex items-center justify-center h-8 w-8 rounded-md bg-[#213361]/10 dark:bg-[#213361]/30">
+                            <span className="text-[#213361] dark:text-blue-300 text-sm font-semibold">✓</span>
                           </div>
                         </div>
                         <div>
@@ -577,8 +577,8 @@ export default function PublicationPayment() {
                       </div>
                       <div className="flex items-start gap-3">
                         <div className="flex-shrink-0">
-                          <div className="flex items-center justify-center h-8 w-8 rounded-md bg-blue-100 dark:bg-blue-900/30">
-                            <span className="text-blue-600 dark:text-blue-400 text-sm font-semibold">✓</span>
+                          <div className="flex items-center justify-center h-8 w-8 rounded-md bg-[#213361]/10 dark:bg-[#213361]/30">
+                            <span className="text-[#213361] dark:text-blue-300 text-sm font-semibold">✓</span>
                           </div>
                         </div>
                         <div>
@@ -592,8 +592,8 @@ export default function PublicationPayment() {
 
                 {/* Author Information Form */}
                 <Card>
-                  <CardHeader className="bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-950/30 dark:to-blue-900/30">
-                    <CardTitle>Author Information</CardTitle>
+                  <CardHeader className="bg-[#213361] text-white">
+                    <CardTitle className="text-white">Author Information</CardTitle>
                   </CardHeader>
                   <CardContent className="pt-6 space-y-6">
                     <div className="grid md:grid-cols-2 gap-6">
@@ -708,7 +708,7 @@ export default function PublicationPayment() {
                       <Button 
                         onClick={() => setStep("checkout")} 
                         disabled={!isReadyForCheckout}
-                        className="flex-1 bg-blue-600 hover:bg-blue-700 h-12"
+                        className="flex-1 bg-[#213361] hover:bg-[#2a4078] h-12"
                       >
                         Continue to Review
                       </Button>
@@ -720,8 +720,8 @@ export default function PublicationPayment() {
 
             {step === "checkout" && (
               <Card>
-                <CardHeader className="bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-950/30 dark:to-blue-900/30">
-                  <CardTitle>Order Summary</CardTitle>
+                <CardHeader className="bg-[#213361] text-white">
+                  <CardTitle className="text-white">Order Summary</CardTitle>
                 </CardHeader>
                 <CardContent className="pt-6 space-y-6">
                   <div className="space-y-4">
@@ -755,7 +755,7 @@ export default function PublicationPayment() {
                     </div>
                   </div>
 
-                  <div className="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-lg space-y-2">
+                  <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg space-y-2 border border-gray-200 dark:border-gray-700">
                     <h4 className="font-semibold text-foreground">What's Included:</h4>
                     <ul className="space-y-1 text-sm text-muted-foreground">
                       <li className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-green-600" /> Crossref DOI Assignment</li>
@@ -769,7 +769,7 @@ export default function PublicationPayment() {
                     <Button variant="outline" onClick={() => setStep("cart")} className="flex-1">
                       Back
                     </Button>
-                    <Button onClick={() => setStep("payment")} className="flex-1 bg-blue-600 hover:bg-blue-700">
+                    <Button onClick={() => setStep("payment")} className="flex-1 bg-[#213361] hover:bg-[#2a4078]">
                       Proceed to Payment
                     </Button>
                   </div>
@@ -779,22 +779,22 @@ export default function PublicationPayment() {
 
             {step === "payment" && (
               <Card>
-                <CardHeader className="bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-950/30 dark:to-blue-900/30">
-                  <CardTitle className="flex items-center gap-2">
-                    <Lock className="w-5 h-5 text-green-600" />
+                <CardHeader className="bg-[#213361] text-white">
+                  <CardTitle className="flex items-center gap-2 text-white">
+                    <Lock className="w-5 h-5 text-green-400" />
                     Secure Payment
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="pt-6 space-y-6">
                   {formData.authorType === "indian" ? (
                     <div className="space-y-4">
-                      <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/30 dark:to-blue-900/20 p-6 rounded-lg border-2 border-blue-200 dark:border-blue-800">
+                      <div className="bg-gray-50 dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700">
                         <div className="flex flex-col md:flex-row gap-6 items-center">
                           <div className="flex-shrink-0 bg-white p-3 rounded-xl shadow-md border border-blue-200">
                             <img src={upiQrPath} alt="UPI QR Code" className="w-40 h-40 object-contain" />
                             <div className="flex items-center justify-center gap-2 mt-2">
-                              <QrCode className="w-4 h-4 text-blue-900" />
-                              <span className="text-xs font-bold text-blue-900 uppercase">Scan to Pay</span>
+                              <QrCode className="w-4 h-4 text-[#213361]" />
+                              <span className="text-xs font-bold text-[#213361] uppercase">Scan to Pay</span>
                             </div>
                           </div>
                           
@@ -821,7 +821,7 @@ export default function PublicationPayment() {
 
                               <div className="bg-white dark:bg-gray-900 p-4 rounded border border-blue-300 dark:border-blue-700">
                                 <p className="text-sm text-muted-foreground mb-2">Amount to Pay</p>
-                                <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">{apc.display}</p>
+                                <p className="text-3xl font-bold text-[#213361] dark:text-blue-300">{apc.display}</p>
                               </div>
                             </div>
                           </div>
@@ -998,7 +998,7 @@ export default function PublicationPayment() {
                     </ol>
                   </div>
 
-                  <Button onClick={() => window.location.href = '/'} className="bg-blue-600 hover:bg-blue-700">
+                  <Button onClick={() => window.location.href = '/'} className="bg-[#213361] hover:bg-[#2a4078]">
                     Return to Home
                   </Button>
                 </CardContent>
@@ -1009,9 +1009,9 @@ export default function PublicationPayment() {
           {/* Sidebar - Order Summary */}
           {step !== "verify" && (
             <div className="lg:col-span-1">
-              <Card className="sticky top-20 border-2 border-blue-200 dark:border-blue-800">
-                <CardHeader className="bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-950/30 dark:to-blue-900/30">
-                  <CardTitle className="flex items-center gap-2">
+              <Card className="sticky top-20 border border-gray-200 dark:border-gray-700">
+                <CardHeader className="bg-[#213361] text-white">
+                  <CardTitle className="flex items-center gap-2 text-white">
                     <ShoppingCart className="w-5 h-5" />
                     Your Order
                   </CardTitle>
@@ -1019,8 +1019,8 @@ export default function PublicationPayment() {
                 <CardContent className="pt-6 space-y-4">
                   <div>
                     <p className="text-sm text-muted-foreground mb-2">Publication Fee</p>
-                    <div className="bg-blue-50 dark:bg-blue-950/20 p-3 rounded">
-                      <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{apc.display}</p>
+                    <div className="bg-gray-50 dark:bg-gray-800 p-3 rounded border border-gray-200 dark:border-gray-700">
+                      <p className="text-2xl font-bold text-[#213361] dark:text-blue-300">{apc.display}</p>
                     </div>
                   </div>
 

@@ -91,7 +91,7 @@ export default function ReviewerLogin() {
     <div className="min-h-screen flex flex-col">
       <Header />
       
-      <main className="flex-1 bg-gradient-to-b from-blue-50 to-white py-12">
+      <main className="flex-1 bg-background py-12">
         <div className="container mx-auto px-4 max-w-md">
           <Link href="/" className="inline-flex items-center text-blue-600 hover:text-blue-800 mb-6">
             <ArrowLeft className="w-4 h-4 mr-2" />
@@ -160,7 +160,7 @@ export default function ReviewerLogin() {
 
                 <Button
                   type="submit"
-                  className="w-full h-11 bg-blue-600 hover:bg-blue-700"
+                  className="w-full h-11 bg-[#213361] hover:bg-[#2a4078]"
                   disabled={isLoading}
                   data-testid="button-login"
                 >

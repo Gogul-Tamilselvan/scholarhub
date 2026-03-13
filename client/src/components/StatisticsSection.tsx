@@ -34,10 +34,10 @@ export default function StatisticsSection() {
                 >
                   <Card className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 h-full shadow-sm">
                     <CardContent className="p-6 flex flex-col items-center text-center gap-3">
-                      <div className="p-3 rounded-full bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800">
+                      <div className="p-3 rounded-full bg-[#213361]/10 dark:bg-[#213361]/20 border border-[#213361]/20 dark:border-[#213361]/30">
                         <Icon className="h-6 w-6 text-[#213361] dark:text-blue-300" />
                       </div>
-                      <h3 className="font-semibold text-base text-blue-900 dark:text-blue-300">
+                      <h3 className="font-semibold text-base text-gray-900 dark:text-gray-100">
                         {stat.title}
                       </h3>
                       <motion.p

@@ -48,14 +48,14 @@ export default function ReviewerApplication() {
               <CardTitle className="text-2xl font-serif text-white">Why Become a Reviewer?</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/30 dark:to-blue-900/20 border-2 border-blue-200 dark:border-blue-800 rounded-lg p-6">
-                <h3 className="text-xl font-semibold mb-4 text-blue-900 dark:text-blue-300">Benefits of Being a Reviewer</h3>
+              <div className="bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-lg p-6">
+                <h3 className="text-xl font-semibold mb-4 text-gray-900 dark:text-gray-100">Benefits of Being a Reviewer</h3>
                 <div className="space-y-3">
                   <div className="flex items-start gap-3">
                     <span className="text-green-600 dark:text-green-400 font-bold text-xl">✓</span>
                     <div>
-                      <h4 className="font-semibold text-blue-900 dark:text-blue-200">Certificate of Appreciation</h4>
-                      <p className="text-sm text-blue-800 dark:text-blue-300">
+                      <h4 className="font-semibold text-gray-900 dark:text-gray-100">Certificate of Appreciation</h4>
+                      <p className="text-sm text-gray-700 dark:text-gray-300">
                         Receive an official certificate for every review you complete, recognizing your valuable contribution to academic research.
                       </p>
                     </div>
@@ -63,8 +63,8 @@ export default function ReviewerApplication() {
                   <div className="flex items-start gap-3">
                     <span className="text-green-600 dark:text-green-400 font-bold text-xl">✓</span>
                     <div>
-                      <h4 className="font-semibold text-blue-900 dark:text-blue-200">Professional Recognition</h4>
-                      <p className="text-sm text-blue-800 dark:text-blue-300">
+                      <h4 className="font-semibold text-gray-900 dark:text-gray-100">Professional Recognition</h4>
+                      <p className="text-sm text-gray-700 dark:text-gray-300">
                         Enhance your academic profile and build your reputation as an expert in your field.
                       </p>
                     </div>
@@ -72,8 +72,8 @@ export default function ReviewerApplication() {
                   <div className="flex items-start gap-3">
                     <span className="text-green-600 dark:text-green-400 font-bold text-xl">✓</span>
                     <div>
-                      <h4 className="font-semibold text-blue-900 dark:text-blue-200">Early Access to Research</h4>
-                      <p className="text-sm text-blue-800 dark:text-blue-300">
+                      <h4 className="font-semibold text-gray-900 dark:text-gray-100">Early Access to Research</h4>
+                      <p className="text-sm text-gray-700 dark:text-gray-300">
                         Stay at the forefront of your field by reviewing cutting-edge research before publication.
                       </p>
                     </div>
@@ -81,8 +81,8 @@ export default function ReviewerApplication() {
                   <div className="flex items-start gap-3">
                     <span className="text-green-600 dark:text-green-400 font-bold text-xl">✓</span>
                     <div>
-                      <h4 className="font-semibold text-blue-900 dark:text-blue-200">Networking Opportunities</h4>
-                      <p className="text-sm text-blue-800 dark:text-blue-300">
+                      <h4 className="font-semibold text-gray-900 dark:text-gray-100">Networking Opportunities</h4>
+                      <p className="text-sm text-gray-700 dark:text-gray-300">
                         Connect with researchers and scholars from around the world.
                       </p>
                     </div>
@@ -135,7 +135,7 @@ export default function ReviewerApplication() {
                   </li>
                 </ul>
               </div>
-              <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-md">
+              <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-md border border-gray-200 dark:border-gray-700">
                 <p className="text-sm text-gray-700 dark:text-gray-300">
                   <strong>Typical Commitment:</strong> 2-3 manuscripts per year, 15-20 days review turnaround
                 </p>

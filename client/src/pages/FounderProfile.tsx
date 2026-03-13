@@ -560,7 +560,7 @@ export default function FounderProfile() {
             {interestAreas.map((area, index) => (
               <Card
                 key={index}
-                className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/30 dark:to-blue-900/30"
+                className="bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700"
                 data-testid={`card-interest-${index}`}
               >
                 <CardContent className="p-6 text-center">

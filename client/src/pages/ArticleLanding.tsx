@@ -477,23 +477,47 @@ export default function ArticleLanding() {
     );
   }
 
-  // Generate APA citation
+  // Clean author names — strip *, †, ‡, superscript digits
+  const cleanAuthors = (raw: string) =>
+    raw
+      .replace(/[*†‡§¶]/g, "")
+      .replace(/\d+/g, "")
+      .replace(/\s+,/g, ",")
+      .replace(/\s{2,}/g, " ")
+      .trim();
+
+  // Convert ALL-CAPS title to Title Case
+  const toTitleCase = (str: string) => {
+    const minor = new Set(["a","an","the","and","but","or","for","nor","on","at","to","by","in","of","up","as","with","from","into","through","during","before","after","above","below","between","against"]);
+    return str
+      .toLowerCase()
+      .split(" ")
+      .map((w, i) => (i === 0 || !minor.has(w)) ? w.charAt(0).toUpperCase() + w.slice(1) : w)
+      .join(" ");
+  };
+
+  // Convert ALL-CAPS title to Sentence case
+  const toSentenceCase = (str: string) => {
+    const lower = str.toLowerCase();
+    return lower.charAt(0).toUpperCase() + lower.slice(1);
+  };
+
+  const isHumanities = article.id.startsWith("sjhss");
+
+  // APA citation — for Humanities & Social Sciences
   const generateAPACitation = () => {
-    const authorsFormatted = article.authors.replace(/\*/g, "");
-    const parts = authorsFormatted.split(",").map((a) => a.trim());
+    const authors = cleanAuthors(article.authors);
+    const title = toSentenceCase(article.title);
+    const doi = article.doi ? ` https://doi.org/${article.doi}` : "";
+    return `${authors}. (${article.year}). ${title}. ${article.journal}, ${article.volume}(${article.issue}), ${article.pages}.${doi}`;
+  };
 
-    let formattedAuthors = "";
-    if (parts.length === 1) {
-      formattedAuthors = parts[0];
-    } else if (parts.length === 2) {
-      formattedAuthors = `${parts[0]}, & ${parts[1]}`;
-    } else {
-      const lastAuthor = parts[parts.length - 1];
-      const otherAuthors = parts.slice(0, -1).join(", ");
-      formattedAuthors = `${otherAuthors}, & ${lastAuthor}`;
-    }
-
-    return `${formattedAuthors}. (${article.year}). ${article.title}. ${article.journal}, ${article.volume}(${article.issue}), ${article.pages}.${article.doi ? ` https://doi.org/${article.doi}` : ""}`;
+  // MLA citation — for Commerce & Management
+  const generateMLACitation = () => {
+    const authors = cleanAuthors(article.authors);
+    const title = toTitleCase(article.title);
+    const doi = article.doi ? ` doi:${article.doi}.` : "";
+    return `${authors}. "${title}." ${article.journal}, vol. ${article.volume}, no. ${article.issue}, ${article.year}, pp. ${article.pages}.${doi}`;
   };
 
   // Split pages to get first and last page
@@ -621,10 +645,10 @@ export default function ArticleLanding() {
 
               {article.abstract && (
                 <div>
-                  <h3 className="text-lg font-serif font-bold mb-3 text-blue-900 dark:text-blue-300">
+                  <h3 className="text-base font-bold mb-2 text-gray-900 dark:text-gray-100 uppercase tracking-wide border-b border-gray-200 dark:border-gray-700 pb-1">
                     Abstract
                   </h3>
-                  <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+                  <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed text-justify">
                     {article.abstract}
                   </p>
                 </div>
@@ -632,32 +656,30 @@ export default function ArticleLanding() {
 
               {article.keywords && article.keywords.length > 0 && (
                 <div>
-                  <h3 className="text-lg font-serif font-bold mb-3 text-blue-900 dark:text-blue-300">
+                  <h3 className="text-base font-bold mb-2 text-gray-900 dark:text-gray-100 uppercase tracking-wide border-b border-gray-200 dark:border-gray-700 pb-1">
                     Keywords
                   </h3>
-                  <div className="flex flex-wrap gap-2">
-                    {article.keywords.map((keyword, index) => (
-                      <span
-                        key={index}
-                        className="px-3 py-1 bg-blue-100 dark:bg-blue-900 text-blue-900 dark:text-blue-300 text-xs rounded-full font-medium"
-                      >
-                        {keyword}
-                      </span>
-                    ))}
-                  </div>
+                  <p className="text-sm text-gray-700 dark:text-gray-300">
+                    {article.keywords.join(" · ")}
+                  </p>
                 </div>
               )}
 
               <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
-                <h3 className="text-lg font-serif font-bold mb-3 text-blue-900 dark:text-blue-300">
+                <h3 className="text-base font-bold mb-3 text-gray-900 dark:text-gray-100 uppercase tracking-wide">
                   How to Cite
                 </h3>
-                <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-md border border-blue-200 dark:border-blue-900">
-                  <p className="text-sm font-semibold text-blue-600 dark:text-blue-400 mb-2">
-                    APA Citation:
-                  </p>
-                  <p className="text-sm text-gray-900 dark:text-gray-100 leading-relaxed italic">
-                    {generateAPACitation()}
+                <div className="bg-gray-50 dark:bg-gray-800 rounded-md border border-gray-200 dark:border-gray-700 overflow-hidden">
+                  <div className="flex items-center gap-2 px-4 py-2 bg-[#213361] text-white">
+                    <span className="text-xs font-bold uppercase tracking-wider">
+                      {isHumanities ? "APA" : "MLA"} Citation
+                    </span>
+                    <span className="text-[10px] text-blue-200 ml-1">
+                      ({isHumanities ? "7th ed." : "9th ed."})
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-800 dark:text-gray-200 leading-relaxed px-4 py-3 font-mono">
+                    {isHumanities ? generateAPACitation() : generateMLACitation()}
                   </p>
                 </div>
               </div>

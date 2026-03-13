@@ -296,7 +296,7 @@ export default function EditorProfile() {
             {specializations.map((spec, index) => (
               <Badge
                 key={index}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 text-sm"
+                className="bg-[#213361] text-white px-4 py-2 text-sm"
                 data-testid={`badge-specialization-${index}`}
               >
                 {spec}

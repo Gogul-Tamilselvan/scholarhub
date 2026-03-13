@@ -313,9 +313,9 @@ export default function ReviewerSearch() {
 
         {/* Multiple Reviewer Selection - Grouped by Role and Journal */}
         {showSelection && reviewers.length > 0 && (
-          <Card className="mb-8 border-2 border-blue-300 dark:border-blue-700">
-            <CardHeader className="bg-blue-50 dark:bg-blue-900/30">
-              <CardTitle className="text-blue-900 dark:text-blue-200">
+          <Card className="mb-8 border-2 border-blue-300 dark:border-blue-700 overflow-hidden">
+            <CardHeader className="bg-[#213361] text-white">
+              <CardTitle className="text-white">
                 Your Profiles ({reviewers.length} found)
               </CardTitle>
             </CardHeader>

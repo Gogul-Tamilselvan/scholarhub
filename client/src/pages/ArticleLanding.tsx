@@ -371,43 +371,43 @@ export default function ArticleLanding() {
           Back
           </Button>
 
-          <Card className="bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700">
-          <CardHeader className="border-b border-gray-200 dark:border-gray-700 bg-blue-50 dark:bg-blue-950">
+          <Card className="bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 overflow-hidden">
+          <CardHeader className="bg-[#213361] border-0">
             <div className="space-y-4">
-              <div className="text-sm text-blue-600 dark:text-blue-400 font-medium">
+              <div className="text-sm text-yellow-400 font-medium">
                 {article.journal}
               </div>
-              <CardTitle className="text-xl md:text-2xl font-serif leading-relaxed text-blue-900 dark:text-blue-300">
+              <CardTitle className="text-xl md:text-2xl font-serif leading-relaxed text-white">
                 {article.title}
               </CardTitle>
               <div className="space-y-2 text-sm">
-                <p className="text-base font-medium text-gray-900 dark:text-gray-100">
+                <p className="text-base font-medium text-blue-100">
                   {article.authors}
                 </p>
-                <p className="text-sm italic text-gray-700 dark:text-gray-300">
+                <p className="text-sm italic text-blue-200">
                   {article.affiliation}
                 </p>
                 <div className="pt-2 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-                  <p className="text-sm">
-                    <span className="font-medium text-blue-600 dark:text-blue-400">DOI:</span>{" "}
+                  <p className="text-sm text-blue-100">
+                    <span className="font-medium text-yellow-400">DOI:</span>{" "}
                     {article.doi ? (
                       <a
                         href={`https://doi.org/${article.doi}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-blue-600 hover:text-blue-900 hover:underline dark:text-blue-400"
+                        className="text-blue-200 hover:text-white hover:underline"
                       >
                         {article.doi}
                       </a>
                     ) : (
-                      <span className="text-gray-600 dark:text-gray-400 italic">
+                      <span className="text-blue-300 italic">
                         (will be added later)
                       </span>
                     )}
                   </p>
                   <Button
                     size="sm"
-                    className="bg-blue-600 hover:bg-blue-50 text-white font-semibold shadow-md hover:shadow-lg transition-all w-full md:w-auto"
+                    className="bg-yellow-500 hover:bg-yellow-400 text-blue-900 font-semibold shadow-md hover:shadow-lg transition-all w-full md:w-auto"
                     onClick={() => {
                       window.open(article.pdfUrl, '_blank');
                     }}

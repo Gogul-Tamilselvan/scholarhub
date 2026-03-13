@@ -149,21 +149,21 @@ export default function IssueLanding() {
           </Link>
         </div>
 
-        <Card className="bg-white dark:bg-gray-900">
-          <CardHeader className="border-b bg-blue-50 dark:bg-blue-950">
+        <Card className="bg-white dark:bg-gray-900 overflow-hidden">
+          <CardHeader className="bg-[#213361] border-0">
             <div className="space-y-2">
-              <div className="flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400">
-                <Calendar className="h-4 w-4" />
+              <div className="flex items-center gap-2 text-sm text-blue-100">
+                <Calendar className="h-4 w-4 text-yellow-400" />
                 <span>{issueData.period} {issueData.year}</span>
               </div>
-              <CardTitle className="text-2xl md:text-3xl font-serif text-blue-900 dark:text-blue-300">
+              <CardTitle className="text-2xl md:text-3xl font-serif text-white">
                 {issueData.journal}
               </CardTitle>
               <div className="flex items-center gap-4 text-sm">
-                <span className="font-semibold text-blue-900 dark:text-blue-300">
+                <span className="font-semibold text-blue-100">
                   Volume {issueData.volume}, Issue {issueData.issue}
                 </span>
-                <span className="text-blue-600 dark:text-blue-400">
+                <span className="text-blue-200">
                   {issueData.articles.length} Published {issueData.articles.length === 1 ? 'Article' : 'Articles'}
                 </span>
               </div>

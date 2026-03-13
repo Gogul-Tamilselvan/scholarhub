@@ -455,9 +455,9 @@ export default function FounderProfile() {
                 {certifications.map((cert, index) => (
                   <div
                     key={index}
-                    className="flex items-start gap-3 p-4 bg-blue-50 dark:bg-blue-950/30 rounded-lg"
+                    className="flex items-start gap-3 p-4 bg-[#213361]/5 dark:bg-[#213361]/20 rounded-lg"
                   >
-                    <Award className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-1 flex-shrink-0" />
+                    <Award className="w-5 h-5 text-[#213361] dark:text-blue-400 mt-1 flex-shrink-0" />
                     <span className="text-foreground">{cert}</span>
                   </div>
                 ))}
@@ -582,11 +582,11 @@ export default function FounderProfile() {
           className="mb-16"
         >
           <Card
-            className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/30 dark:to-blue-900/30"
+            className="bg-white dark:bg-gray-900 overflow-hidden"
             data-testid="card-personal"
           >
-            <CardHeader>
-              <CardTitle>Personal Profile</CardTitle>
+            <CardHeader className="bg-[#213361] text-white">
+              <CardTitle className="text-white">Personal Profile</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid md:grid-cols-2 gap-6">
@@ -631,7 +631,7 @@ export default function FounderProfile() {
           <div className="flex flex-wrap justify-center gap-4">
             <Link href="/contact">
               <Button
-                className="bg-blue-600 hover:bg-blue-700 text-white px-8"
+                className="bg-[#213361] hover:bg-[#2a4078] text-white px-8"
                 data-testid="button-contact"
               >
                 Contact Us

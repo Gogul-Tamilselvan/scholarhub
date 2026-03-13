@@ -19,10 +19,10 @@ export default function AboutSection() {
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
           viewport={{ once: true }}>
-          <Card className="bg-white dark:bg-gray-900 border-blue-200 dark:border-blue-800">
-            <CardHeader className="flex flex-col space-y-1 p-4 text-center bg-blue-50 dark:bg-blue-950/20">
+          <Card className="bg-white dark:bg-gray-900 border-blue-200 dark:border-blue-800 overflow-hidden">
+            <CardHeader className="flex flex-col space-y-1 p-4 text-center bg-[#213361] text-white">
               <div>
-                <CardTitle className="text-2xl font-serif text-blue-900 dark:text-blue-300 mb-2">
+                <CardTitle className="text-2xl font-serif text-white mb-2">
                   About Us
                 </CardTitle>
               </div>
@@ -269,7 +269,7 @@ export default function AboutSection() {
                             />
                             <div className="relative z-10">
                               <div className="flex items-center gap-2 mb-1">
-                                <div className="h-1.5 w-1.5 rounded-full bg-blue-600 animate-pulse" />
+                                <div className="h-1.5 w-1.5 rounded-full bg-[#213361] animate-pulse" />
                                 <h4 className="font-bold text-sm text-blue-900 dark:text-blue-200">
                                   {item.title}
                                 </h4>

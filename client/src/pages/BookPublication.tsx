@@ -139,14 +139,13 @@ export default function BookPublication() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.5 + index * 0.1 }}
             >
-              <Card className="bg-white dark:bg-gray-900 border-blue-200 dark:border-blue-800 h-full hover-elevate">
-                <CardHeader>
-                  <feature.icon className="w-12 h-12 mb-3 text-blue-900 dark:text-blue-300" />
-                  <CardTitle className="text-xl text-blue-900 dark:text-blue-300">
-                    {feature.title}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
+              <Card className="bg-white dark:bg-gray-900 border-blue-200 dark:border-blue-800 h-full hover-elevate overflow-hidden">
+                <div className="h-1 w-full bg-[#213361]" />
+                <CardContent className="pt-6">
+                  <div className="p-3 rounded-lg bg-[#213361] inline-flex mb-4">
+                    <feature.icon className="w-6 h-6 text-white" />
+                  </div>
+                  <h3 className="text-xl font-semibold mb-2 text-gray-900 dark:text-gray-100">{feature.title}</h3>
                   <p className="text-gray-900 dark:text-gray-200">
                     {feature.description}
                   </p>
@@ -171,7 +170,7 @@ export default function BookPublication() {
             <CardContent>
               <div className="space-y-4">
                 <div className="flex gap-4">
-                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-blue-600 dark:bg-blue-600 text-white flex items-center justify-center font-bold">
+                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-[#213361] text-white flex items-center justify-center font-bold">
                     1
                   </div>
                   <div>
@@ -180,7 +179,7 @@ export default function BookPublication() {
                   </div>
                 </div>
                 <div className="flex gap-4">
-                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-blue-600 dark:bg-blue-600 text-white flex items-center justify-center font-bold">
+                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-[#213361] text-white flex items-center justify-center font-bold">
                     2
                   </div>
                   <div>
@@ -189,7 +188,7 @@ export default function BookPublication() {
                   </div>
                 </div>
                 <div className="flex gap-4">
-                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-blue-600 dark:bg-blue-600 text-white flex items-center justify-center font-bold">
+                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-[#213361] text-white flex items-center justify-center font-bold">
                     3
                   </div>
                   <div>
@@ -198,7 +197,7 @@ export default function BookPublication() {
                   </div>
                 </div>
                 <div className="flex gap-4">
-                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-blue-600 dark:bg-blue-600 text-white flex items-center justify-center font-bold">
+                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-[#213361] text-white flex items-center justify-center font-bold">
                     4
                   </div>
                   <div>
@@ -207,7 +206,7 @@ export default function BookPublication() {
                   </div>
                 </div>
                 <div className="flex gap-4">
-                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-blue-600 dark:bg-blue-600 text-white flex items-center justify-center font-bold">
+                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-[#213361] text-white flex items-center justify-center font-bold">
                     5
                   </div>
                   <div>

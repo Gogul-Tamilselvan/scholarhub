@@ -106,15 +106,16 @@ export default function BookPublicationInfo() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.3 + index * 0.1 }}
             >
-              <Card className="bg-white dark:bg-gray-900 border-blue-200 dark:border-blue-800 h-full hover-elevate">
-                <CardHeader>
-                  <feature.icon className="w-12 h-12 mb-3 text-blue-900 dark:text-blue-300" />
-                  <CardTitle className="text-xl text-blue-900 dark:text-blue-300">
+              <Card className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 h-full hover-elevate overflow-hidden shadow-sm">
+                <div className="h-1 w-full bg-[#213361]" />
+                <CardContent className="p-6">
+                  <div className="p-3 rounded-lg bg-[#213361] inline-flex mb-4">
+                    <feature.icon className="w-6 h-6 text-white" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-blue-900 dark:text-blue-200 mb-2">
                     {feature.title}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-gray-900 dark:text-gray-200">
+                  </h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
                     {feature.description}
                   </p>
                 </CardContent>
@@ -129,9 +130,9 @@ export default function BookPublicationInfo() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.7 }}
         >
-          <Card className="bg-white dark:bg-gray-900 border-blue-200 dark:border-blue-800">
-            <CardHeader className="bg-blue-50 dark:bg-blue-950/20">
-              <CardTitle className="text-2xl text-blue-900 dark:text-blue-300">
+          <Card className="bg-white dark:bg-gray-900 border-blue-200 dark:border-blue-800 overflow-hidden">
+            <CardHeader className="bg-[#213361] text-white">
+              <CardTitle className="text-2xl text-white">
                 Publication Process
               </CardTitle>
             </CardHeader>

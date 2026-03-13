@@ -214,9 +214,9 @@ export default function TabbedJournalPage({
           <main className="flex-1 min-w-0">
             <Tabs value={activeTab} className="w-full">
               <TabsContent value="overview" className="mt-0 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                <Card className="bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700">
-              <CardHeader className="bg-blue-50 dark:bg-blue-950 border-b border-gray-200 dark:border-gray-700">
-                <CardTitle className="text-2xl font-serif text-blue-900 dark:text-blue-300">Journal Particulars</CardTitle>
+                <Card className="bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 overflow-hidden">
+              <CardHeader className="bg-[#213361] border-0">
+                <CardTitle className="text-2xl font-serif text-white">Journal Particulars</CardTitle>
               </CardHeader>
               <CardContent className="mt-4">
                 <div className="grid md:grid-cols-2 gap-4">
@@ -269,9 +269,9 @@ export default function TabbedJournalPage({
             </Card>
 
             {subjectCovers && subjectCovers.length > 0 && (
-              <Card className="bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700">
-                <CardHeader className="bg-blue-50 dark:bg-blue-950 border-b border-gray-200 dark:border-gray-700">
-                  <CardTitle className="text-2xl font-serif text-blue-900 dark:text-blue-300">Subject Covers</CardTitle>
+              <Card className="bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 overflow-hidden">
+                <CardHeader className="bg-[#213361] border-0">
+                  <CardTitle className="text-2xl font-serif text-white">Subject Covers</CardTitle>
                 </CardHeader>
                 <CardContent className="mt-4">
                   <p className="text-lg leading-relaxed text-gray-700 dark:text-gray-300 mb-4">
@@ -289,45 +289,45 @@ export default function TabbedJournalPage({
               </Card>
             )}
 
-            <Card className="bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700">
-              <CardHeader className="bg-blue-50 dark:bg-blue-950 border-b border-gray-200 dark:border-gray-700">
-                <CardTitle className="text-2xl font-serif text-blue-900 dark:text-blue-300">Aim</CardTitle>
+            <Card className="bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 overflow-hidden">
+              <CardHeader className="bg-[#213361] border-0">
+                <CardTitle className="text-2xl font-serif text-white">Aim</CardTitle>
               </CardHeader>
               <CardContent className="mt-4">
                 <p className="text-lg leading-relaxed text-gray-700 dark:text-gray-300">{aim}</p>
               </CardContent>
             </Card>
 
-            <Card className="bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700">
-              <CardHeader className="bg-blue-50 dark:bg-blue-950 border-b border-gray-200 dark:border-gray-700">
-                <CardTitle className="text-2xl font-serif text-blue-900 dark:text-blue-300">Scope</CardTitle>
+            <Card className="bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 overflow-hidden">
+              <CardHeader className="bg-[#213361] border-0">
+                <CardTitle className="text-2xl font-serif text-white">Scope</CardTitle>
               </CardHeader>
               <CardContent className="mt-4">
                 <p className="text-lg leading-relaxed text-gray-700 dark:text-gray-300">{scope}</p>
               </CardContent>
             </Card>
 
-            <Card className="bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700">
-              <CardHeader className="bg-blue-50 dark:bg-blue-950 border-b border-gray-200 dark:border-gray-700">
-                <CardTitle className="text-2xl font-serif text-blue-900 dark:text-blue-300">Publication Types</CardTitle>
+            <Card className="bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 overflow-hidden">
+              <CardHeader className="bg-[#213361] border-0">
+                <CardTitle className="text-2xl font-serif text-white">Publication Types</CardTitle>
               </CardHeader>
               <CardContent className="mt-4">
                 <p className="text-lg leading-relaxed text-gray-700 dark:text-gray-300">{publicationTypes}</p>
               </CardContent>
             </Card>
 
-            <Card className="bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700">
-              <CardHeader className="bg-blue-50 dark:bg-blue-950 border-b border-gray-200 dark:border-gray-700">
-                <CardTitle className="text-2xl font-serif text-blue-900 dark:text-blue-300">Research Focus</CardTitle>
+            <Card className="bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 overflow-hidden">
+              <CardHeader className="bg-[#213361] border-0">
+                <CardTitle className="text-2xl font-serif text-white">Research Focus</CardTitle>
               </CardHeader>
               <CardContent className="mt-4">
                 <p className="text-lg leading-relaxed text-gray-700 dark:text-gray-300">{researchFocus}</p>
               </CardContent>
             </Card>
 
-            <Card className="bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700">
-              <CardHeader className="bg-blue-50 dark:bg-blue-950 border-b border-gray-200 dark:border-gray-700">
-                <CardTitle className="text-2xl font-serif text-blue-900 dark:text-blue-300">Target Audience</CardTitle>
+            <Card className="bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 overflow-hidden">
+              <CardHeader className="bg-[#213361] border-0">
+                <CardTitle className="text-2xl font-serif text-white">Target Audience</CardTitle>
               </CardHeader>
               <CardContent className="mt-4">
                 <p className="text-lg leading-relaxed text-gray-700 dark:text-gray-300">{targetAudience}</p>
@@ -338,9 +338,9 @@ export default function TabbedJournalPage({
           <TabsContent value="editorial-board">
             <div className="space-y-8">
               {editorInChief && (
-                <Card className="bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700">
-                  <CardHeader className="bg-blue-50 dark:bg-blue-950 border-b border-gray-200 dark:border-gray-700">
-                    <CardTitle className="text-2xl font-serif text-blue-900 dark:text-blue-300">Editor-in-Chief</CardTitle>
+                <Card className="bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 overflow-hidden">
+                  <CardHeader className="bg-[#213361] border-0">
+                    <CardTitle className="text-2xl font-serif text-white">Editor-in-Chief</CardTitle>
                   </CardHeader>
                   <CardContent className="pt-6">
                     <div className="flex flex-col md:flex-row gap-6">
@@ -371,9 +371,9 @@ export default function TabbedJournalPage({
               )}
 
               {managingEditor && (
-                <Card className="bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700">
-                  <CardHeader className="bg-blue-50 dark:bg-blue-950 border-b border-gray-200 dark:border-gray-700">
-                    <CardTitle className="text-2xl font-serif text-blue-900 dark:text-blue-300">Managing Editor</CardTitle>
+                <Card className="bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 overflow-hidden">
+                  <CardHeader className="bg-[#213361] border-0">
+                    <CardTitle className="text-2xl font-serif text-white">Managing Editor</CardTitle>
                   </CardHeader>
                   <CardContent className="pt-6">
                     <div className="space-y-4">
@@ -408,9 +408,9 @@ export default function TabbedJournalPage({
               )}
 
               {associateEditors.length > 0 && (
-                <Card className="bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700">
-                  <CardHeader className="bg-blue-50 dark:bg-blue-950 border-b border-gray-200 dark:border-gray-700">
-                    <CardTitle className="text-2xl font-serif text-blue-900 dark:text-blue-300">Associate Editors</CardTitle>
+                <Card className="bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 overflow-hidden">
+                  <CardHeader className="bg-[#213361] border-0">
+                    <CardTitle className="text-2xl font-serif text-white">Associate Editors</CardTitle>
                   </CardHeader>
                   <CardContent className="pt-6">
                     <div className="grid md:grid-cols-2 gap-6">
@@ -441,9 +441,9 @@ export default function TabbedJournalPage({
               )}
 
               {boardMembers.length > 0 ? (
-                <Card className="bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700">
-                  <CardHeader className="bg-blue-50 dark:bg-blue-950 border-b border-gray-200 dark:border-gray-700">
-                    <CardTitle className="text-2xl font-serif text-blue-900 dark:text-blue-300">Editorial Board Members</CardTitle>
+                <Card className="bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 overflow-hidden">
+                  <CardHeader className="bg-[#213361] border-0">
+                    <CardTitle className="text-2xl font-serif text-white">Editorial Board Members</CardTitle>
                   </CardHeader>
                   <CardContent className="pt-6">
                     <div className="grid md:grid-cols-2 gap-6">
@@ -472,9 +472,9 @@ export default function TabbedJournalPage({
                   </CardContent>
                 </Card>
               ) : (
-                <Card className="bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700">
-                  <CardHeader className="bg-blue-50 dark:bg-blue-950 border-b border-gray-200 dark:border-gray-700">
-                    <CardTitle className="text-2xl font-serif text-blue-900 dark:text-blue-300">Editorial Board Members</CardTitle>
+                <Card className="bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 overflow-hidden">
+                  <CardHeader className="bg-[#213361] border-0">
+                    <CardTitle className="text-2xl font-serif text-white">Editorial Board Members</CardTitle>
                   </CardHeader>
                   <CardContent className="pt-16 pb-16 text-center">
                     <Users className="h-20 w-20 text-blue-400 mx-auto mb-6" />
@@ -496,18 +496,18 @@ export default function TabbedJournalPage({
           </TabsContent>
 
           <TabsContent value="current-issue">
-            <Card className="bg-white dark:bg-gray-900">
-              <CardHeader className="border-b bg-blue-50/50 dark:bg-blue-950/30 py-6">
+            <Card className="bg-white dark:bg-gray-900 overflow-hidden">
+              <CardHeader className="bg-[#213361] border-0 py-6">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                   <div className="flex items-center gap-4">
-                    <div className="h-12 w-12 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center border border-blue-200 dark:border-blue-800">
-                      <Calendar className="h-6 w-6 text-blue-900 dark:text-blue-300" />
+                    <div className="h-12 w-12 rounded-full bg-white/20 flex items-center justify-center">
+                      <Calendar className="h-6 w-6 text-yellow-400" />
                     </div>
                     <div>
-                      <CardTitle className="text-xl md:text-2xl font-serif text-blue-900 dark:text-blue-300">
+                      <CardTitle className="text-xl md:text-2xl font-serif text-white">
                         Current Issue (January - March 2026)
                       </CardTitle>
-                      <p className="text-sm md:text-base font-medium text-blue-700 dark:text-blue-400">
+                      <p className="text-sm md:text-base font-medium text-blue-100">
                         (Volume {currentVolume}, Issue {currentIssue})
                       </p>
                     </div>
@@ -516,7 +516,7 @@ export default function TabbedJournalPage({
                     <Button 
                       variant="ghost" 
                       size="sm" 
-                      className="text-blue-700 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors"
+                      className="text-white hover:bg-white/10 transition-colors"
                       onClick={() => {
                         setActiveTab("archives");
                         setSelectedVolume("v1");
@@ -847,23 +847,23 @@ export default function TabbedJournalPage({
           </TabsContent>
 
           <TabsContent value="reviewers">
-            <Card className="bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700">
-              <CardHeader className="bg-blue-50 dark:bg-blue-950 border-b border-gray-200 dark:border-gray-700">
-                <CardTitle className="text-2xl font-serif text-blue-900 dark:text-blue-300">Editor / Reviewer Application</CardTitle>
+            <Card className="bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 overflow-hidden">
+              <CardHeader className="bg-[#213361] border-0">
+                <CardTitle className="text-2xl font-serif text-white">Editor / Reviewer Application</CardTitle>
               </CardHeader>
               <CardContent className="pt-6">
                 {!showReviewerForm ? (
                   <div className="space-y-12">
                     {/* Become a Reviewer CTA */}
-                    <div className="bg-blue-50 dark:bg-blue-950/30 p-8 rounded-lg border border-blue-200 dark:border-blue-800 text-center">
-                      <h3 className="text-2xl font-serif font-bold text-blue-900 dark:text-blue-300 mb-2">Become a Reviewer / Editor</h3>
-                      <p className="text-blue-800 dark:text-blue-400 font-bold mb-4">Join our distinguished panel of expert reviewers</p>
+                    <div className="bg-[#213361]/5 dark:bg-[#213361]/20 p-8 rounded-lg border border-[#213361]/20 text-center">
+                      <h3 className="text-2xl font-serif font-bold text-[#213361] dark:text-blue-300 mb-2">Become a Reviewer / Editor</h3>
+                      <p className="text-[#213361] dark:text-blue-400 font-bold mb-4">Join our distinguished panel of expert reviewers</p>
                       <p className="text-gray-700 dark:text-gray-300 mb-6 max-w-2xl mx-auto text-lg italic">
                         "Share your expertise and contribute to advancing scholarly research"
                       </p>
                       <Button 
                         onClick={() => setShowReviewerForm(true)} 
-                        className="bg-blue-900 hover:bg-blue-800 text-white px-10 h-12 text-lg font-bold"
+                        className="bg-[#213361] hover:bg-[#2a4078] text-white px-10 h-12 text-lg font-bold"
                       >
                         Apply Now
                       </Button>
@@ -1106,9 +1106,9 @@ export default function TabbedJournalPage({
           </TabsContent>
 
           <TabsContent value="submit">
-            <Card className="bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700">
-              <CardHeader className="bg-blue-50 dark:bg-blue-950 border-b border-gray-200 dark:border-gray-700">
-                <CardTitle className="text-2xl font-serif text-blue-900 dark:text-blue-300">Submit Manuscript</CardTitle>
+            <Card className="bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 overflow-hidden">
+              <CardHeader className="bg-[#213361] border-0">
+                <CardTitle className="text-2xl font-serif text-white">Submit Manuscript</CardTitle>
               </CardHeader>
               <CardContent className="pt-6">
                 <GeneralManuscriptSubmissionForm journalTitle={title} subject={subject} />
@@ -1118,10 +1118,10 @@ export default function TabbedJournalPage({
 
           <TabsContent value="guidelines">
             <div className="space-y-6">
-              <Card className="bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700">
-                <CardHeader className="bg-blue-50 dark:bg-blue-950 border-b border-gray-200 dark:border-gray-700">
-                  <CardTitle className="text-2xl font-serif flex items-center text-blue-900 dark:text-blue-300">
-                    <Edit className="h-6 w-6 mr-2" /> Author Guidelines
+              <Card className="bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 overflow-hidden">
+                <CardHeader className="bg-[#213361] border-0">
+                  <CardTitle className="text-2xl font-serif flex items-center text-white">
+                    <Edit className="h-6 w-6 mr-2 text-yellow-400" /> Author Guidelines
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-8 pt-6">
@@ -1333,9 +1333,9 @@ export default function TabbedJournalPage({
           </TabsContent>
 
           <TabsContent value="indexing">
-            <Card className="bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700">
-              <CardHeader className="bg-blue-50 dark:bg-blue-950 border-b border-gray-200 dark:border-gray-700">
-                <CardTitle className="text-2xl font-serif text-blue-900 dark:text-blue-300">Indexing & Abstracting</CardTitle>
+            <Card className="bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 overflow-hidden">
+              <CardHeader className="bg-[#213361] border-0">
+                <CardTitle className="text-2xl font-serif text-white">Indexing & Abstracting</CardTitle>
               </CardHeader>
               <CardContent className="pt-8">
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-8">

@@ -275,13 +275,13 @@ export default function GeneralManuscriptSubmissionForm({ journalTitle, subject 
   };
 
   return (
-    <Card className="bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 max-w-2xl mx-auto border-gray-200 dark:border-gray-700">
-      <CardHeader className="bg-blue-50 dark:bg-blue-950 border-b border-gray-200 dark:border-gray-700">
-        <CardTitle className="text-2xl font-serif flex items-center text-blue-900 dark:text-blue-300">
-          <FileText className="h-6 w-6 mr-2 text-blue-600 dark:text-blue-400" />
+    <Card className="bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 max-w-2xl mx-auto overflow-hidden">
+      <CardHeader className="bg-[#213361] text-white">
+        <CardTitle className="text-2xl font-serif flex items-center text-white">
+          <FileText className="h-6 w-6 mr-2 text-yellow-400" />
           Submit Manuscript
         </CardTitle>
-        <p className="text-sm text-gray-700 dark:text-gray-300 mt-2">
+        <p className="text-sm text-blue-100 mt-2">
           Please fill out all required fields and upload your manuscript in Word format (.doc or .docx)
         </p>
       </CardHeader>

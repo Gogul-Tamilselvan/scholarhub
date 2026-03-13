@@ -211,23 +211,23 @@ export default function PublicationPayment() {
       <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
         <div className="max-w-6xl mx-auto px-4 py-8">
           <div className="flex items-center justify-center gap-4 overflow-x-auto">
-            <div className={`flex flex-col items-center gap-2 ${step === "verify" || step === "cart" || step === "checkout" || step === "payment" || step === "success" ? "text-blue-600 dark:text-blue-400" : "text-gray-400"} whitespace-nowrap`}>
-              <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${step === "verify" || step === "cart" || step === "checkout" || step === "payment" || step === "success" ? "bg-blue-600 text-white" : "bg-gray-300 text-gray-600"}`}>1</div>
+            <div className={`flex flex-col items-center gap-2 ${step === "verify" || step === "cart" || step === "checkout" || step === "payment" || step === "success" ? "text-[#213361] dark:text-blue-300" : "text-gray-400"} whitespace-nowrap`}>
+              <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${step === "verify" || step === "cart" || step === "checkout" || step === "payment" || step === "success" ? "bg-[#213361] text-white" : "bg-gray-200 text-gray-600"}`}>1</div>
               <span className="text-sm font-medium">Verify ID</span>
             </div>
             <div className="w-8 h-1 bg-gray-300"></div>
-            <div className={`flex flex-col items-center gap-2 ${step === "cart" || step === "checkout" || step === "payment" || step === "success" ? "text-blue-600 dark:text-blue-400" : "text-gray-400"} whitespace-nowrap`}>
-              <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${step === "cart" || step === "checkout" || step === "payment" || step === "success" ? "bg-blue-600 text-white" : "bg-gray-300 text-gray-600"}`}>2</div>
+            <div className={`flex flex-col items-center gap-2 ${step === "cart" || step === "checkout" || step === "payment" || step === "success" ? "text-[#213361] dark:text-blue-300" : "text-gray-400"} whitespace-nowrap`}>
+              <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${step === "cart" || step === "checkout" || step === "payment" || step === "success" ? "bg-[#213361] text-white" : "bg-gray-200 text-gray-600"}`}>2</div>
               <span className="text-sm font-medium">Your Details</span>
             </div>
             <div className="w-8 h-1 bg-gray-300"></div>
-            <div className={`flex flex-col items-center gap-2 ${step === "checkout" || step === "payment" || step === "success" ? "text-blue-600 dark:text-blue-400" : "text-gray-400"} whitespace-nowrap`}>
-              <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${step === "checkout" || step === "payment" || step === "success" ? "bg-blue-600 text-white" : "bg-gray-300 text-gray-600"}`}>3</div>
+            <div className={`flex flex-col items-center gap-2 ${step === "checkout" || step === "payment" || step === "success" ? "text-[#213361] dark:text-blue-300" : "text-gray-400"} whitespace-nowrap`}>
+              <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${step === "checkout" || step === "payment" || step === "success" ? "bg-[#213361] text-white" : "bg-gray-200 text-gray-600"}`}>3</div>
               <span className="text-sm font-medium">Review</span>
             </div>
             <div className="w-8 h-1 bg-gray-300"></div>
-            <div className={`flex flex-col items-center gap-2 ${step === "payment" || step === "success" ? "text-blue-600 dark:text-blue-400" : "text-gray-400"} whitespace-nowrap`}>
-              <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${step === "payment" || step === "success" ? "bg-blue-600 text-white" : "bg-gray-300 text-gray-600"}`}>4</div>
+            <div className={`flex flex-col items-center gap-2 ${step === "payment" || step === "success" ? "text-[#213361] dark:text-blue-300" : "text-gray-400"} whitespace-nowrap`}>
+              <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${step === "payment" || step === "success" ? "bg-[#213361] text-white" : "bg-gray-200 text-gray-600"}`}>4</div>
               <span className="text-sm font-medium">Payment</span>
             </div>
           </div>
@@ -323,9 +323,9 @@ export default function PublicationPayment() {
 
             {(step as string) !== "success" && (
               <Card className="border-blue-100 dark:border-blue-900 shadow-sm overflow-hidden">
-                <CardHeader className="bg-blue-50/50 dark:bg-blue-950/30">
-                  <CardTitle className="text-lg text-blue-900 dark:text-blue-100 flex items-center gap-2">
-                    <QrCode className="w-5 h-5" />
+                <CardHeader className="bg-[#213361] text-white">
+                  <CardTitle className="text-lg text-white flex items-center gap-2">
+                    <QrCode className="w-5 h-5 text-yellow-400" />
                     Quick Scan & Pay
                   </CardTitle>
                 </CardHeader>

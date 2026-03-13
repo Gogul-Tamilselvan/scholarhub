@@ -110,15 +110,16 @@ export default function ConferenceSeminars() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.5 + index * 0.1 }}
             >
-              <Card className="bg-white dark:bg-gray-900 border-blue-200 dark:border-blue-800 h-full hover-elevate">
-                <CardHeader>
-                  <benefit.icon className="w-10 h-10 mb-3 text-blue-900 dark:text-blue-300" />
-                  <CardTitle className="text-lg text-blue-900 dark:text-blue-300">
+              <Card className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 h-full hover-elevate overflow-hidden shadow-sm">
+                <div className="h-1 w-full bg-[#213361]" />
+                <CardContent className="p-5">
+                  <div className="p-2.5 rounded-lg bg-[#213361] inline-flex mb-3">
+                    <benefit.icon className="w-5 h-5 text-white" />
+                  </div>
+                  <h3 className="text-base font-semibold text-blue-900 dark:text-blue-200 mb-2">
                     {benefit.title}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-gray-700 dark:text-gray-300">
+                  </h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
                     {benefit.description}
                   </p>
                 </CardContent>
@@ -134,9 +135,9 @@ export default function ConferenceSeminars() {
           transition={{ duration: 0.6, delay: 0.8 }}
           className="mb-12"
         >
-          <Card className="bg-white dark:bg-gray-900 border-blue-200 dark:border-blue-800">
-            <CardHeader className="bg-blue-50 dark:bg-blue-950/20">
-              <CardTitle className="text-2xl text-blue-900 dark:text-blue-300">
+          <Card className="bg-white dark:bg-gray-900 border-blue-200 dark:border-blue-800 overflow-hidden">
+            <CardHeader className="bg-[#213361] text-white">
+              <CardTitle className="text-2xl text-white">
                 What We Offer
               </CardTitle>
             </CardHeader>
@@ -204,9 +205,9 @@ export default function ConferenceSeminars() {
           transition={{ duration: 0.6, delay: 0.9 }}
           className="mb-12"
         >
-          <Card className="bg-white dark:bg-gray-900 border-blue-200 dark:border-blue-800">
-            <CardHeader className="bg-blue-50 dark:bg-blue-950/20">
-              <CardTitle className="text-2xl text-blue-900 dark:text-blue-300">
+          <Card className="bg-white dark:bg-gray-900 border-blue-200 dark:border-blue-800 overflow-hidden">
+            <CardHeader className="bg-[#213361] text-white">
+              <CardTitle className="text-2xl text-white">
                 How It Works
               </CardTitle>
             </CardHeader>
@@ -269,11 +270,11 @@ export default function ConferenceSeminars() {
           transition={{ duration: 0.6, delay: 1.1 }}
           className="mb-12"
         >
-          <Card className="bg-white dark:bg-gray-900 border-blue-200 dark:border-blue-800">
-            <CardHeader className="bg-blue-50 dark:bg-blue-950/20">
+          <Card className="bg-white dark:bg-gray-900 border-blue-200 dark:border-blue-800 overflow-hidden">
+            <CardHeader className="bg-[#213361] text-white">
               <div className="flex items-center gap-3 mb-2">
-                <Video className="w-8 h-8 text-blue-900 dark:text-blue-300" />
-                <CardTitle className="text-2xl text-blue-900 dark:text-blue-300">
+                <Video className="w-8 h-8 text-yellow-400" />
+                <CardTitle className="text-2xl text-white">
                   Workshops & Webinars
                 </CardTitle>
               </div>

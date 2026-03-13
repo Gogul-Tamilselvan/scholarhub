@@ -279,8 +279,8 @@ export default function About() {
                   { icon: Heart, label: "Author support" }
                 ].map((item, index) => (
                   <div key={index} className="flex flex-col items-center text-center p-4">
-                    <div className="rounded-full p-4 mb-3 border-2 border-blue-200 dark:border-blue-700 bg-blue-50 dark:bg-blue-950/20">
-                      <item.icon className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                    <div className="rounded-full p-4 mb-3 bg-[#213361]">
+                      <item.icon className="h-6 w-6 text-white" />
                     </div>
                     <p className="text-sm font-semibold text-card-foreground">{item.label}</p>
                   </div>
@@ -299,11 +299,11 @@ export default function About() {
           className="mb-16"
         >
           <div className="grid md:grid-cols-2 gap-6">
-            <Card className="bg-card border-2 border-blue-500/30">
+            <Card className="bg-card border-2 border-[#213361]/30">
               <CardContent className="p-8">
                 <div className="flex items-center gap-3 mb-6">
-                  <div className="bg-blue-500/10 rounded-lg p-3 border border-blue-500/30">
-                    <Target className="h-6 w-6 text-blue-400" />
+                  <div className="bg-[#213361]/10 rounded-lg p-3 border border-[#213361]/30">
+                    <Target className="h-6 w-6 text-[#213361] dark:text-blue-400" />
                   </div>
                   <h3 className="text-2xl font-bold text-card-foreground">Our Mission</h3>
                 </div>

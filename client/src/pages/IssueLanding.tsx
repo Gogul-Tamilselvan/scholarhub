@@ -193,7 +193,7 @@ export default function IssueLanding() {
                           className="block group"
                           data-testid={`link-article-${article.id}`}
                         >
-                          <h2 className="text-base md:text-lg font-bold text-blue-9 dark:text-blue-3 group-hover:text-blue-6 dark:group-hover:text-blue-4 transition-colors leading-snug cursor-pointer">
+                          <h3 className="text-base md:text-lg font-bold text-blue-9 dark:text-blue-3 group-hover:text-blue-6 dark:group-hover:text-blue-4 transition-colors leading-snug cursor-pointer">
                             {article.title}
                           </h3>
                         </Link>

@@ -153,7 +153,7 @@ export default function TabbedJournalPage({
               {/* Journal Menu */}
               <div className="bg-white dark:bg-gray-9 rounded-xl shadow-lg border border-gray-1 dark:border-gray-8 overflow-hidden">
                 <div className="bg-[#213361] px-6 py-4">
-                  <h3 className="text-xl font-serif font-bold text-white tracking-wide">Journal Menu</h2>
+                  <h3 className="text-xl font-serif font-bold text-white tracking-wide">Journal Menu</h3>
                 </div>
                 <nav className="flex flex-col py-2">
                   {[
@@ -416,7 +416,7 @@ export default function TabbedJournalPage({
                     <div className="grid md:grid-cols-2 gap-6">
                       {associateEditors.map((member, idx) => (
                         <div key={idx} className="p-4 rounded-lg bg-gray-5 dark:bg-gray-8 border border-gray-1 dark:border-gray-7">
-                          <h3 className="font-bold text-gray-9 dark:text-gray-1">{member.name}</h4>
+                          <h3 className="font-bold text-gray-9 dark:text-gray-1">{member.name}</h3>
                           <p className="text-sm text-blue-6 dark:text-blue-4">{member.designation}</p>
                           <p className="text-sm text-gray-7 dark:text-gray-3">{member.institution}</p>
                           <p className="text-xs text-gray-5 dark:text-gray-4 mt-1">{member.location}</p>
@@ -449,7 +449,7 @@ export default function TabbedJournalPage({
                     <div className="grid md:grid-cols-2 gap-6">
                       {boardMembers.map((member, idx) => (
                         <div key={idx} className="p-4 rounded-lg bg-gray-5 dark:bg-gray-8 border border-gray-1 dark:border-gray-7">
-                          <h3 className="font-bold text-gray-9 dark:text-gray-1">{member.name}</h4>
+                          <h3 className="font-bold text-gray-9 dark:text-gray-1">{member.name}</h3>
                           <p className="text-sm text-blue-6 dark:text-blue-4">{member.designation}</p>
                           <p className="text-sm text-gray-7 dark:text-gray-3">{member.institution}</p>
                           <p className="text-xs text-gray-5 dark:text-gray-4 mt-1">{member.location}</p>
@@ -549,7 +549,7 @@ export default function TabbedJournalPage({
                                 <Link href={`/article/${article.articleId}`} className="block group">
                                   <h3 className="text-sm md:text-base font-serif font-bold text-[#213361] dark:text-blue-3 group-hover:text-blue-7 dark:group-hover:text-blue-4 transition-colors cursor-pointer leading-snug uppercase tracking-wide">
                                     {article.title}
-                                  </h4>
+                                  </h3>
                                 </Link>
                                 <div className="flex flex-wrap items-center gap-y-1 text-gray-6 dark:text-gray-4">
                                   <Users className="h-3.5 w-3.5 mr-2 text-blue-6 dark:text-blue-4 shrink-0" />
@@ -644,7 +644,7 @@ export default function TabbedJournalPage({
                         <div className="flex items-center gap-3">
                           <Archive className="h-7 w-7 text-yellow-4" />
                           <div>
-                            <h3 className="text-2xl font-serif font-bold">Archives</h2>
+                            <h3 className="text-2xl font-serif font-bold">Archives</h3>
                             <p className="text-blue-2 text-sm mt-1">Browse past volumes and issues</p>
                           </div>
                         </div>
@@ -695,7 +695,7 @@ export default function TabbedJournalPage({
                               <ArrowLeft className="h-5 w-5 text-white" />
                             </button>
                             <div>
-                              <h3 className="text-2xl font-serif font-bold">{currentVol.label}</h2>
+                              <h3 className="text-2xl font-serif font-bold">{currentVol.label}</h3>
                               <p className="text-blue-2 text-sm mt-1">{currentVol.period} &middot; {currentVol.issues.length} {currentVol.issues.length === 1 ? "Issue" : "Quarterly Issues"}</p>
                             </div>
                           </div>
@@ -875,7 +875,7 @@ export default function TabbedJournalPage({
                         <Link href="/reviewer-login">
                           <CardContent className="p-0">
                             <div className="bg-blue-9 p-4 flex items-center justify-between text-white">
-                              <h3 className="font-serif font-bold text-lg">Reviewer Portal</h4>
+                              <h3 className="font-serif font-bold text-lg">Reviewer Portal</h3>
                               <Users className="h-6 w-6 opacity-5 group-hover:opacity-1 transition-opacity" />
                             </div>
                             <div className="p-4">
@@ -892,7 +892,7 @@ export default function TabbedJournalPage({
                         <Link href="/reviewer-search">
                           <CardContent className="p-0">
                             <div className="bg-blue-7 p-4 flex items-center justify-between text-white">
-                              <h3 className="font-serif font-bold text-lg">Track Your Status</h4>
+                              <h3 className="font-serif font-bold text-lg">Track Your Status</h3>
                               <Database className="h-6 w-6 opacity-5 group-hover:opacity-1 transition-opacity" />
                             </div>
                             <div className="p-4">
@@ -908,7 +908,7 @@ export default function TabbedJournalPage({
 
                     {/* Role Description */}
                     <div className="space-y-4 max-w-4xl">
-                      <h3 className="text-2xl font-serif font-bold text-blue-9 dark:text-blue-3">The Role of a Reviewer</h4>
+                      <h3 className="text-2xl font-serif font-bold text-blue-9 dark:text-blue-3">The Role of a Reviewer</h3>
                       <p className="text-gray-7 dark:text-gray-3 leading-relaxed text-lg">
                         Peer reviewers are the backbone of academic publishing, playing a critical role in ensuring the quality, validity, and integrity of research. Your expert evaluation helps authors refine their work, maintains our journal's academic standards, and contributes to the advancement of knowledge in your field. Through constructive feedback and rigorous assessment, you ensure that only high-quality, original research reaches the global academic community.
                       </p>
@@ -987,7 +987,7 @@ export default function TabbedJournalPage({
 
                     {/* Key Responsibilities */}
                     <div className="space-y-6">
-                      <h3 className="text-xl font-serif font-bold text-blue-9 dark:text-blue-3 underline decoration-blue-2 underline-offset-8">Key Responsibilities</h4>
+                      <h3 className="text-xl font-serif font-bold text-blue-9 dark:text-blue-3 underline decoration-blue-2 underline-offset-8">Key Responsibilities</h3>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="flex gap-3 items-center p-4 bg-gray-5 dark:bg-gray-8 rounded-lg border border-gray-1 dark:border-gray-7">
                           <CheckCircle className="h-5 w-5 text-blue-6 shrink-0" />
@@ -1010,7 +1010,7 @@ export default function TabbedJournalPage({
 
                     {/* Review Process */}
                     <div className="bg-gray-5 dark:bg-gray-800/5 p-8 rounded-xl border border-gray-1 dark:border-gray-8">
-                      <h3 className="text-2xl font-serif font-bold text-blue-9 dark:text-blue-3 mb-6">Manuscript Review Process</h4>
+                      <h3 className="text-2xl font-serif font-bold text-blue-9 dark:text-blue-3 mb-6">Manuscript Review Process</h3>
                       <p className="text-gray-7 dark:text-gray-3 mb-8 leading-relaxed">
                         We follow a rigorous and transparent peer review process to ensure the highest standards of academic quality, originality, and integrity. Our double-blind peer review system protects reviewer and author anonymity while maintaining editorial oversight.
                       </p>
@@ -1034,7 +1034,7 @@ export default function TabbedJournalPage({
 
                       {/* Reviewer Guidelines */}
                       <div className="space-y-6 mb-1">
-                        <h3 className="text-xl font-serif font-bold text-blue-9 dark:text-blue-3 border-b pb-2">Reviewer Guidelines</h4>
+                        <h3 className="text-xl font-serif font-bold text-blue-9 dark:text-blue-3 border-b pb-2">Reviewer Guidelines</h3>
                         <ul className="space-y-4 text-sm text-gray-7 dark:text-gray-3">
                           <li className="flex gap-3">
                             <div className="h-1.5 w-1.5 rounded-full bg-blue-6 mt-2 shrink-0"></div>
@@ -1190,7 +1190,7 @@ export default function TabbedJournalPage({
                         <div className="space-y-8">
                           {/* APA Section */}
                           <div className="space-y-4">
-                            <h3 className="text-lg font-bold text-blue-8 dark:text-blue-4 border-b pb-2">APA Style (7th Edition)</h4>
+                            <h3 className="text-lg font-bold text-blue-8 dark:text-blue-4 border-b pb-2">APA Style (7th Edition)</h3>
                             <div className="space-y-2">
                               <p className="font-bold text-gray-9 dark:text-white">In-Text Citations:</p>
                               <ul className="list-disc list-inside space-y-1 text-sm text-gray-7 dark:text-gray-3">
@@ -1219,7 +1219,7 @@ export default function TabbedJournalPage({
 
                           {/* MLA Section */}
                           <div className="space-y-4">
-                            <h3 className="text-lg font-bold text-blue-8 dark:text-blue-4 border-b pb-2">MLA Style (9th Edition)</h4>
+                            <h3 className="text-lg font-bold text-blue-8 dark:text-blue-4 border-b pb-2">MLA Style (9th Edition)</h3>
                             <div className="space-y-2">
                               <p className="font-bold text-gray-9 dark:text-white">In-Text Citations:</p>
                               <ul className="list-disc list-inside space-y-1 text-sm text-gray-7 dark:text-gray-3">
@@ -1290,11 +1290,11 @@ export default function TabbedJournalPage({
                   {/* Ethical Statements */}
                   <div className="grid md:grid-cols-2 gap-6">
                     <div className="p-5 bg-gray-5 dark:bg-gray-800/5 rounded-lg border border-gray-1 dark:border-gray-8">
-                      <h3 className="font-bold text-blue-9 dark:text-blue-3 mb-2">Author Contributions</h4>
+                      <h3 className="font-bold text-blue-9 dark:text-blue-3 mb-2">Author Contributions</h3>
                       <p className="text-sm text-gray-7 dark:text-gray-3">Identify each author’s contribution using CRediT taxonomy (e.g., Conceptualization, Methodology, Writing - Original Draft, etc.). The corresponding author is responsible for accuracy.</p>
                     </div>
                     <div className="p-5 bg-gray-5 dark:bg-gray-800/5 rounded-lg border border-gray-1 dark:border-gray-8">
-                      <h3 className="font-bold text-blue-9 dark:text-blue-3 mb-2">Conflict of Interest</h4>
+                      <h3 className="font-bold text-blue-9 dark:text-blue-3 mb-2">Conflict of Interest</h3>
                       <p className="text-sm text-gray-7 dark:text-gray-3">All financial or personal affiliations that could influence the work must be disclosed. If none exist, state: "The authors have no conflict of interest to report."</p>
                     </div>
                   </div>
@@ -1320,7 +1320,7 @@ export default function TabbedJournalPage({
 
                   {/* Diversity & Inclusivity */}
                   <div className="p-6 bg-blue-50/3 dark:bg-blue-950/1 rounded-lg border border-blue-1 dark:border-blue-9">
-                    <h3 className="font-bold text-blue-9 dark:text-blue-3 mb-3">Diversity & Inclusivity (Use of Inclusive Language)</h4>
+                    <h3 className="font-bold text-blue-9 dark:text-blue-3 mb-3">Diversity & Inclusivity (Use of Inclusive Language)</h3>
                     <div className="space-y-4 text-sm text-gray-7 dark:text-gray-3 leading-relaxed">
                       <p>Incorporating inclusive language in manuscripts recognizes the array of differences among individuals, demonstrates respect for all individuals, displays sensitivity to varying perspectives, and fosters equal prospects.</p>
                       <p>Articles should steer clear of any insinuation of one person's superiority over another based on factors like age, gender, race, ethnicity, culture, sexual orientation, disability, or health status. Utilizing inclusive language consistently throughout is of paramount importance. Authors must ensure their writing is void of partiality, clichés, slang, and allusions that assume a dominant culture or cultural presumptions.</p>

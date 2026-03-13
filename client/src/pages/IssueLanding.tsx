@@ -195,7 +195,7 @@ export default function IssueLanding() {
                         >
                           <h2 className="text-base md:text-lg font-bold text-blue-9 dark:text-blue-3 group-hover:text-blue-6 dark:group-hover:text-blue-4 transition-colors leading-snug cursor-pointer">
                             {article.title}
-                          </h3>
+                          </h2>
                         </Link>
                         
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">

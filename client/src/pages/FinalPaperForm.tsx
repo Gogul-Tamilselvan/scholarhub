@@ -285,7 +285,7 @@ export default function FinalPaperForm() {
         {showConfirmDialog && (
           <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4">
             <Card className="max-w-md w-full shadow-2xl">
-              <CardHeader className="bg-amber-600 text-white">
+              <CardHeader className="bg-[#213361] text-white">
                 <CardTitle className="flex items-center gap-2">
                   <AlertCircle className="w-5 h-5" />
                   Final Submission Check

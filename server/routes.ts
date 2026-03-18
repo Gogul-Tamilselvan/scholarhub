@@ -3726,72 +3726,43 @@ Sitemap: ${protocol}://${domain}/sitemap.xml
         'book': 'Book / Book Chapter'
       };
 
-      // Record in Google Sheets
+      // Record all data to a single "Final Paper" sheet for easy tracking
       const { appendToSheet } = await import('./google-sheets-client');
 
-      // Record to Final Paper sheet
       try {
         await appendToSheet('Final Paper', [
+          // Submission Details
           new Date().toISOString(),
           manuscriptId,
           publicationTypeMap[publicationType] || publicationType,
           articleTitle,
+          // Author Information
           combinedAuthors || correspondingAuthorName,
+          correspondingAuthorName,
           correspondingEmail,
           correspondingPhone,
+          correspondingAuthorAddress,
+          correspondingAuthorAffiliation,
+          supportingAuthors || '',
+          // Final Paper Details
           revisionNotes || '',
           paperFileUrl,
-          'Submitted'
-        ]);
-      } catch (sheetError: any) {
-        console.error('Failed to record final paper in Google Sheets:', sheetError?.message);
-      }
-
-      // Record to Copyright sheet
-      try {
-        await appendToSheet('Copyright', [
-          new Date().toISOString(),
-          manuscriptId,
-          publicationTypeMap[publicationType] || publicationType,
-          articleTitle,
-          correspondingAuthorName,
-          correspondingAuthorAffiliation,
-          correspondingAuthorAddress,
-          supportingAuthors || '',
-          correspondingEmail,
-          correspondingPhone,
+          // Copyright Form Details
           conflictOfInterest === 'yes' ? 'Yes' : 'No',
           conflictDetails || '',
           fundingSupport === 'yes' ? 'Yes' : 'No',
           fundingDetails || '',
           agreementAccepted === 'true' ? 'Accepted' : 'Not Accepted',
           copyrightFileUrl,
+          // Payment Details
+          paymentMethod || (isComplementStatus ? 'Optional - Not Provided' : ''),
+          transactionId || '',
+          paymentNotes || '',
+          // Status
           'Submitted'
         ]);
       } catch (sheetError: any) {
-        console.error('Failed to record copyright form in Google Sheets:', sheetError?.message);
-      }
-
-      // Record payment information if provided (optional for complement status)
-      if (paymentMethod || transactionId || !isComplementStatus) {
-        // For non-complement status, record payment info even if partially filled
-        // For complement status, only record if payment info is explicitly provided
-        if ((paymentMethod && transactionId) || (!isComplementStatus && paymentMethod)) {
-          try {
-            await appendToSheet('Payment', [
-              new Date().toISOString(),
-              manuscriptId,
-              correspondingAuthorName,
-              correspondingEmail,
-              paymentMethod || '',
-              transactionId || '',
-              paymentNotes || '',
-              isComplementStatus ? 'Optional - Not Provided' : 'Submitted'
-            ]);
-          } catch (sheetError: any) {
-            console.error('Failed to record payment in Google Sheets:', sheetError?.message);
-          }
-        }
+        console.error('Failed to record unified submission in Google Sheets:', sheetError?.message);
       }
 
       console.log(`✅ Unified submission completed for manuscript: ${manuscriptId}${isComplementStatus ? ' (Complement status - payment optional)' : ''}`);

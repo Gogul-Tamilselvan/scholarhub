@@ -30,7 +30,7 @@ Preferred communication style: Simple, everyday language.
 - **Database**: PostgreSQL with Drizzle ORM on Neon Database serverless instance.
 - **Schema**: User management with UUID primary keys.
 - **Migrations**: Drizzle-kit.
-- **Google Sheets**: Centralized spreadsheet for all form submissions and admin data across multiple sheets (Reviewers, Manuscript, Contact, Payment, Books, Assignments, ReviewFormUploads, Reviewer Messages, Admin Replies, Newsletter).
+- **Google Sheets**: Centralized spreadsheet for all form submissions and admin data. Contact sheet (A-H: SubmittedAt, FirstName, LastName, Email, Phone, EnquiryType, Subject, Message); Final Paper sheet records comprehensive submission data including author details, copyright declarations, payment info, and file URLs in one unified row for easy tracking.
 - **Assignments Sheet Structure**: Columns A-M: AssignedAt, ReviewerID, ManuscriptID, DueDate, Notes, Status, ManuscriptLink, Recommendation, OverallMarks, ReviewerEmail, ReviewerFullName, ManuscriptTitle, CertificateNo (8-digit alphanumeric auto-generated).
 
 ### Authentication and Authorization
@@ -51,7 +51,7 @@ Preferred communication style: Simple, everyday language.
 - **Permanent URLs**: Stable landing pages for issues, articles, and PDFs.
 - **Services Offered**: Book Publication (with DOI, ISBN), Conference & Seminars (special issue publication), and Other Services (editing, plagiarism check, translation).
 - **Reviewer/Editor System**: Application system, Admin Dashboard for manuscript assignment (auto/manual, due dates), reviewer management, tracking, comprehensive 4-part peer review form (Part 1: Review Comments, Part 2: Ethics & Integrity, Part 3: Declaration, Part 4: Objective Evaluation with recommendation dropdown), approval workflow, password management. Reviewer and Editor dashboards display assigned manuscripts, performance metrics, deadlines, and a messaging system.
-- **Final Submission Workflow**: Unified 3-step submission form (`/final-paper`, `/copyright-form` both route to FinalPaperForm.tsx) combining: Step 1 (Final Paper Submission with author details and manuscript upload), Step 2 (Copyright Form with ethics declarations, conflict of interest, funding information, and signed copyright form upload), Step 3 (Payment Details with method, transaction ID). Single endpoint `/api/final-paper-unified` records to both Final Paper and Copyright sheets, handles multi-file uploads, and records payment information.
+- **Final Submission Workflow**: Unified 3-step submission form (`/final-paper`, `/copyright-form` both route to FinalPaperForm.tsx) combining: Step 1 (Final Paper Submission with author details and manuscript upload), Step 2 (Copyright Form with ethics declarations, conflict of interest, funding information, and signed copyright form upload), Step 3 (Payment Details with method, transaction ID; optional for "complement" status manuscripts). Single endpoint `/api/final-paper-unified` records ALL data (submission details, author info, copyright declarations, payment info) into a unified "Final Paper" Google Sheet row for easy tracking, handles multi-file uploads, and conditionally records payment information based on manuscript status.
 - **APC & Payment**: Clear pricing for Indian and International authors with payment submission form.
 - **Contact & Communication**: Contact form with automated email confirmation.
 - **Email Automation**: Specific confirmation emails for submissions and inquiries.

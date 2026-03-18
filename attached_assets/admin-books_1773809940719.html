@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Books — Scholar India Publishers ERP</title>
+    <link rel="icon" href="sip-logo.png" type="image/png">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="css/erp-style.css">
+</head>
+
+<body>
+    <div class="erp-layout">
+        <main class="erp-main">
+            <header class="erp-header">
+                <div class="header-left">
+                    <div class="header-title">Book Management</div>
+                    <div class="header-breadcrumb">Manage and track book submissions</div>
+                </div>
+            </header>
+
+            <div class="erp-content">
+                <div class="page-header">
+                    <div class="page-header-left">
+                        <h1>Book Submissions</h1>
+                        <p id="countLabel">Loading records...</p>
+                    </div>
+                    <div class="page-header-actions">
+                        <div class="search-box">
+                            <i class="fa fa-search"></i>
+                            <input type="text" id="searchInput" placeholder="Search title, author, ref no..."
+                                onkeyup="applyFilters()">
+                        </div>
+                        <button class="btn btn-outline" onclick="loadData()"><i class="fa fa-sync"></i> Refresh</button>
+                        <button class="btn btn-primary" onclick="printTable('Book Submissions')"><i
+                                class="fa fa-print"></i> Print Report</button>
+                    </div>
+                </div>
+
+                <div class="table-wrapper">
+                    <div class="table-scroll">
+                        <table class="erp-table">
+                            <thead>
+                                <tr>
+                                    <th onclick="sortBy('Book Ref Number')">Ref No / Title <i class="fa fa-sort"></i>
+                                    </th>
+                                    <th onclick="sortBy('Author Name')">Author Details <i class="fa fa-sort"></i></th>
+                                    <th onclick="sortBy('Subject Area')">Subject Area <i class="fa fa-sort"></i></th>
+                                    <th onclick="sortBy('Submitted Date')">Submitted <i class="fa fa-sort"></i></th>
+                                    <th onclick="sortBy('Status')">Status <i class="fa fa-sort"></i></th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Details Modal -->
+    <div class="modal-overlay" id="detailModal">
+        <div class="modal modal-lg">
+            <div class="modal-header">
+                <h3><i class="fa fa-book"></i> Book Submission Details</h3>
+                <button class="modal-close" onclick="closeModal('detailModal')">&times;</button>
+            </div>
+            <div class="modal-body" id="detailContent"></div>
+            <div class="modal-footer">
+                <button class="btn btn-gray" onclick="closeModal('detailModal')">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast-container"></div>
+    <script src="js/erp-common.js"></script>
+    <script>
+        buildAdminSidebar('books');
+        let allData = [], filtered = [], sortKey = '', sortAsc = true;
+
+        async function loadData() {
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = '<tr class="loading-row"><td colspan="6"><div class="spinner"></div></td></tr>';
+            try {
+                const res = await apiGet({ action: 'getBooks' });
+                allData = res.status === 'success' ? res.data : [];
+                applyFilters();
+            } catch (e) {
+                showToast('Failed to load data', 'error');
+            }
+        }
+
+        function applyFilters() {
+            const q = document.getElementById('searchInput').value.toLowerCase();
+            filtered = allData.filter(b => {
+                if (!q) return true;
+                return ['Book Ref Number', 'Book Title', 'Author Name', 'Email', 'Subject Area'].some(k =>
+                    String(b[k] || '').toLowerCase().includes(q)
+                );
+            });
+            if (sortKey) filtered = sortTable(filtered, sortKey, sortAsc);
+            renderTable();
+        }
+
+        function sortBy(key) {
+            if (sortKey === key) sortAsc = !sortAsc;
+            else { sortKey = key; sortAsc = true; }
+            applyFilters();
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('tableBody');
+            document.getElementById('countLabel').textContent = filtered.length + ' submissions';
+
+            if (!filtered.length) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--text-muted);"><i class="fa fa-book-open" style="font-size:2rem;display:block;margin-bottom:10px;opacity:.2;"></i>No book submissions found</td></tr>';
+                return;
+            }
+            tbody.innerHTML = filtered.map((b, i) => {
+                const isUnread = (b['Read'] || 'No') !== 'Yes';
+                return `
+                <tr style="${isUnread ? 'background-color: #fffbeb; font-weight: 500;' : ''}">
+                    <td>
+                        <div style="font-size:.7rem;font-weight:700;color:var(--text-muted);">${b['Book Ref Number'] || '—'} ${isUnread ? '<span class="badge badge-danger" style="font-size: .6rem; padding: 1px 4px;">NEW</span>' : ''}</div>
+                        <strong style="display:block;margin-top:2px;">${b['Book Title'] || 'Untitled'}</strong>
+                    </td>
+                    <td>
+                        <div style="font-weight:600;">${b['Author Name'] || '—'}</div>
+                        <div style="font-size:.75rem;color:var(--text-muted);">${b['Email'] || '—'}</div>
+                    </td>
+                    <td><span class="badge badge-info">${b['Subject Area'] || '—'}</span></td>
+                    <td style="font-size:.8rem;">${fmtDate(b['Submitted Date'])}</td>
+                    <td>${statusBadge(b['Status'])}</td>
+                    <td>
+                        <div class="action-wrap">
+                            <button class="action-toggle" onclick="toggleActionMenu(this)"><i class="fa fa-ellipsis-v"></i></button>
+                            <div class="action-menu">
+                                <button onclick="viewDetails(${i})"><i class="fa fa-eye"></i> View Details</button>
+                                <div class="separator"></div>
+                                <button onclick="updateStatus('${b['Book Ref Number']}','Under Review')"><i class="fa fa-clock" style="color:var(--warning);"></i> Under Review</button>
+                                <button onclick="updateStatus('${b['Book Ref Number']}','Approved')"><i class="fa fa-check" style="color:var(--success);"></i> Approve</button>
+                                <button onclick="updateStatus('${b['Book Ref Number']}','Rejected')"><i class="fa fa-times" style="color:var(--danger);"></i> Reject</button>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+            `;}).join('');
+        }
+
+        function viewDetails(idx) {
+            const b = filtered[idx];
+            let html = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;">';
+            Object.entries(b).forEach(([k, v]) => {
+                html += `
+                    <div style="background:var(--bg);padding:12px;border-radius:8px;">
+                        <label style="display:block;font-size:.65rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px;">${k}</label>
+                        <div style="font-weight:500;">${v || '—'}</div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            document.getElementById('detailContent').innerHTML = html;
+            document.getElementById('detailModal').classList.add('show');
+            if ((b['Read'] || 'No') !== 'Yes') markAsRead(b['Book Ref Number']);
+        }
+
+        async function markAsRead(ref) {
+            await apiPost({
+                action: 'updateStatus',
+                sheetName: 'Books',
+                idColumn: 'Book Ref Number',
+                idValue: ref,
+                updates: { 'Read': 'Yes' }
+            });
+        }
+
+        async function updateStatus(ref, status) {
+            if (!confirm(`Update status of ${ref} to ${status}?`)) return;
+            const res = await apiPost({
+                action: 'updateStatus',
+                sheetName: 'Books',
+                idColumn: 'Book Ref Number',
+                idValue: ref,
+                updates: { 'Status': status }
+            });
+            if (res.status === 'success') {
+                showToast('Status updated successfully', 'success');
+                loadData();
+            } else {
+                showToast('Error: ' + res.message, 'error');
+            }
+        }
+
+        loadData();
+    </script>
+</body>
+
+</html>

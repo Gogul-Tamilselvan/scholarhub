@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deadline Calendar — SIP Admin</title>
+    <link rel="icon" href="assets/logo.png" type="image/png">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="css/erp-style.css">
+</head>
+
+<body>
+    <script>if (sessionStorage.getItem('adminLoggedIn') !== 'true') window.location.href = 'admin-login.html';</script>
+    <div class="erp-layout">
+        <main class="erp-main">
+            <header class="erp-header">
+                <div class="header-left">
+                    <div class="header-title">Deadline Calendar</div>
+                </div>
+                <div class="header-right">
+                    <div class="header-user">
+                        <div class="user-avatar" id="header-avatar">AD</div>
+                        <div class="user-info">
+                            <div class="user-name" id="header-user-name">Admin</div>
+                            <div class="user-role">Administrator</div>
+                        </div>
+                    </div>
+                </div>
+            </header>
+            <div class="erp-content">
+                <div class="page-header">
+                    <div class="page-header-left">
+                        <h1>Deadline Calendar</h1>
+                        <p>All reviewer assignment deadlines sorted by date. Overdue items highlighted.</p>
+                    </div>
+                    <div class="page-header-actions">
+                        <button class="btn btn-gray" onclick="loadData()"><i class="fa fa-sync"></i> Refresh</button>
+                        <button class="btn btn-primary" onclick="exportCSV(deadlines,'deadlines')"><i
+                                class="fa fa-download"></i> Export CSV</button>
+                    </div>
+                </div>
+
+                <!-- Filter Tabs -->
+                <div class="tab-bar">
+                    <button class="tab-btn active" onclick="filterDL('all',this)">All</button>
+                    <button class="tab-btn" onclick="filterDL('overdue',this)">⚠️ Overdue</button>
+                    <button class="tab-btn" onclick="filterDL('week',this)">This Week</button>
+                    <button class="tab-btn" onclick="filterDL('month',this)">This Month</button>
+                    <button class="tab-btn" onclick="filterDL('upcoming',this)">Upcoming</button>
+                </div>
+
+                <div class="table-wrapper">
+                    <div class="table-toolbar">
+                        <div class="search-box"><i class="fa fa-search"></i><input type="text" id="searchInput"
+                                placeholder="Search reviewer or manuscript..." oninput="applyFilters()"></div>
+                        <span id="countLabel" style="font-size:.82rem;color:var(--text-muted);"></span>
+                    </div>
+                    <div id="deadlineList">
+                        <div style="text-align:center;padding:50px;">
+                            <div class="spinner"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    <div id="toast-container"></div>
+    <script src="js/erp-common.js"></script>
+    <script>
+        buildAdminSidebar('deadlines');
+        let deadlines = [], dlFilter = 'all';
+
+        async function loadData() {
+            document.getElementById('deadlineList').innerHTML = '<div style="text-align:center;padding:50px;"><div class="spinner"></div></div>';
+            const res = await apiGet({ action: 'getAssignments' });
+            const all = res.status === 'success' ? res.data : [];
+            deadlines = all.filter(a => a['DueDate'] && String(a['Status'] || '').toLowerCase() !== 'revoked')
+                .sort((a, b) => new Date(a['DueDate']) - new Date(b['DueDate']));
+            applyFilters();
+        }
+
+        function filterDL(type, btn) {
+            dlFilter = type;
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            applyFilters();
+        }
+
+        function applyFilters() {
+            const now = new Date();
+            const q = document.getElementById('searchInput').value.toLowerCase();
+            const endWeek = new Date(now); endWeek.setDate(endWeek.getDate() + 7);
+            const endMonth = new Date(now); endMonth.setDate(endMonth.getDate() + 30);
+
+            let data = deadlines.filter(a => {
+                const due = new Date(a['DueDate']);
+                if (dlFilter === 'overdue') return due < now;
+                if (dlFilter === 'week') return due >= now && due <= endWeek;
+                if (dlFilter === 'month') return due >= now && due <= endMonth;
+                if (dlFilter === 'upcoming') return due > endMonth;
+                return true;
+            });
+            if (q) data = data.filter(a => String((a['ReviewerFullName'] || '') + ' ' + (a['ManuscriptTitle'] || '') + ' ' + (a['ManuscriptID'] || '')).toLowerCase().includes(q));
+            document.getElementById('countLabel').textContent = data.length + ' deadline(s)';
+            renderDeadlines(data);
+        }
+
+        function renderDeadlines(data) {
+            const el = document.getElementById('deadlineList');
+            if (!data.length) { el.innerHTML = '<div class="empty-state"><i class="fa fa-calendar-check"></i><h4>No deadlines in this filter</h4><p>All reviewers are on schedule!</p></div>'; return; }
+            const now = new Date();
+            el.innerHTML = data.map(a => {
+                const due = new Date(a['DueDate']);
+                const isOverdue = due < now;
+                const diff = Math.ceil((due - now) / 86400000);
+                const dayStr = isOverdue ? `${Math.abs(diff)} days overdue` : diff === 0 ? 'Today!' : `${diff} days left`;
+                const cls = isOverdue ? 'overdue' : diff <= 3 ? 'soon' : '';
+                const day = due.toLocaleDateString('en-IN', { day: '2-digit' });
+                const mon = due.toLocaleDateString('en-IN', { month: 'short' });
+                return `<div class="deadline-item">
+          <div class="deadline-date ${cls}"><div class="day">${day}</div><div class="mon">${mon}</div></div>
+          <div class="deadline-info">
+            <h4>${String(a['ManuscriptTitle'] || '').substring(0, 60)}...</h4>
+            <p><i class="fa fa-user" style="margin-right:5px;color:var(--accent);"></i>${a['ReviewerFullName'] || '—'} &nbsp;|&nbsp; ${a['ManuscriptID'] || ''}</p>
+          </div>
+          <div style="text-align:right;flex-shrink:0;">
+            ${statusBadge(a['Status'] || 'Pending')}
+            <div style="font-size:.75rem;font-weight:700;color:${isOverdue ? 'var(--danger)' : diff <= 3 ? 'var(--warning)' : 'var(--text-muted)'};margin-top:5px;">${dayStr}</div>
+          </div>
+        </div>`;
+            }).join('');
+        }
+
+        loadData();
+    </script>
+</body>
+
+</html>

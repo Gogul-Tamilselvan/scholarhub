@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Assign Work — SIP Admin</title>
+    <link rel="icon" href="assets/logo.png" type="image/png">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="css/erp-style.css">
+</head>
+
+<body>
+    <script>if (sessionStorage.getItem('adminLoggedIn') !== 'true') window.location.href = 'admin-login.html';</script>
+    <div class="erp-layout">
+        <main class="erp-main">
+            <header class="erp-header">
+                <div class="header-left">
+                    <div class="header-title">Assign Work to Reviewers</div>
+                </div>
+                <div class="header-right">
+                    <div class="header-user">
+                        <div class="user-avatar" id="header-avatar">AD</div>
+                        <div class="user-info">
+                            <div class="user-name" id="header-user-name">Admin</div>
+                            <div class="user-role">Administrator</div>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <div class="erp-content">
+                <div class="page-header">
+                    <div class="page-header-left">
+                        <h1>Assign Work</h1>
+                        <p>Showing manuscripts <strong>"Under Review"</strong> only. Each manuscript may be assigned to
+                            a maximum of <strong>3 reviewers</strong>.</p>
+                    </div>
+                    <div class="page-header-actions">
+                        <button class="btn btn-gray" onclick="loadAll()"><i class="fa fa-sync"></i> Refresh</button>
+                    </div>
+                </div>
+
+                <!-- Search -->
+                <div class="table-wrapper mb-24">
+                    <div class="table-toolbar">
+                        <div class="search-box"><i class="fa fa-search"></i><input type="text" id="msSearch"
+                                placeholder="Search manuscripts..." oninput="renderManuscripts()"></div>
+                        <span id="msCount" style="font-size:.82rem;color:var(--text-muted);"></span>
+                    </div>
+                    <div class="table-scroll">
+                        <table class="erp-table">
+                            <thead>
+                                <tr>
+                                    <th>Manuscript ID</th>
+                                    <th>Title</th>
+                                    <th>Author</th>
+                                    <th>Journal</th>
+                                    <th>Assigned (max 3)</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="msBody">
+                                <tr class="loading-row">
+                                    <td colspan="6">
+                                        <div class="spinner"></div> Loading manuscripts...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Assign Modal -->
+    <div class="modal-overlay" id="assignModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3><i class="fa fa-user-plus"></i> Assign Reviewer</h3>
+                <button class="modal-close" onclick="closeModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <div style="background:var(--bg);padding:12px 16px;border-radius:8px;margin-bottom:16px;">
+                    <div style="font-size:.72rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;">
+                        Manuscript</div>
+                    <div id="modalMsTitle" style="font-weight:600;margin-top:4px;"></div>
+                    <div id="modalMsId" style="font-size:.78rem;color:var(--text-muted);"></div>
+                </div>
+
+                <div id="currentAssignees" style="margin-bottom:16px;"></div>
+
+                <div class="form-group">
+                    <label class="form-label">Select Reviewer / Board Member <span>*</span></label>
+                    <select id="reviewerSelect" class="form-control">
+                        <option value="">— Choose Active Reviewer —</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Due Date <span>*</span></label>
+                    <input type="date" id="dueDate" class="form-control">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="doAssign()"><i class="fa fa-check"></i> Assign</button>
+                <button class="btn btn-gray" onclick="closeModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast-container"></div>
+    <script src="js/erp-common.js"></script>
+    <script>
+        buildAdminSidebar('assign');
+        let manuscripts = [], reviewers = [], assignments = [], currentMs = null;
+
+        async function loadAll() {
+            document.getElementById('msBody').innerHTML = '<tr class="loading-row"><td colspan="6"><div class="spinner"></div></td></tr>';
+            try {
+                const res = await apiBatchGet([
+                    { action: 'getManuscripts' },
+                    { action: 'getReviewers' },
+                    { action: 'getAssignments' }
+                ]);
+
+                if (res.status !== 'success') throw new Error(res.message);
+                const batch = res.data;
+
+                const msRes = batch['getManuscripts'];
+                manuscripts = msRes.status === 'success' ? msRes.data.filter(m => {
+                    const s = String(getVal(m, ['Status'])).toLowerCase().trim();
+                    return s === 'under review' || s === 'under-review' || s === 'review';
+                }) : [];
+
+                const rvRes = batch['getReviewers'];
+                reviewers = rvRes.status === 'success' ? rvRes.data.filter(r => {
+                    const s = String(getVal(r, ['Status'])).toLowerCase().trim();
+                    return s === 'active' || s === 'approved';
+                }) : [];
+
+                const asRes = batch['getAssignments'];
+                assignments = asRes.status === 'success' ? asRes.data : [];
+
+                renderManuscripts();
+            } catch (e) {
+                showToast('Connection error', 'error');
+                console.error(e);
+            }
+        }
+
+        function renderManuscripts() {
+            const q = document.getElementById('msSearch').value.toLowerCase();
+            let data = manuscripts.filter(m => {
+                const title = String(getVal(m, ['Manuscript Title'])).toLowerCase();
+                const author = String(getVal(m, ['Author Name'])).toLowerCase();
+                return !q || title.includes(q) || author.includes(q);
+            });
+            document.getElementById('msCount').textContent = data.length + ' manuscript(s) under review';
+            const tbody = document.getElementById('msBody');
+            if (!data.length) {
+                tbody.innerHTML = '<tr><td colspan="6"><div class="empty-state"><i class="fa fa-file-alt"></i><h4>No manuscripts under review</h4><p>Change manuscript status to "Under Review" to enable assignment</p></div></td></tr>';
+                return;
+            }
+            tbody.innerHTML = data.map(m => {
+                const msId = getVal(m, ['Manuscript ID', 'ManuscriptID']);
+                const activeAssign = assignments.filter(a => String(getVal(a, ['ManuscriptID', 'Manuscript ID'])) === String(msId) && String(getVal(a, ['Status'])).toLowerCase() !== 'revoked');
+                const count = activeAssign.length;
+                const color = count >= 3 ? 'var(--danger)' : count > 0 ? 'var(--warning)' : 'var(--text-muted)';
+                return `<tr>
+          <td><strong>${msId}</strong></td>
+          <td><strong style="font-size:.85rem;">${String(getVal(m, ['Manuscript Title'])).substring(0, 50)}</strong></td>
+          <td style="font-size:.8rem;">${getVal(m, ['Author Name']) || '—'}</td>
+          <td style="font-size:.8rem;">${getVal(m, ['Journal']) || '—'}</td>
+          <td>
+            <div style="font-weight:700;color:${color};font-size:.85rem;">${count} / 3</div>
+            <div style="font-size:.72rem;color:var(--text-muted);">${activeAssign.map(a => getVal(a, ['ReviewerFullName', 'Reviewer Name'])).join(', ') || 'None'}</div>
+          </td>
+          <td>
+            <button class="btn btn-primary btn-sm" onclick="openAssign('${msId}')" ${count >= 3 ? 'disabled title="Maximum 3 reviewers assigned"' : ''}>
+              <i class="fa fa-plus"></i> Assign
+            </button>
+          </td>
+        </tr>`;
+            }).join('');
+        }
+
+        async function openAssign(msId) {
+            currentMs = manuscripts.find(m => String(m['ManuscriptID'] || m['Manuscript ID']) === String(msId));
+            if (!currentMs) return;
+
+            const activeAssign = assignments.filter(a => String(a['ManuscriptID']) === String(msId) && String(a['Status'] || '').toLowerCase() !== 'revoked');
+
+            document.getElementById('modalMsTitle').textContent = currentMs['Manuscript Title'] || currentMs['Manuscript Title '] || 'Untitled';
+            document.getElementById('modalMsId').textContent = 'ID: ' + msId;
+
+            // Current assignees
+            const ca = document.getElementById('currentAssignees');
+            if (activeAssign.length > 0) {
+                ca.innerHTML = `<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:10px 14px;margin-bottom:4px;">
+          <div style="font-size:.72rem;font-weight:700;color:var(--success);text-transform:uppercase;margin-bottom:6px;">Currently Assigned (${activeAssign.length}/3)</div>
+          ${activeAssign.map(a => `<div style="font-size:.82rem;font-weight:500;margin-bottom:3px;"><i class="fa fa-user" style="color:var(--accent);margin-right:6px;"></i>${a['ReviewerFullName']} <span style="color:var(--text-muted);">(${a['ReviewerID']})</span> — Due: ${fmtDate(a['DueDate'])}</div>`).join('')}
+        </div>`;
+            } else {
+                ca.innerHTML = '';
+            }
+
+            // Populate reviewer select (exclude already assigned)
+            const assignedIds = activeAssign.map(a => String(a['Reviewer ID']));
+            const available = reviewers.filter(r => !assignedIds.includes(String(r['Reviewer ID'])));
+            const sel = document.getElementById('reviewerSelect');
+            sel.innerHTML = '<option value="">— Choose Active Reviewer —</option>' +
+                available.map(r => `<option value="${r['Reviewer ID']}" data-name="${r['First Name']} ${r['Last Name']}" data-email="${r['Email']}">${r['First Name']} ${r['Last Name']} (${r['Role'] || 'Reviewer'}) — ${r['Journal'] || ''}</option>`).join('');
+
+            // Set default due date to 2 weeks from now
+            const d = new Date(); d.setDate(d.getDate() + 14);
+            document.getElementById('dueDate').value = d.toISOString().split('T')[0];
+
+            document.getElementById('assignModal').classList.add('show');
+        }
+
+        async function doAssign() {
+            const sel = document.getElementById('reviewerSelect');
+            const reviewerId = sel.value;
+            const reviewerName = sel.options[sel.selectedIndex]?.dataset?.name || '';
+            const dueDate = document.getElementById('dueDate').value;
+            if (!reviewerId) { showToast('Please select a reviewer', 'warning'); return; }
+            if (!dueDate) { showToast('Please set a due date', 'warning'); return; }
+
+            const msId = currentMs['ManuscriptID'] || currentMs['Manuscript ID'];
+            const msTitle = currentMs['ManuscriptTitle'] || currentMs['Manuscript Title'] || currentMs['Manuscript Title '] || '';
+            const reviewerEmail = sel.options[sel.selectedIndex]?.dataset?.email || '';
+            const manuscriptLink = currentMs['Uploaded File'] || '';
+
+            try {
+                const res = await apiPost({
+                    action: 'assignManuscript',
+                    manuscriptId: msId,
+                    manuscriptTitle: msTitle,
+                    reviewerId,
+                    reviewerName,
+                    reviewerEmail,
+                    dueDate,
+                    manuscriptLink
+                });
+                if (res.status === 'success') {
+                    showToast('✓ Work assigned to ' + reviewerName, 'success');
+                    logActivity('Assign Work', `${msId} → ${reviewerName} (${reviewerId})`, 'assign');
+                    closeModal(); loadAll();
+                } else { showToast('Error: ' + res.message, 'error'); }
+            } catch (e) { showToast('Connection error', 'error'); }
+        }
+
+        function closeModal() { document.getElementById('assignModal').classList.remove('show'); }
+
+        loadAll();
+    </script>
+</body>
+
+</html>

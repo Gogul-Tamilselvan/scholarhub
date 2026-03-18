@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Approve Reviews — SIP Admin</title>
+    <link rel="icon" href="assets/logo.png" type="image/png">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="css/erp-style.css">
+</head>
+
+<body>
+    <script>if (sessionStorage.getItem('adminLoggedIn') !== 'true') window.location.href = 'admin-login.html';</script>
+    <div class="erp-layout">
+        <main class="erp-main">
+            <header class="erp-header">
+                <div class="header-left">
+                    <div class="header-title">Approve Submitted Reviews</div>
+                </div>
+                <div class="header-right">
+                    <div class="header-user">
+                        <div class="user-avatar" id="header-avatar">AD</div>
+                        <div class="user-info">
+                            <div class="user-name" id="header-user-name">Admin</div>
+                            <div class="user-role">Administrator</div>
+                        </div>
+                    </div>
+                </div>
+            </header>
+            <div class="erp-content">
+                <div class="page-header">
+                    <div class="page-header-left">
+                        <h1>Review Approvals</h1>
+                        <p>Submitted reviews awaiting admin decision. You can approve or reject each review with a note.
+                        </p>
+                    </div>
+                    <div class="page-header-actions"><button class="btn btn-gray" onclick="loadData()"><i
+                                class="fa fa-sync"></i> Refresh</button></div>
+                </div>
+
+                <div class="table-wrapper">
+                    <div class="table-toolbar">
+                        <div class="search-box"><i class="fa fa-search"></i><input type="text" id="searchInput"
+                                placeholder="Search by manuscript or reviewer..." oninput="applyFilters()"></div>
+                        <span id="countLabel" style="font-size:.82rem;color:var(--text-muted);"></span>
+                    </div>
+                    <div class="table-scroll">
+                        <table class="erp-table">
+                            <thead>
+                                <tr>
+                                    <th>Assigned At</th>
+                                    <th>Manuscript</th>
+                                    <th>Reviewer</th>
+                                    <th>Recommendation</th>
+                                    <th>Marks</th>
+                                    <th>Submitted</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tableBody">
+                                <tr class="loading-row">
+                                    <td colspan="8">
+                                        <div class="spinner"></div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Review Detail Modal -->
+    <div class="modal-overlay" id="reviewModal">
+        <div class="modal modal-xl">
+            <div class="modal-header">
+                <h3><i class="fa fa-clipboard-check"></i> Review Details</h3><button class="modal-close"
+                    onclick="closeModal()">×</button>
+            </div>
+            <div class="modal-body" id="reviewContent"></div>
+            <div class="modal-footer">
+                <button class="btn btn-success" id="approveReviewBtn"><i class="fa fa-check"></i> Approve</button>
+                <button class="btn btn-danger" id="rejectReviewBtn"><i class="fa fa-times"></i> Reject</button>
+                <button class="btn btn-gray" onclick="closeModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast-container"></div>
+    <script src="js/erp-common.js"></script>
+    <script>
+        buildAdminSidebar('approve-reviews');
+        let allData = [], filtered = [], currentAssignId = '';
+
+        async function loadData() {
+            document.getElementById('tableBody').innerHTML = '<tr class="loading-row"><td colspan="8"><div class="spinner"></div></td></tr>';
+            const res = await apiGet({ action: 'getReviews' });
+            allData = res.status === 'success' ? res.data : [];
+            applyFilters();
+        }
+
+        function applyFilters() {
+            const q = document.getElementById('searchInput').value.toLowerCase();
+            filtered = allData.filter(a =>
+                !q || String((a['ManuscriptTitle'] || '') + ' ' + (a['ReviewerFullName'] || '') + ' ' + (a['ManuscriptID'] || '')).toLowerCase().includes(q)
+            );
+            document.getElementById('countLabel').textContent = filtered.length + ' pending review(s)';
+            const tbody = document.getElementById('tableBody');
+            if (!filtered.length) { tbody.innerHTML = '<tr><td colspan="8"><div class="empty-state"><i class="fa fa-clipboard-check"></i><h4>No pending reviews</h4><p>All submitted reviews have been processed</p></div></td></tr>'; return; }
+            tbody.innerHTML = filtered.map((a, i) => `<tr>
+        <td style="font-size:.78rem;"><strong>${fmtDate(a['AssignedAt'])}</strong></td>
+        <td><strong style="font-size:.82rem;">${String(a['ManuscriptTitle'] || '').substring(0, 40)}</strong><span class="td-muted">${a['ManuscriptID'] || ''}</span></td>
+        <td><strong style="font-size:.82rem;">${a['ReviewerFullName'] || '—'}</strong><span class="td-muted">${a['ReviewerID'] || ''}</span></td>
+        <td style="font-size:.8rem;">${a['Recommendation'] || '—'}</td>
+        <td><strong style="font-size:1rem;color:${(a['OverallMarks'] || 0) >= 7 ? 'var(--success)' : 'var(--danger)'};">${a['OverallMarks'] || '—'}</strong>/10</td>
+        <td style="font-size:.78rem;">${fmtDT(a['Submission Date'])}</td>
+        <td>${statusBadge(a['Status'] || 'Pending')}</td>
+        <td>
+          <button class="btn btn-primary btn-sm" onclick="openReview(${i})"><i class="fa fa-eye"></i> Review</button>
+        </td>
+      </tr>`).join('');
+        }
+
+        function openReview(idx) {
+            const a = filtered[idx];
+            if (!a) return;
+            currentAssignId = a['AssignedAt'];
+            const fields = [
+                { key: 'Importance', label: 'Importance' },
+                { key: 'Title Feedback', label: 'Title feedback' },
+                { key: 'Abstract Feedback', label: 'Abstract feedback' },
+                { key: 'Scientific Correctness', label: 'Scientific Correctness' },
+                { key: 'References Feedback', label: 'References feedback' },
+                { key: 'Language Quality', label: 'Language Quality' },
+                { key: 'General Comments', label: 'General Comments' },
+                { key: 'Ethical Issues', label: 'Ethical Issues' },
+                { key: 'Ethical Details', label: 'Ethical Details' },
+                { key: 'Competing Interests', label: 'Competing Interests' },
+                { key: 'Plagiarism Suspected', label: 'Plagiarism Suspected' },
+            ];
+            let html = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
+        <div style="background:var(--bg);padding:12px;border-radius:8px;"><div class="form-label" style="margin-bottom:4px;">Manuscript</div><div style="font-weight:600;">${a['ManuscriptTitle'] || '—'}</div></div>
+        <div style="background:var(--bg);padding:12px;border-radius:8px;"><div class="form-label" style="margin-bottom:4px;">Reviewer</div><div style="font-weight:600;">${a['ReviewerFullName'] || '—'}</div></div>
+        <div style="background:linear-gradient(135deg,#f0fdf4,#dcfce7);padding:12px;border-radius:8px;border-left:4px solid var(--success);">
+          <div class="form-label" style="margin-bottom:4px;">Overall Marks</div>
+          <div style="font-size:1.6rem;font-weight:800;color:var(--success);">${a['OverallMarks'] || '—'}/10</div>
+        </div>
+        <div style="background:var(--bg);padding:12px;border-radius:8px;"><div class="form-label" style="margin-bottom:4px;">Recommendation</div><div style="font-weight:700;">${a['Recommendation'] || '—'}</div></div>
+      </div>`;
+            html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">';
+            fields.forEach(f => { html += `<div style="background:var(--bg);padding:10px;border-radius:8px;"><div class="form-label" style="margin-bottom:3px;">${f.label}</div><div style="font-size:.82rem;font-weight:500;">${a[f.key] || '—'}</div></div>`; });
+            html += '</div>';
+            html += `<div class="form-group"><label class="form-label">Admin Note (for approve/reject)</label><textarea id="adminNote" class="form-control" rows="3" placeholder="Add your note here..."></textarea></div>`;
+            document.getElementById('reviewContent').innerHTML = html;
+            document.getElementById('approveReviewBtn').onclick = () => processReview('Approved');
+            document.getElementById('rejectReviewBtn').onclick = () => processReview('Rejected');
+            document.getElementById('reviewModal').classList.add('show');
+        }
+
+        async function processReview(decision) {
+            const note = document.getElementById('adminNote').value.trim();
+            if (!confirm(`${decision} this review?`)) return;
+            const res = await apiPost({ action: 'approveReview', assignedAt: currentAssignId, decision, note });
+            if (res.status === 'success') { showToast('✓ Review ' + decision, 'success'); logActivity('Review Decision', `${currentAssignId} → ${decision}`, 'approve-reviews'); closeModal(); loadData(); }
+            else showToast('Error: ' + res.message, 'error');
+        }
+
+        function closeModal() { document.getElementById('reviewModal').classList.remove('show'); }
+        loadData();
+    </script>
+</body>
+
+</html>

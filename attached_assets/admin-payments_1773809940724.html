@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payments — SIP Admin</title>
+    <link rel="icon" href="assets/logo.png" type="image/png">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="css/erp-style.css">
+</head>
+
+<body>
+    <script>if (sessionStorage.getItem('adminLoggedIn') !== 'true') window.location.href = 'admin-login.html';</script>
+    <div class="erp-layout">
+        <main class="erp-main">
+            <header class="erp-header">
+                <div class="header-left">
+                    <div class="header-title">Payment Details</div>
+                </div>
+                <div class="header-right">
+                    <div class="header-user">
+                        <div class="user-avatar" id="header-avatar">AD</div>
+                        <div class="user-info">
+                            <div class="user-name" id="header-user-name">Admin</div>
+                            <div class="user-role">Administrator</div>
+                        </div>
+                    </div>
+                </div>
+            </header>
+            <div class="erp-content">
+                <div class="page-header">
+                    <div class="page-header-left">
+                        <h1>Payments</h1>
+                        <p>Track and manage all payment transactions from the Payment sheet.</p>
+                    </div>
+                    <div class="page-header-actions">
+                        <button class="btn btn-gray" onclick="loadData()"><i class="fa fa-sync"></i> Refresh</button>
+                        <button class="btn btn-gray" onclick="printTable('Payments')"><i class="fa fa-print"></i>
+                            Print</button>
+                        <button class="btn btn-primary" onclick="openAddModal()"><i class="fa fa-plus"></i> Add
+                            Payment</button>
+                        <button class="btn btn-gray" onclick="exportCSV(filtered,'payments')"><i
+                                class="fa fa-download"></i> Export CSV</button>
+                    </div>
+                </div>
+                <div class="table-wrapper">
+                    <div class="table-toolbar">
+                        <div class="search-box"><i class="fa fa-search"></i><input type="text" id="searchInput"
+                                placeholder="Search payments..." oninput="applyFilters()"></div>
+                        <div style="display:flex;gap:8px;align-items:center;">
+                            <select id="statusFilter" class="form-control" style="width:160px;padding:7px 10px;"
+                                onchange="applyFilters()">
+                                <option value="">All Statuses</option>
+                                <option>Approved</option>
+                                <option>Under Review</option>
+                                <option>Pending</option>
+                                <option>Rejected</option>
+                            </select>
+                            <span id="countLabel"
+                                style="font-size:.82rem;color:var(--text-muted);white-space:nowrap;"></span>
+                            <div id="totalLabel"
+                                style="background:var(--success-bg);color:var(--success);padding:4px 12px;border-radius:20px;font-weight:700;font-size:.85rem;white-space:nowrap;border:1px solid var(--success);">
+                                Total: ₹0</div>
+                        </div>
+                    </div>
+                    <div class="table-scroll">
+                        <table class="erp-table">
+                            <thead>
+                                <tr>
+                                    <th onclick="sortBy('Manuscript ID')">Payment / Manuscript Details ↕</th>
+                                    <th onclick="sortBy('Amount Paid')">Amount ↕</th>
+                                    <th onclick="sortBy('Mode of Payment')">Mode ↕</th>
+                                    <th onclick="sortBy('Transaction Number')">Transaction No. ↕</th>
+                                    <th onclick="sortBy('Date of Payment')">Date ↕</th>
+                                    <th onclick="sortBy('Status')">Status ↕</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tableBody">
+                                <tr class="loading-row">
+                                    <td colspan="7">
+                                        <div class="spinner"></div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- VIEW MODAL -->
+    <div id="viewModal" class="modal-overlay">
+        <div class="modal modal-lg">
+            <div class="modal-header">
+                <h3><i class="fa fa-info-circle"></i> Payment Details</h3>
+                <button class="modal-close" onclick="closeModal('viewModal')">&times;</button>
+            </div>
+            <div class="modal-body" id="viewDetailsContent"></div>
+            <div class="modal-footer">
+                <button class="btn btn-gray" onclick="closeModal('viewModal')">Close</button>
+                <button id="viewEditBtn" class="btn btn-primary"><i class="fa fa-edit"></i> Edit Payment</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- EDIT MODAL -->
+    <div id="editModal" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h3><i class="fa fa-edit"></i> Edit Payment Record</h3>
+                <button class="modal-close" onclick="closeModal('editModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="editForm">
+                    <input type="hidden" id="editPid">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label">Manuscript ID</label>
+                            <input type="text" id="editManuscriptId" class="form-control" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">First Author Name</label>
+                            <input type="text" id="editAuthorName" class="form-control">
+                        </div>
+                    </div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label">Email</label>
+                            <input type="email" id="editEmail" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Transaction Number</label>
+                            <input type="text" id="editTransaction" class="form-control">
+                        </div>
+                    </div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label">Amount Paid (₹)</label>
+                            <input type="number" id="editAmount" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Payment Mode</label>
+                            <input type="text" id="editMode" class="form-control">
+                        </div>
+                    </div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label">Payment Date</label>
+                            <input type="date" id="editDate" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Invoice No</label>
+                            <input type="text" id="editInvoice" class="form-control">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Status</label>
+                        <select id="editStatus" class="form-control">
+                            <option>Pending</option>
+                            <option>Under Review</option>
+                            <option>Approved</option>
+                            <option>Rejected</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-gray" onclick="closeModal('editModal')">Cancel</button>
+                <button class="btn btn-primary" onclick="savePayment()">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ADD MODAL -->
+    <div id="addModal" class="modal-overlay">
+        <div class="modal modal-lg">
+            <div class="modal-header">
+                <h3><i class="fa fa-plus-circle"></i> Add New Payment Detail</h3>
+                <button class="modal-close" onclick="closeModal('addModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="addForm">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label">Manuscript ID</label>
+                            <input type="text" id="addManuscriptId" class="form-control" placeholder="e.g. SIP20261234">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">First Author Name</label>
+                            <input type="text" id="addAuthorName" class="form-control" placeholder="Full Name">
+                        </div>
+                    </div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label">Email</label>
+                            <input type="email" id="addEmail" class="form-control" placeholder="email@example.com">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Manuscript Title</label>
+                            <input type="text" id="addTitle" class="form-control" placeholder="Paper Title">
+                        </div>
+                    </div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label">Amount Paid (₹)</label>
+                            <input type="number" id="addAmount" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Mode of Payment</label>
+                            <input type="text" id="addMode" class="form-control"
+                                placeholder="GPay / Bank Transfer / UPI">
+                        </div>
+                    </div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label">Date of Payment</label>
+                            <input type="date" id="addDate" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Transaction Number</label>
+                            <input type="text" id="addTransaction" class="form-control"
+                                placeholder="UTR Number / Ref ID">
+                        </div>
+                    </div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label">Publication Type</label>
+                            <input type="text" id="addPubType" class="form-control" placeholder="Journal / Book">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Invoice No</label>
+                            <input type="text" id="addInvoice" class="form-control" placeholder="Invoice Number">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Status</label>
+                        <select id="addStatus" class="form-control">
+                            <option>Pending</option>
+                            <option>Under Review</option>
+                            <option>Approved</option>
+                            <option>Rejected</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-gray" onclick="closeModal('addModal')">Cancel</button>
+                <button class="btn btn-primary" onclick="saveNewPayment()">Save Payment</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast-container"></div>
+    <script src="js/erp-common.js"></script>
+    <script>
+        buildAdminSidebar('payments');
+        let allData = [], filtered = [], sortKey = '', sortAsc = true;
+
+        function sortBy(key) {
+            if (sortKey === key) sortAsc = !sortAsc; else { sortKey = key; sortAsc = true; }
+            applyFilters();
+        }
+
+        async function loadData() {
+            document.getElementById('tableBody').innerHTML = '<tr><td colspan="7"><div class="spinner"></div></td></tr>';
+            const res = await apiGet({ action: 'getPayments' });
+            allData = res.status === 'success' ? res.data : [];
+            applyFilters();
+        }
+
+        function applyFilters() {
+            const q = document.getElementById('searchInput').value.toLowerCase();
+            const sf = document.getElementById('statusFilter').value;
+            filtered = allData.filter(p => {
+                const searchStatus = sf ? sf.toLowerCase().trim() : '';
+                const pStatus = String(p['Status'] || p['Payment Status'] || 'Pending').toLowerCase().trim();
+
+                if (sf && pStatus !== searchStatus) return false;
+
+                if (q) {
+                    const str = JSON.stringify(p).toLowerCase();
+                    if (!str.includes(q)) return false;
+                }
+                return true;
+            });
+
+            if (sortKey) filtered = sortTable(filtered, sortKey, sortAsc);
+
+            const total = filtered.reduce((sum, p) => sum + (parseFloat(p['Amount Paid']) || 0), 0);
+            document.getElementById('totalLabel').textContent = `Total: ₹${total.toLocaleString('en-IN')}`;
+            document.getElementById('countLabel').textContent = filtered.length + ' payment(s)';
+            const tbody = document.getElementById('tableBody');
+            if (!filtered.length) { tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state"><i class="fa fa-credit-card"></i><h4>No payments</h4></div></td></tr>'; return; }
+
+            tbody.innerHTML = filtered.map((p, idx) => {
+                const pid = p['Manuscript ID'] || '';
+                const st = p['Status'] || 'Pending';
+                const isUnread = (p['Read'] || 'No') !== 'Yes';
+                return `<tr style="${isUnread ? 'background-color: #fffbeb; font-weight: 500;' : ''}">
+          <td>
+            <div style="font-weight:700;color:var(--text-muted);font-size:.7rem;margin-bottom:4px;">${pid} ${isUnread ? '<span class="badge badge-danger" style="font-size: .6rem; padding: 1px 4px;">NEW</span>' : ''}</div>
+            <strong style="font-size:.84rem;display:block;margin-bottom:2px;">${p['Manuscript Title'] || '—'}</strong>
+            <div style="font-size:.78rem;color:var(--text-muted);line-height:1.5;">
+                <strong>${p['First Author Name'] || '—'}</strong><br>
+                <i class="fa fa-envelope" style="width:14px;color:var(--accent);"></i> ${p['Email'] || '—'}
+            </div>
+          </td>
+          <td style="font-weight:700;color:var(--success);">₹${p['Amount Paid'] || '—'}</td>
+          <td style="font-size:.8rem;">${p['Mode of Payment'] || '—'}</td>
+          <td style="font-size:.78rem;font-family:monospace;">${p['Transaction Number'] || '—'}</td>
+          <td style="font-size:.78rem;">${fmtDate(p['Date of Payment'])}</td>
+          <td>${statusBadge(st)}</td>
+          <td>
+            <div class="action-wrap">
+              <button class="action-toggle" onclick="toggleActionMenu(this)"><i class="fa fa-ellipsis-v"></i></button>
+              <div class="action-menu">
+                <button onclick="viewPayment(${idx})"><i class="fa fa-eye"></i> View Details</button>
+                <button onclick="editPayment(${idx})"><i class="fa fa-edit"></i> Edit Record</button>
+                <div class="separator"></div>
+                <button onclick="updatePaymentStatus('${pid}','Approved')"><i class="fa fa-check" style="color:var(--success);"></i> Quick Approve</button>
+                <button onclick="updatePaymentStatus('${pid}','Rejected')"><i class="fa fa-times" style="color:var(--danger);"></i> Quick Reject</button>
+              </div>
+            </div>
+          </td>
+        </tr>`;
+            }).join('');
+        }
+
+        function viewPayment(idx) {
+            const p = filtered[idx];
+            let html = '<div class="details-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">';
+            Object.entries(p).forEach(([k, v]) => {
+                let displayKey = k;
+                const lowerK = k.toLowerCase();
+
+                // Rename Invoice Link to Invoice No in display if found
+                if (lowerK === 'invoice link' || lowerK === 'invoice no') {
+                    displayKey = 'Invoice No';
+                    html += `<div class="detail-item">
+                                <label style="display:block;font-size:.7rem;color:var(--text-muted);font-weight:700;text-transform:uppercase;margin-bottom:2px;">${displayKey}</label>
+                                <div style="font-weight:500;">${v || '—'}</div>
+                             </div>`;
+                    return;
+                }
+
+                if (lowerK.includes('proof') && v) {
+                    html += `<div class="detail-item" style="grid-column: span 2;background: #f8fafc;padding: 12px;border-radius: 8px;">
+                                <label style="display:block;font-size:.7rem;color:var(--text-muted);font-weight:700;text-transform:uppercase;margin-bottom:4px;">${k}</label>
+                                <a href="${v}" target="_blank" style="color:var(--accent);font-weight:600;display:flex;align-items:center;gap:8px;">
+                                    <i class="fa fa-file-image"></i> Click to View Document <i class="fa fa-external-link-alt" style="font-size:.7rem;"></i>
+                                </a>
+                             </div>`;
+                } else if (lowerK.includes('link') && v) {
+                    html += `<div class="detail-item">
+                                <label style="display:block;font-size:.7rem;color:var(--text-muted);font-weight:700;text-transform:uppercase;margin-bottom:2px;">${k}</label>
+                                <a href="${v}" target="_blank" style="color:var(--accent);font-weight:600;"><i class="fa fa-external-link-alt"></i> View</a>
+                             </div>`;
+                } else {
+                    html += `<div class="detail-item">
+                                <label style="display:block;font-size:.7rem;color:var(--text-muted);font-weight:700;text-transform:uppercase;margin-bottom:2px;">${k}</label>
+                                <div style="font-weight:500;">${v || '—'}</div>
+                             </div>`;
+                }
+            });
+            html += '</div>';
+            document.getElementById('viewDetailsContent').innerHTML = html;
+
+            // Set edit button action
+            const editBtn = document.getElementById('viewEditBtn');
+            editBtn.onclick = () => {
+                closeModal('viewModal');
+                editPayment(idx);
+            };
+
+            document.getElementById('viewModal').classList.add('show');
+            if ((p['Read'] || 'No') !== 'Yes') markAsRead(p['Manuscript ID']);
+        }
+
+        async function markAsRead(pid) {
+            await apiPost({
+                action: 'updateStatus',
+                sheetName: 'Payment',
+                idColumn: 'Manuscript ID',
+                idValue: pid,
+                updates: { 'Read': 'Yes' }
+            });
+        }
+
+        function editPayment(idx) {
+            const p = filtered[idx];
+            document.getElementById('editPid').value = p['Manuscript ID'] || '';
+            document.getElementById('editManuscriptId').value = p['Manuscript ID'] || '';
+            document.getElementById('editAuthorName').value = p['First Author Name'] || '';
+            document.getElementById('editEmail').value = p['Email'] || '';
+            document.getElementById('editTransaction').value = p['Transaction Number'] || '';
+            document.getElementById('editAmount').value = p['Amount Paid'] || '';
+            document.getElementById('editMode').value = (p['Mode of Payment'] || '').trim();
+            document.getElementById('editInvoice').value = p['Invoice No'] || p['Invoice Number'] || p['Invoice Link'] || '';
+            document.getElementById('editStatus').value = p['Status'] || 'Pending';
+
+            const rawDate = p['Date of Payment'] || '';
+            if (rawDate) {
+                const d = new Date(rawDate);
+                if (!isNaN(d)) document.getElementById('editDate').value = d.toISOString().split('T')[0];
+            }
+
+            document.getElementById('editModal').classList.add('show');
+        }
+
+        function openAddModal() {
+            document.getElementById('addForm').reset();
+            document.getElementById('addDate').value = new Date().toISOString().split('T')[0];
+            document.getElementById('addModal').classList.add('show');
+        }
+
+        async function saveNewPayment() {
+            const data = {
+                'Submitted At': fmtDT(new Date()),
+                'Manuscript ID': document.getElementById('addManuscriptId').value,
+                'First Author Name': document.getElementById('addAuthorName').value,
+                'Email': document.getElementById('addEmail').value,
+                'Manuscript Title': document.getElementById('addTitle').value,
+                'Publication Type': document.getElementById('addPubType').value,
+                'Amount Paid': document.getElementById('addAmount').value,
+                'Mode of Payment': document.getElementById('addMode').value,
+                'Date of Payment': document.getElementById('addDate').value,
+                'Transaction Number': document.getElementById('addTransaction').value,
+                'Invoice No': document.getElementById('addInvoice').value,
+                'Status': document.getElementById('addStatus').value
+            };
+
+            const btn = event.target;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Saving...';
+
+            const res = await apiPost({ action: 'addPayment', data: data });
+            if (res.status === 'success') {
+                showToast('✓ Payment added successfully', 'success');
+                closeModal('addModal');
+                loadData();
+            } else {
+                showToast('Error: ' + res.message, 'error');
+            }
+            btn.disabled = false;
+            btn.innerHTML = 'Save Payment';
+        }
+
+        async function savePayment() {
+            const pid = document.getElementById('editPid').value;
+            const updates = {
+                'First Author Name': document.getElementById('editAuthorName').value,
+                'Email': document.getElementById('editEmail').value,
+                'Amount Paid': document.getElementById('editAmount').value,
+                'Mode of Payment': document.getElementById('editMode').value,
+                'Date of Payment': document.getElementById('editDate').value,
+                'Transaction Number': document.getElementById('editTransaction').value,
+                'Invoice No': document.getElementById('editInvoice').value,
+                'Status': document.getElementById('editStatus').value
+            };
+
+            const btn = event.target;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Saving...';
+
+            const res = await apiPost({ action: 'updateStatus', sheetName: 'Payment', idColumn: 'Manuscript ID', idValue: pid, updates: updates });
+            if (res.status === 'success') {
+                showToast('✓ Payment record updated', 'success');
+                closeModal('editModal');
+                loadData();
+            } else {
+                showToast('Error: ' + res.message, 'error');
+            }
+            btn.disabled = false;
+            btn.innerHTML = 'Save Changes';
+        }
+
+        function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+
+        async function updatePaymentStatus(pid, status) {
+            document.querySelectorAll('.action-menu.open').forEach(m => m.classList.remove('open'));
+            if (!confirm(`Set payment status to "${status}"?`)) return;
+            const res = await apiPost({ action: 'updateStatus', sheetName: 'Payment', idColumn: 'Manuscript ID', idValue: pid, updates: { 'Status': status } });
+            if (res.status === 'success') { showToast('✓ Payment ' + status, 'success'); loadData(); }
+            else showToast('Error: ' + res.message, 'error');
+        }
+
+        loadData();
+    </script>
+</body>
+
+</html>

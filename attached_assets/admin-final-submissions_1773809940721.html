@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Final Submissions — SIP Admin</title>
+    <link rel="icon" href="assets/logo.png" type="image/png">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="css/erp-style.css">
+    <style>
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .comp-card {
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 15px;
+            background: #fff;
+        }
+
+        .comp-header {
+            margin-bottom: 10px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border);
+            font-weight: 700;
+            color: var(--accent);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .comp-body {
+            font-size: 0.85rem;
+        }
+
+        .comp-item {
+            margin-bottom: 8px;
+        }
+
+        .comp-label {
+            font-weight: 600;
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+        }
+
+        .comp-val {
+            font-weight: 500;
+            color: var(--text);
+            word-break: break-all;
+        }
+    </style>
+</head>
+
+<body>
+    <script src="js/erp-common.js"></script>
+    <script>
+        if (sessionStorage.getItem('adminLoggedIn') !== 'true') window.location.href = 'admin-login.html';
+        document.addEventListener('DOMContentLoaded', () => {
+            buildAdminSidebar('final-submissions');
+            loadData();
+        });
+    </script>
+
+    <div class="erp-layout">
+        <main class="erp-main" id="sidebar-target">
+            <!-- Sidebar will be injected here by buildAdminSidebar -->
+            <header class="erp-header">
+                <div class="header-left">
+                    <div class="header-title">Final Submissions Management</div>
+                </div>
+                <div class="header-right" id="header-right">
+                    <!-- Right header tools injected by buildAdminSidebar -->
+                </div>
+            </header>
+
+            <div class="erp-content">
+                <div class="page-header">
+                    <div class="page-header-left">
+                        <h1>Submission Comparison</h1>
+                        <p>Verify Copyright Forms and Final Manuscripts side-by-side.</p>
+                    </div>
+                    <div class="page-header-actions">
+                        <button class="btn btn-gray" onclick="loadData()"><i class="fa fa-sync"></i> Refresh</button>
+                        <button class="btn btn-primary" onclick="exportCSV(filtered,'final_submissions')"><i
+                                class="fa fa-download"></i> Export CSV</button>
+                    </div>
+                </div>
+
+                <div class="table-wrapper">
+                    <div class="table-toolbar">
+                        <div class="search-box">
+                            <i class="fa fa-search"></i>
+                            <input type="text" id="searchInput" placeholder="Search MSID, Title, Author..."
+                                oninput="applyFilters()">
+                        </div>
+                        <div style="display:flex;gap:8px;align-items:center;">
+                            <select id="statusFilter" class="form-control" style="width:180px;"
+                                onchange="applyFilters()">
+                                <option value="">All Applicable</option>
+                                <option value="completed">Ready for Approval</option>
+                                <option value="pending_payment">Pending Payment</option>
+                                <option value="pending_docs">Pending Documents</option>
+                                <option value="approved">Approved for Prod.</option>
+                            </select>
+                            <span id="countLabel" class="td-muted"></span>
+                        </div>
+                    </div>
+
+                    <div class="table-scroll">
+                        <table class="erp-table">
+                            <thead>
+                                <tr>
+                                    <th onclick="sortBy('id')">Manuscript ID ↕</th>
+                                    <th>Manuscript Details</th>
+                                    <th>MS Status</th>
+                                    <th>Payment</th>
+                                    <th>Copyright Form</th>
+                                    <th>Final Paper</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tableBody">
+                                <tr class="loading-row">
+                                    <td colspan="7">
+                                        <div class="spinner"></div> Loading records...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- COMPARISON & APPROVAL MODAL -->
+    <div id="compareModal" class="modal-overlay">
+        <div class="modal modal-lg">
+            <div class="modal-header">
+                <h3><i class="fa fa-clipboard-check"></i> Review & Approve for Production</h3>
+                <button class="modal-close" onclick="closeModal('compareModal')">&times;</button>
+            </div>
+            <div class="modal-body" id="compareBody">
+                <!-- Content injected via JS -->
+            </div>
+            <div class="modal-footer" id="modalFooter">
+                <button class="btn btn-gray" onclick="closeModal('compareModal')">Close</button>
+                <button class="btn btn-success" id="btnApproveProd" style="display:none;"><i
+                        class="fa fa-check-double"></i> Approve for Production</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let allData = [];
+        let filtered = [];
+        let sortCol = 'id';
+        let sortAsc = true;
+
+        async function loadData() {
+            document.getElementById('tableBody').innerHTML = '<tr class="loading-row"><td colspan="7"><div class="spinner"></div> Loading...</td></tr>';
+            try {
+                const res = await apiBatchGet([
+                    { action: 'getManuscripts' },
+                    { action: 'getCopyright' },
+                    { action: 'getFinalPapers' },
+                    { action: 'getPayments' }
+                ]);
+
+                if (res.status === 'success') {
+                    const batch = res.data;
+                    const manuscriptsRes = batch['getManuscripts'];
+                    const copyrightsRes = batch['getCopyright'];
+                    const papersRes = batch['getFinalPapers'];
+                    const paymentsRes = batch['getPayments'];
+
+                    const manuscripts = manuscriptsRes.status === 'success' ? manuscriptsRes.data : [];
+                    const copyrights = copyrightsRes.status === 'success' ? copyrightsRes.data : [];
+                    const papers = papersRes.status === 'success' ? papersRes.data : [];
+                    const payments = paymentsRes.status === 'success' ? paymentsRes.data : [];
+
+                    // Filter manuscripts to only those that are 'Accepted' or 'Complement'
+                    const applicableMs = manuscripts.filter(ms => {
+                        const status = String(ms['Status'] || ms['Status '] || '').toLowerCase().trim();
+                        return status === 'accepted' || status === 'complement';
+                    });
+
+                    // Map all manuscripts and their corresponding final submissions
+                    allData = applicableMs.map(ms => {
+                        const msId = String(ms['Manuscript ID'] || '').trim();
+                        const status = String(ms['Status'] || ms['Status '] || '').trim();
+
+                        const copyright = copyrights.find(c => String(c['Manuscript ID']).trim() === msId);
+                        const paper = papers.find(p => String(p['Manuscript ID']).trim() === msId);
+
+                        // For payments, we look for approved payments or the latest one
+                        const msPayments = payments.filter(p => String(p['Manuscript ID']).trim() === msId);
+                        const approvedPayment = msPayments.find(p => String(p['Status']).toLowerCase() === 'approved');
+                        const payment = approvedPayment || (msPayments.length > 0 ? msPayments[msPayments.length - 1] : null);
+
+                        let isReady = false;
+                        let missingDocs = !copyright || !paper;
+                        let missingPayment = status.toLowerCase() === 'accepted' && (!payment || String(payment['Status']).toLowerCase() !== 'approved');
+
+                        if (!missingDocs && !missingPayment) isReady = true;
+
+                        return {
+                            ...ms,
+                            id: msId,
+                            title: ms['Manuscript Title'] || ms['Manuscript Title '] || 'Untitled',
+                            author: ms['Author Name'] || ms['Author Name '] || 'Unknown',
+                            msStatus: status,
+                            copyright: copyright,
+                            paper: paper,
+                            payment: payment,
+                            isReady: isReady,
+                            isProdApproved: paper && String(paper['Status']).toLowerCase().includes('approved for production')
+                        };
+                    });
+
+                    filtered = [...allData];
+                    applyFilters();
+                } else {
+                    showToast(res.message || 'Failed to load data', 'error');
+                }
+            } catch (err) {
+                console.error(err);
+                showToast('Error connecting to server', 'error');
+            }
+        }
+
+        function applyFilters() {
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            const statusFilter = document.getElementById('statusFilter').value;
+
+            filtered = allData.filter(item => {
+                const matchSearch = item.id.toLowerCase().includes(query) ||
+                    item.title.toLowerCase().includes(query) ||
+                    item.author.toLowerCase().includes(query);
+
+                let matchStatus = true;
+                if (statusFilter === 'completed') matchStatus = item.isReady && !item.isProdApproved;
+                else if (statusFilter === 'approved') matchStatus = item.isProdApproved;
+                else if (statusFilter === 'pending_payment') {
+                    matchStatus = item.msStatus.toLowerCase() === 'accepted' &&
+                        (!item.payment || String(item.payment['Status']).toLowerCase() !== 'approved');
+                }
+                else if (statusFilter === 'pending_docs') {
+                    matchStatus = !item.copyright || !item.paper;
+                }
+
+                return matchSearch && matchStatus;
+            });
+
+            renderTable();
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('tableBody');
+            document.getElementById('countLabel').textContent = `${filtered.length} Manuscripts`;
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="empty-state"><i class="fa fa-folder-open"></i><br>No matching submissions found</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = filtered.map(item => `
+                <tr>
+                    <td>
+                        <div style="font-weight:700;color:var(--text);">${item.id}</div>
+                    </td>
+                    <td>
+                        <div style="font-weight:600;font-size:0.85rem;max-width:250px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${item.title}">${item.title}</div>
+                        <div class="td-muted" style="margin-top:2px;">${item.author}</div>
+                    </td>
+                    <td><span class="badge ${item.msStatus.toLowerCase() === 'complement' ? 'badge-primary' : 'badge-success'}">${item.msStatus}</span></td>
+                    <td>${renderPaymentBadge(item)}</td>
+                    <td>${renderStatusBadge(item.copyright, 'Copyright')}</td>
+                    <td>${renderStatusBadge(item.paper, 'Paper')}</td>
+                    <td>
+                        <button class="btn btn-sm ${item.isProdApproved ? 'btn-success' : (item.isReady ? 'btn-primary' : 'btn-gray')}" 
+                                onclick="openCompare('${item.id}')">
+                            <i class="fa fa-${item.isProdApproved ? 'check-circle' : 'search'}"></i> Review
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function renderPaymentBadge(item) {
+            if (item.msStatus.toLowerCase() === 'complement') {
+                return `<span class="badge" style="background:var(--purple-light);color:var(--purple);font-weight:700;">Exempted</span>`;
+            }
+            if (!item.payment) return `<span class="badge badge-pending">Pending</span>`;
+
+            const status = String(item.payment['Status']).toLowerCase();
+            if (status === 'approved') return `<span class="badge badge-success">Paid</span>`;
+            if (status === 'rejected') return `<span class="badge badge-danger">Rejected</span>`;
+            return `<span class="badge badge-warning">Under Review</span>`;
+        }
+
+        function renderStatusBadge(data, type) {
+            if (!data) return `<span class="badge badge-pending">Missing</span>`;
+
+            // Check if it's the paper and if it's approved for prod
+            const status = String(data['Status'] || '').toLowerCase();
+            if (status.includes('approved for production')) {
+                return `<div style="display:flex; flex-direction:column; gap:4px;">
+                    <span class="badge" style="background:#059669;color:#fff;">Production Ready <i class="fa fa-check"></i></span>
+                    <a href="${data['File Link'] || '#'}" target="_blank" class="td-muted" style="text-decoration:underline;">View File</a>
+                </div>`;
+            }
+
+            const url = data['File Link'] || '#';
+            return `
+                <div style="display:flex; flex-direction:column; gap:4px;">
+                    <span class="badge badge-success">Submitted</span>
+                    <a href="${url}" target="_blank" class="td-muted" style="text-decoration:underline;">
+                        <i class="fa fa-external-link-alt"></i> View File
+                    </a>
+                </div>
+            `;
+        }
+
+        function openCompare(msId) {
+            const item = allData.find(d => d.id === msId);
+            if (!item) return;
+
+            const modalBody = document.getElementById('compareBody');
+
+            // Reconfigure footer
+            const btnApprove = document.getElementById('btnApproveProd');
+
+            // Only show approve button if ALL conditions are met and NOT already approved
+            if (item.isProdApproved) {
+                btnApprove.style.display = 'none';
+                modalBody.innerHTML = `<div style="background:#d1fae5; color:#065f46; padding:12px; border-radius:8px; margin-bottom:15px; font-weight:600; text-align:center;"><i class="fa fa-check-circle"></i> This manuscript has already been approved for production.</div>`;
+            } else if (item.isReady) {
+                btnApprove.style.display = 'inline-flex';
+                btnApprove.onclick = () => approveProduction(msId);
+                modalBody.innerHTML = `<div style="background:#e0f2fe; color:#0369a1; padding:12px; border-radius:8px; margin-bottom:15px; font-weight:600; text-align:center;"><i class="fa fa-info-circle"></i> All requirements met. Ready for production approval.</div>`;
+            } else {
+                btnApprove.style.display = 'none';
+                modalBody.innerHTML = `<div style="background:#fef3c7; color:#92400e; padding:12px; border-radius:8px; margin-bottom:15px; font-weight:600;"><i class="fa fa-exclamation-triangle"></i> Cannot approve yet. Missing requirements:
+                    <ul style="margin:5px 0 0 20px; font-weight:500;">
+                        ${!item.copyright ? '<li>Copyright Form missing</li>' : ''}
+                        ${!item.paper ? '<li>Final Manuscript missing</li>' : ''}
+                        ${item.msStatus.toLowerCase() === 'accepted' && (!item.payment || String(item.payment['Status']).toLowerCase() !== 'approved') ? '<li>Payment pending or missing</li>' : ''}
+                    </ul>
+                </div>`;
+            }
+
+            modalBody.innerHTML += `
+                <div class="comparison-grid" style="${item.msStatus.toLowerCase() === 'accepted' ? 'grid-template-columns: 1fr 1fr 1fr;' : 'grid-template-columns: 1fr 1fr;'}">
+                    
+                    ${item.msStatus.toLowerCase() === 'accepted' ? `
+                    <!-- PAYMENT SIDE -->
+                    <div class="comp-card">
+                        <div class="comp-header">
+                            <i class="fa fa-credit-card"></i> Payment Status
+                        </div>
+                        <div class="comp-body">
+                            ${item.payment ? `
+                                <div class="comp-item"><div class="comp-label">Amount Paid</div><div class="comp-val">₹${item.payment['Amount Paid'] || 'N/A'}</div></div>
+                                <div class="comp-item"><div class="comp-label">Mode</div><div class="comp-val">${item.payment['Mode of Payment'] || 'N/A'}</div></div>
+                                <div class="comp-item"><div class="comp-label">Date</div><div class="comp-val">${fmtDate(item.payment['Date of Payment']) || 'N/A'}</div></div>
+                                <div class="comp-item"><div class="comp-label">Status</div><div class="comp-val">${renderPaymentBadge(item)}</div></div>
+                                ${item.payment['Payment Proof URL'] ? `<div style="margin-top:15px;"><a href="${item.payment['Payment Proof URL']}" target="_blank" class="btn btn-gray btn-sm" style="width:100%;"><i class="fa fa-external-link-alt"></i> View Proof</a></div>` : ''}
+                            ` : `<div style="padding:20px; text-align:center; color:var(--danger); font-weight:600;">Not Submitted</div>`}
+                        </div>
+                    </div>` : ''}
+
+                    <!-- COPYRIGHT SIDE -->
+                    <div class="comp-card">
+                        <div class="comp-header">
+                            <i class="fa fa-file-signature"></i> Copyright Form
+                        </div>
+                        <div class="comp-body">
+                            ${item.copyright ? `
+                                <div class="comp-item">
+                                    <div class="comp-label">Author Name</div>
+                                    <div class="comp-val">${item.copyright['Author Name'] || 'N/A'}</div>
+                                </div>
+                                <div class="comp-item">
+                                    <div class="comp-label">Email</div>
+                                    <div class="comp-val">${item.copyright['Email'] || 'N/A'}</div>
+                                </div>
+                                <div class="comp-item">
+                                    <div class="comp-label">Submitted On</div>
+                                    <div class="comp-val">${fmtDate(item.copyright['Submission Date']) || 'N/A'}</div>
+                                </div>
+                                <div style="margin-top:15px;">
+                                    <a href="${item.copyright['File Link']}" target="_blank" class="btn btn-primary btn-sm" style="width:100%;">
+                                        <i class="fa fa-download"></i> View Form
+                                    </a>
+                                </div>
+                            ` : `<div style="padding:20px; text-align:center; color:var(--danger); font-weight:600;">Not Submitted</div>`}
+                        </div>
+                    </div>
+
+                    <!-- FINAL PAPER SIDE -->
+                    <div class="comp-card">
+                        <div class="comp-header">
+                            <i class="fa fa-file-pdf"></i> Final Manuscript
+                        </div>
+                        <div class="comp-body">
+                            ${item.paper ? `
+                                <div class="comp-item">
+                                    <div class="comp-label">Submitted By</div>
+                                    <div class="comp-val">${item.paper['Author Name'] || 'N/A'}</div>
+                                </div>
+                                <div class="comp-item">
+                                    <div class="comp-label">Contact</div>
+                                    <div class="comp-val">${item.paper['Email'] || 'N/A'}</div>
+                                </div>
+                                <div class="comp-item">
+                                    <div class="comp-label">Submitted On</div>
+                                    <div class="comp-val">${fmtDate(item.paper['Submission Date']) || 'N/A'}</div>
+                                </div>
+                                <div style="margin-top:15px;">
+                                    <a href="${item.paper['File Link']}" target="_blank" class="btn btn-primary btn-sm" style="width:100%;">
+                                        <i class="fa fa-download"></i> View Paper
+                                    </a>
+                                </div>
+                            ` : `<div style="padding:20px; text-align:center; color:var(--danger); font-weight:600;">Not Submitted</div>`}
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('compareModal').classList.add('show');
+        }
+
+        async function approveProduction(msId) {
+            if (!confirm(`Are you sure you want to approve MSID: ${msId} for production? \n\nThis will mark the final paper as Approved for Production.`)) return;
+
+            const btn = document.getElementById('btnApproveProd');
+            btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Approving...';
+            btn.disabled = true;
+
+            try {
+                const res = await apiPost({
+                    action: 'updateStatus',
+                    sheetName: 'Final Paper',
+                    idColumn: 'Manuscript ID',
+                    idValue: msId,
+                    updates: { 'Status': 'Approved for Production' }
+                });
+
+                if (res.status === 'success') {
+                    showToast('Manuscript approved for production!', 'success');
+                    closeModal('compareModal');
+                    loadData(); // refresh the grid
+                } else {
+                    showToast('Error: ' + res.message, 'error');
+                }
+            } catch (err) {
+                console.error(err);
+                showToast('Connection error', 'error');
+            } finally {
+                btn.innerHTML = '<i class="fa fa-check-double"></i> Approve for Production';
+                btn.disabled = false;
+            }
+        }
+
+        function sortBy(col) {
+            if (sortCol === col) sortAsc = !sortAsc;
+            else { sortCol = col; sortAsc = true; }
+
+            filtered.sort((a, b) => {
+                let v1 = a[col] || '';
+                let v2 = b[col] || '';
+                if (typeof v1 === 'string') v1 = v1.toLowerCase();
+                if (typeof v2 === 'string') v2 = v2.toLowerCase();
+                if (v1 < v2) return sortAsc ? -1 : 1;
+                if (v1 > v2) return sortAsc ? 1 : -1;
+                return 0;
+            });
+            renderTable();
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('show');
+        }
+    </script>
+</body>
+
+</html>

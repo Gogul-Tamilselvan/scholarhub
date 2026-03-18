@@ -150,6 +150,7 @@ export default function FinalPaperForm() {
         formData.append(key, String(value));
       });
       formData.append("authors", JSON.stringify(authors));
+      formData.append("manuscriptStatus", manuscriptStatus);
       if (paperFile) {
         formData.append("finalPaper", paperFile);
       }

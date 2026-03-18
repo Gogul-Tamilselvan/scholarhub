@@ -1567,10 +1567,10 @@ export async function appendContactToSheet(contactData: any) {
 
     const submittedAt = contactData.submittedAt || new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
 
-    // Append to Contact sheet
+    // Append to Contact sheet - all fields: SubmittedAt, FirstName, LastName, Email, Phone, EnquiryType, Subject, Message
     await sheets.spreadsheets.values.append({
       spreadsheetId,
-      range: 'Contact!A:E',
+      range: 'Contact!A:H',
       valueInputOption: 'USER_ENTERED',
       requestBody: {
         values: [[
@@ -1579,6 +1579,8 @@ export async function appendContactToSheet(contactData: any) {
           contactData.lastName || '',
           contactData.email || '',
           contactData.phoneNumber || '',
+          contactData.enquiryType || '',
+          contactData.subject || '',
           contactData.message || ''
         ]]
       }

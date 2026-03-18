@@ -761,6 +761,7 @@ Sitemap: ${baseUrl}/sitemap.xml`;
         name,
         email,
         phone,
+        enquiryType,
         subject,
         message
       } = req.body;
@@ -782,6 +783,8 @@ Sitemap: ${baseUrl}/sitemap.xml`;
         lastName,
         email,
         phoneNumber: phone || '',
+        enquiryType: enquiryType || '',
+        subject: subject || '',
         message,
         submittedAt: new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })
       };

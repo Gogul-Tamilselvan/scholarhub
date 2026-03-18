@@ -577,44 +577,64 @@ textarea.form-control { resize: vertical; min-height: 80px; }
 .action-toggle {
   background: none;
   border: 1px solid var(--border);
-  border-radius: 5px;
-  padding: 5px 8px;
+  border-radius: 6px;
+  padding: 5px 10px;
   cursor: pointer;
   color: var(--text-muted);
-  font-size: .8rem;
-  transition: background .15s;
+  font-size: .82rem;
+  transition: background .15s, border-color .15s;
 }
-.action-toggle:hover { background: var(--border); color: var(--text); }
+.action-toggle:hover { background: var(--border); color: var(--text); border-color: var(--text-muted); }
 .action-menu {
   position: absolute;
   right: 0;
-  top: calc(100% + 4px);
+  top: calc(100% + 5px);
   background: var(--bg-card);
   border: 1px solid var(--border);
-  border-radius: 7px;
-  box-shadow: var(--shadow-md);
-  min-width: 160px;
-  z-index: 200;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0,0,0,.12), 0 1px 4px rgba(0,0,0,.06);
+  min-width: 185px;
+  z-index: 300;
   display: none;
   overflow: hidden;
+  padding: 4px 0;
 }
 .action-menu.show { display: block; }
+
+/* Style ALL items inside action-menu (both <a> and <button>) */
+.action-menu a,
+.action-menu button,
 .action-menu-item {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 9px 14px;
+  gap: 9px;
+  padding: 8px 14px;
   font-size: .8rem;
   color: var(--text);
   cursor: pointer;
   transition: background .12s;
   font-weight: 500;
   text-decoration: none;
+  background: none;
+  border: none;
+  width: 100%;
+  text-align: left;
+  font-family: inherit;
+  line-height: 1.4;
+  white-space: nowrap;
 }
-.action-menu-item:hover { background: var(--border); }
-.action-menu-item.danger { color: var(--danger); }
-.action-menu-item.danger:hover { background: #fee2e2; }
-.action-menu-divider { border-top: 1px solid var(--border); margin: 4px 0; }
+.action-menu a:hover,
+.action-menu button:hover,
+.action-menu-item:hover { background: var(--bg); }
+.action-menu a i,
+.action-menu button i,
+.action-menu-item i { width: 14px; text-align: center; flex-shrink: 0; }
+.action-menu-item.danger,
+.action-menu button.danger { color: var(--danger); }
+.action-menu-item.danger:hover,
+.action-menu button.danger:hover { background: #fee2e2; }
+.action-menu-divider,
+.action-menu .separator { border: none; border-top: 1px solid var(--border); margin: 3px 0; padding: 0; height: 0; }
 
 /* ─── CHAT ────────────────────────────────────────────────── */
 .chat-layout {

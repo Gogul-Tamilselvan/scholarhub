@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { FileText, Download, Upload, CheckCircle, Loader2, AlertCircle, CreditCard } from "lucide-react";
+import { FileText, Download, Upload, CheckCircle, Loader2, AlertCircle, CreditCard, Image as ImageIcon } from "lucide-react";
 
 const commerceTemplate = "/downloads/template-sjcm.docx";
 const hssTemplate = "/downloads/template-sjhss.docx";
@@ -54,6 +54,10 @@ export default function FinalPaperForm() {
   const [isFetching, setIsFetching] = useState(false);
   const [authors, setAuthors] = useState([{ name: "", designation: "", affiliation: "", email: "" }]);
   const [manuscriptStatus, setManuscriptStatus] = useState<string>("");
+  const [paymentCompleted, setPaymentCompleted] = useState<"yes" | "no" | "">("");
+  const [paymentNonReason, setPaymentNonReason] = useState<"complementary" | "waiver" | "other" | "">("");
+  const [paymentOtherReason, setPaymentOtherReason] = useState("");
+  const [paymentScreenshot, setPaymentScreenshot] = useState<File | null>(null);
 
   const addAuthor = () => setAuthors([...authors, { name: "", designation: "", affiliation: "", email: "" }]);
   const removeAuthor = (index: number) => setAuthors(authors.filter((_, i) => i !== index));
@@ -151,11 +155,17 @@ export default function FinalPaperForm() {
       });
       formData.append("authors", JSON.stringify(authors));
       formData.append("manuscriptStatus", manuscriptStatus);
+      formData.append("paymentCompleted", paymentCompleted);
+      formData.append("paymentNonReason", paymentNonReason);
+      formData.append("paymentOtherReason", paymentOtherReason);
       if (paperFile) {
         formData.append("finalPaper", paperFile);
       }
       if (copyrightFile) {
         formData.append("copyrightForm", copyrightFile);
+      }
+      if (paymentScreenshot) {
+        formData.append("paymentScreenshot", paymentScreenshot);
       }
 
       // Submit to unified endpoint
@@ -211,13 +221,51 @@ export default function FinalPaperForm() {
       });
       return;
     }
+    if (!paymentCompleted) {
+      toast({
+        title: "Payment Status Required",
+        description: "Please indicate whether payment has been completed.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (paymentCompleted === "yes" && !data.paymentMethod) {
+      toast({
+        title: "Payment Method Required",
+        description: "Please select your payment method.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (paymentCompleted === "yes" && !data.transactionId) {
+      toast({
+        title: "Transaction ID Required",
+        description: "Please enter your transaction ID or reference number.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (paymentCompleted === "no" && !paymentNonReason) {
+      toast({
+        title: "Reason Required",
+        description: "Please select the reason for non-payment.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (paymentCompleted === "no" && paymentNonReason === "other" && !paymentOtherReason.trim()) {
+      toast({
+        title: "Reason Details Required",
+        description: "Please describe the reason for non-payment.",
+        variant: "destructive",
+      });
+      return;
+    }
     setShowConfirmDialog(true);
   };
 
-  const watchPublicationType = form.watch("publicationType");
   const watchConflict = form.watch("conflictOfInterest");
   const watchFunding = form.watch("fundingSupport");
-  const isComplementStatus = manuscriptStatus.includes("complement");
 
   if (submitted) {
     return (
@@ -255,32 +303,31 @@ export default function FinalPaperForm() {
         </div>
 
         {/* Step Indicator */}
-        <div className="flex gap-4 mb-8 overflow-x-auto">
-          {[1, 2, ...(isComplementStatus ? [] : [3])].map((step) => (
+        <div className="flex items-center gap-2 mb-8 overflow-x-auto">
+          {[1, 2, 3].map((step, idx) => (
             <div key={step} className="flex items-center gap-2">
               <button
+                type="button"
                 onClick={() => setCurrentStep(step)}
-                className={`w-10 h-10 rounded-full font-bold flex items-center justify-center transition-colors ${
+                className={`w-10 h-10 rounded-full font-bold flex items-center justify-center transition-colors flex-shrink-0 ${
                   currentStep >= step
                     ? "bg-[#213361] text-white"
                     : "bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400"
                 }`}
               >
-                {step}
+                {currentStep > step ? "✓" : step}
               </button>
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-300 hidden sm:inline">
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300 hidden sm:inline whitespace-nowrap">
                 {step === 1 && "Final Paper"}
-                {step === 2 && "Copyright"}
+                {step === 2 && "Copyright Form"}
                 {step === 3 && "Payment"}
               </span>
+              {idx < 2 && (
+                <div className={`h-0.5 w-8 mx-1 rounded hidden sm:block ${currentStep > step ? "bg-[#213361]" : "bg-gray-200 dark:bg-gray-700"}`} />
+              )}
             </div>
           ))}
         </div>
-        {isComplementStatus && (
-          <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 p-3 rounded-lg mb-4 text-sm text-blue-800 dark:text-blue-300">
-            This manuscript has "Complement" status. Payment details are optional and will be skipped.
-          </div>
-        )}
 
         {showConfirmDialog && (
           <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4">
@@ -297,11 +344,12 @@ export default function FinalPaperForm() {
                   <ul className="text-sm text-green-800 dark:text-green-300 space-y-1">
                     <li>✓ Final Paper (formatted)</li>
                     <li>✓ Copyright Form (signed)</li>
-                    <li>✓ Payment Details</li>
+                    {paymentCompleted === "yes" && <li>✓ Payment Details Provided</li>}
+                    {paymentCompleted === "no" && <li>⚡ Payment Pending — Reason: {paymentNonReason === "complementary" ? "Complementary" : paymentNonReason === "waiver" ? "Waiver" : "Other"}</li>}
                   </ul>
                 </div>
                 <p className="text-gray-700 dark:text-gray-300 mb-6 font-medium text-center">
-                  Confirm submission of all three documents?
+                  Confirm submission of all documents?
                 </p>
                 <div className="flex gap-3">
                   <Button 
@@ -634,17 +682,44 @@ export default function FinalPaperForm() {
 
               <Button
                 type="button"
-                onClick={() => setCurrentStep(2)}
+                onClick={() => {
+                  if (!form.getValues("publicationType")) {
+                    toast({ title: "Required", description: "Please select a journal/publication type.", variant: "destructive" }); return;
+                  }
+                  if (!form.getValues("manuscriptId")) {
+                    toast({ title: "Required", description: "Please enter your Manuscript ID.", variant: "destructive" }); return;
+                  }
+                  if (!form.getValues("articleTitle")) {
+                    toast({ title: "Required", description: "Please enter the article title.", variant: "destructive" }); return;
+                  }
+                  if (!form.getValues("correspondingAuthorName")) {
+                    toast({ title: "Required", description: "Please enter the corresponding author name.", variant: "destructive" }); return;
+                  }
+                  if (!form.getValues("correspondingEmail")) {
+                    toast({ title: "Required", description: "Please enter a valid email address.", variant: "destructive" }); return;
+                  }
+                  if (!form.getValues("correspondingPhone")) {
+                    toast({ title: "Required", description: "Please enter a contact number.", variant: "destructive" }); return;
+                  }
+                  if (!form.getValues("correspondingAuthorAffiliation")) {
+                    toast({ title: "Required", description: "Please enter the affiliation/institution.", variant: "destructive" }); return;
+                  }
+                  if (!form.getValues("correspondingAuthorAddress")) {
+                    toast({ title: "Required", description: "Please enter the address with pin/zip code.", variant: "destructive" }); return;
+                  }
+                  if (!paperFile) {
+                    toast({ title: "Required", description: "Please upload your final paper.", variant: "destructive" }); return;
+                  }
+                  if (authors.some(a => !a.name || !a.designation || !a.affiliation || !a.email)) {
+                    toast({ title: "Required", description: "Please fill in all author details.", variant: "destructive" }); return;
+                  }
+                  setCurrentStep(2);
+                }}
                 className="w-full h-12 bg-[#213361] hover:bg-[#2a4078]"
                 data-testid="button-next-step-1"
               >
                 Continue to Copyright Form →
               </Button>
-              {isComplementStatus && (
-                <p className="text-xs text-gray-600 dark:text-gray-400 text-center mt-2">
-                  After copyright form, you'll complete the submission
-                </p>
-              )}
             </div>
           )}
 
@@ -852,32 +927,28 @@ export default function FinalPaperForm() {
                 >
                   ← Back to Final Paper
                 </Button>
-                {isComplementStatus ? (
-                  <Button
-                    type="submit"
-                    className="flex-1 h-12 bg-green-600 hover:bg-green-700"
-                    disabled={submitMutation.isPending}
-                    data-testid="button-submit-complement"
-                  >
-                    {submitMutation.isPending ? (
-                      <>
-                        <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                        Submitting...
-                      </>
-                    ) : (
-                      "Submit All Documents"
-                    )}
-                  </Button>
-                ) : (
-                  <Button
-                    type="button"
-                    onClick={() => setCurrentStep(3)}
-                    className="flex-1 bg-[#213361] hover:bg-[#2a4078]"
-                    data-testid="button-next-step-2"
-                  >
-                    Continue to Payment →
-                  </Button>
-                )}
+                <Button
+                  type="button"
+                  onClick={() => {
+                    if (!form.getValues("conflictOfInterest")) {
+                      toast({ title: "Required", description: "Please indicate conflict of interest status.", variant: "destructive" }); return;
+                    }
+                    if (!form.getValues("fundingSupport")) {
+                      toast({ title: "Required", description: "Please indicate funding support status.", variant: "destructive" }); return;
+                    }
+                    if (!form.getValues("agreementAccepted")) {
+                      toast({ title: "Required", description: "Please accept the license agreement.", variant: "destructive" }); return;
+                    }
+                    if (!copyrightFile) {
+                      toast({ title: "Required", description: "Please upload the signed copyright form.", variant: "destructive" }); return;
+                    }
+                    setCurrentStep(3);
+                  }}
+                  className="flex-1 bg-[#213361] hover:bg-[#2a4078]"
+                  data-testid="button-next-step-2"
+                >
+                  Continue to Payment →
+                </Button>
               </div>
             </div>
           )}
@@ -890,90 +961,207 @@ export default function FinalPaperForm() {
                   <div className="flex items-start gap-3">
                     <CreditCard className="w-5 h-5 text-blue-600 mt-0.5" />
                     <div>
-                      <p className="font-semibold text-blue-800 dark:text-blue-300">Payment Information</p>
-                      <p className="text-sm text-blue-700 dark:text-blue-400 mt-2">
-                        Confirm your payment method and provide transaction details. Payment should be made according to the APC rates for your manuscript.
+                      <p className="font-semibold text-blue-800 dark:text-blue-300">Article Processing Charge (APC)</p>
+                      <p className="text-sm text-blue-700 dark:text-blue-400 mt-1">
+                        Please confirm whether you have completed the Article Processing Charge payment. For APC rates, 
+                        <button type="button" onClick={() => window.open("/publication-payment", "_blank")} className="underline font-medium ml-1">view payment details</button>.
                       </p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
+              {/* Yes/No Payment Completed */}
               <Card>
-                <CardHeader>
-                  <CardTitle>Payment Details</CardTitle>
+                <CardHeader className="bg-[#213361] rounded-t-lg overflow-hidden">
+                  <CardTitle className="text-white flex items-center gap-2">
+                    <CreditCard className="w-5 h-5" />
+                    Have you completed the payment?
+                  </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="space-y-2">
-                    <Label>Payment Method</Label>
-                    <Select
-                      value={form.watch("paymentMethod")}
-                      onValueChange={(value) => form.setValue("paymentMethod", value)}
+                <CardContent className="pt-6">
+                  <div className="flex gap-4">
+                    <button
+                      type="button"
+                      onClick={() => setPaymentCompleted("yes")}
+                      className={`flex-1 py-4 px-6 rounded-lg border-2 font-semibold text-sm transition-all ${
+                        paymentCompleted === "yes"
+                          ? "border-green-500 bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400"
+                          : "border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-green-300"
+                      }`}
+                      data-testid="button-payment-yes"
                     >
-                      <SelectTrigger data-testid="select-payment-method">
-                        <SelectValue placeholder="Select payment method" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="bank_transfer">Bank Transfer (NEFT/IMPS/RTGS)</SelectItem>
-                        <SelectItem value="upi">UPI Payment</SelectItem>
-                        <SelectItem value="credit_card">Credit/Debit Card</SelectItem>
-                        <SelectItem value="other">Other</SelectItem>
-                      </SelectContent>
-                    </Select>
+                      <div className="text-2xl mb-1">{paymentCompleted === "yes" ? "✅" : "○"}</div>
+                      Yes, Payment Completed
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPaymentCompleted("no")}
+                      className={`flex-1 py-4 px-6 rounded-lg border-2 font-semibold text-sm transition-all ${
+                        paymentCompleted === "no"
+                          ? "border-amber-500 bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400"
+                          : "border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-amber-300"
+                      }`}
+                      data-testid="button-payment-no"
+                    >
+                      <div className="text-2xl mb-1">{paymentCompleted === "no" ? "⏳" : "○"}</div>
+                      No, Not Yet Paid
+                    </button>
                   </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="transactionId">Transaction ID / Reference Number</Label>
-                    <Input
-                      id="transactionId"
-                      data-testid="input-transaction-id"
-                      placeholder="Enter your transaction ID or reference number"
-                      {...form.register("transactionId")}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="paymentNotes">Additional Notes (Optional)</Label>
-                    <Textarea
-                      id="paymentNotes"
-                      data-testid="input-payment-notes"
-                      placeholder="Any additional information regarding your payment..."
-                      {...form.register("paymentNotes")}
-                    />
-                  </div>
-
-                  <Card className="bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-                    <CardContent className="pt-6">
-                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
-                        For payment instructions and APC rates, please visit:
-                      </p>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="w-full"
-                        onClick={() => window.open("/publication-payment", "_blank")}
-                        data-testid="button-payment-page"
-                      >
-                        View Payment Details & Instructions
-                      </Button>
-                    </CardContent>
-                  </Card>
                 </CardContent>
               </Card>
 
-              <Card className="border-green-200 dark:border-green-800 bg-green-50/50 dark:bg-green-950/20">
-                <CardContent className="pt-6">
-                  <div className="space-y-3">
-                    <p className="font-semibold text-green-800 dark:text-green-300">Submission Summary:</p>
-                    <ul className="text-sm text-green-700 dark:text-green-400 space-y-2">
+              {/* IF YES: Payment Details Form */}
+              {paymentCompleted === "yes" && (
+                <Card className="border-green-200 dark:border-green-800">
+                  <CardHeader className="bg-[#213361] rounded-t-lg overflow-hidden">
+                    <CardTitle className="text-white">Payment Details</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-5 pt-6">
+                    <div className="space-y-2">
+                      <Label>Payment Method *</Label>
+                      <Select
+                        value={form.watch("paymentMethod")}
+                        onValueChange={(value) => form.setValue("paymentMethod", value)}
+                      >
+                        <SelectTrigger data-testid="select-payment-method">
+                          <SelectValue placeholder="Select payment method" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="bank_transfer">Bank Transfer (NEFT / IMPS / RTGS)</SelectItem>
+                          <SelectItem value="upi">UPI Payment</SelectItem>
+                          <SelectItem value="credit_card">Credit / Debit Card</SelectItem>
+                          <SelectItem value="demand_draft">Demand Draft</SelectItem>
+                          <SelectItem value="other">Other</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="transactionId">Transaction ID / Reference Number *</Label>
+                      <Input
+                        id="transactionId"
+                        data-testid="input-transaction-id"
+                        placeholder="Enter your transaction ID or reference number"
+                        {...form.register("transactionId")}
+                      />
+                    </div>
+
+                    {/* Payment Screenshot Upload */}
+                    <div className="space-y-2">
+                      <Label>Payment Screenshot / Proof *</Label>
+                      <div className="border-2 border-dashed border-green-300 dark:border-green-700 rounded-lg p-5 text-center bg-green-50/30 dark:bg-green-950/10">
+                        <Input
+                          type="file"
+                          accept=".jpg,.jpeg,.png,.pdf"
+                          onChange={(e) => setPaymentScreenshot(e.target.files?.[0] || null)}
+                          className="hidden"
+                          id="payment-screenshot"
+                          data-testid="input-payment-screenshot"
+                        />
+                        <label htmlFor="payment-screenshot" className="cursor-pointer">
+                          <ImageIcon className="w-9 h-9 mx-auto text-green-600 mb-2" />
+                          <p className="text-sm font-medium text-green-700 dark:text-green-400">
+                            {paymentScreenshot ? paymentScreenshot.name : "Click to upload payment screenshot"}
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            JPG, PNG or PDF (Max 5MB)
+                          </p>
+                        </label>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="paymentNotes">Additional Notes (Optional)</Label>
+                      <Textarea
+                        id="paymentNotes"
+                        data-testid="input-payment-notes"
+                        placeholder="Any additional information regarding your payment..."
+                        {...form.register("paymentNotes")}
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* IF NO: Reason for Non-Payment */}
+              {paymentCompleted === "no" && (
+                <Card className="border-amber-200 dark:border-amber-800">
+                  <CardHeader className="bg-[#213361] rounded-t-lg overflow-hidden">
+                    <CardTitle className="text-white">Reason for Non-Payment</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-5 pt-6">
+                    <div className="space-y-2">
+                      <Label>Please select the reason *</Label>
+                      <div className="space-y-3">
+                        {[
+                          { value: "complementary", label: "Complementary Publication", desc: "Manuscript granted complementary/waived publication" },
+                          { value: "waiver", label: "APC Waiver Approved", desc: "Waiver approved by editorial team" },
+                          { value: "other", label: "Other Reason", desc: "Please specify below" },
+                        ].map((option) => (
+                          <button
+                            key={option.value}
+                            type="button"
+                            onClick={() => setPaymentNonReason(option.value as any)}
+                            className={`w-full text-left p-4 rounded-lg border-2 transition-all ${
+                              paymentNonReason === option.value
+                                ? "border-[#213361] bg-[#213361]/5 dark:bg-[#213361]/10"
+                                : "border-gray-200 dark:border-gray-700 hover:border-gray-300"
+                            }`}
+                            data-testid={`button-reason-${option.value}`}
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className={`w-4 h-4 rounded-full border-2 flex-shrink-0 ${
+                                paymentNonReason === option.value
+                                  ? "border-[#213361] bg-[#213361]"
+                                  : "border-gray-300 dark:border-gray-600"
+                              }`} />
+                              <div>
+                                <p className="font-semibold text-sm text-gray-900 dark:text-gray-100">{option.label}</p>
+                                <p className="text-xs text-muted-foreground">{option.desc}</p>
+                              </div>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* If Other: text field */}
+                    {paymentNonReason === "other" && (
+                      <div className="space-y-2">
+                        <Label htmlFor="paymentOtherReason">Please describe the reason *</Label>
+                        <Textarea
+                          id="paymentOtherReason"
+                          data-testid="input-payment-other-reason"
+                          placeholder="Describe the reason why payment has not been completed..."
+                          value={paymentOtherReason}
+                          onChange={(e) => setPaymentOtherReason(e.target.value)}
+                          rows={3}
+                        />
+                      </div>
+                    )}
+
+                    <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg p-3 text-sm text-amber-800 dark:text-amber-300">
+                      Your submission will be recorded and our editorial team will review the payment status before processing.
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Submission Summary */}
+              {paymentCompleted && (
+                <Card className="border-green-200 dark:border-green-800 bg-green-50/50 dark:bg-green-950/20">
+                  <CardContent className="pt-5">
+                    <p className="font-semibold text-green-800 dark:text-green-300 mb-3">Ready to Submit:</p>
+                    <ul className="text-sm text-green-700 dark:text-green-400 space-y-1">
                       <li>✓ Final Paper uploaded and formatted</li>
                       <li>✓ Copyright form signed and uploaded</li>
                       <li>✓ All declarations completed</li>
-                      <li>✓ Payment information provided</li>
+                      <li>{paymentCompleted === "yes" ? "✓ Payment details provided" : "⚡ Payment pending — reason recorded"}</li>
                     </ul>
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              )}
 
               <div className="flex gap-3">
                 <Button

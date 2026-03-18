@@ -1,93 +1,175 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ERP Setup — Scholar India Publishers</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-  <link rel="stylesheet" href="css/erp-style.css">
-</head>
-<body>
-  <div class="login-page">
-    <div class="login-box" style="max-width:520px;">
-      <div class="login-brand">
-        <h2 style="font-size:1.3rem;">ERP Backend Setup</h2>
-        <p>Configure your Google Apps Script web app URL</p>
-      </div>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ERP Setup — Scholar India Publishers</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
+    <link rel="stylesheet" href="css/erp-style.css" />
+  </head>
+  <body>
+    <div class="login-page">
+      <div class="login-box" style="max-width: 520px">
+        <div class="login-brand">
+          <h2 style="font-size: 1.3rem">ERP Backend Setup</h2>
+          <p>Configure your Google Apps Script web app URL</p>
+        </div>
 
-      <div style="background:#dbeafe;border-radius:8px;padding:16px;margin-bottom:20px;font-size:.8rem;color:#1d4ed8;">
-        <strong><i class="fa fa-info-circle"></i> Setup Instructions:</strong>
-        <ol style="margin:8px 0 0;padding-left:16px;line-height:2;">
-          <li>Open Google Apps Script (script.google.com)</li>
-          <li>Create a new project and paste the <code>backend.gs</code> code</li>
-          <li>Update the <code>SHEET_ID</code> constant with your Google Sheet ID</li>
-          <li>Click Deploy → New Deployment → Web App</li>
-          <li>Set "Execute as" = Me, "Who has access" = Anyone</li>
-          <li>Copy the Web App URL and paste it below</li>
-        </ol>
-      </div>
+        <div
+          style="
+            background: #dbeafe;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 20px;
+            font-size: 0.8rem;
+            color: #1d4ed8;
+          "
+        >
+          <strong><i class="fa fa-info-circle"></i> Setup Instructions:</strong>
+          <ol style="margin: 8px 0 0; padding-left: 16px; line-height: 2">
+            <li>Open Google Apps Script (script.google.com)</li>
+            <li>
+              Create a new project and paste the <code>backend.gs</code> code
+            </li>
+            <li>
+              Update the <code>SHEET_ID</code> constant with your Google Sheet
+              ID
+            </li>
+            <li>Click Deploy → New Deployment → Web App</li>
+            <li>Set "Execute as" = Me, "Who has access" = Anyone</li>
+            <li>Copy the Web App URL and paste it below</li>
+          </ol>
+        </div>
 
-      <div class="form-group">
-        <label class="form-label">Google Apps Script Web App URL</label>
-        <input type="url" id="webAppUrl" class="form-control" placeholder="https://script.google.com/macros/s/..." value="https://script.google.com/macros/s/AKfycbzxOlBhBgX3j-VmjjPfo2CwbbeHLJEex3m5OPjTKLYnnf91D7sD9zi2sPByNfI2HZW8/exec">
-        <div style="font-size:.73rem;color:var(--text-muted);margin-top:4px;">This URL is stored in your browser's local storage and is only accessible on this device.</div>
-      </div>
+        <div class="form-group">
+          <label class="form-label">Google Apps Script Web App URL</label>
+          <input
+            type="url"
+            id="webAppUrl"
+            class="form-control"
+            placeholder="https://script.google.com/macros/s/..."
+            value="https://script.google.com/macros/s/AKfycbzxOlBhBgX3j-VmjjPfo2CwbbeHLJEex3m5OPjTKLYnnf91D7sD9zi2sPByNfI2HZW8/exec"
+          />
+          <div
+            style="
+              font-size: 0.73rem;
+              color: var(--text-muted);
+              margin-top: 4px;
+            "
+          >
+            This URL is stored in your browser's local storage and is only
+            accessible on this device.
+          </div>
+        </div>
 
-      <div id="testResult" style="display:none;margin-bottom:16px;"></div>
+        <div id="testResult" style="display: none; margin-bottom: 16px"></div>
 
-      <div style="display:flex;gap:10px;">
-        <button class="btn btn-gray" style="flex:1;" onclick="testConnection()"><i class="fa fa-plug"></i> Test Connection</button>
-        <button class="btn btn-primary" style="flex:1;" onclick="saveUrl()"><i class="fa fa-save"></i> Save & Continue</button>
-      </div>
+        <div style="display: flex; gap: 10px">
+          <button
+            class="btn btn-gray"
+            style="flex: 1"
+            onclick="testConnection()"
+          >
+            <i class="fa fa-plug"></i> Test Connection
+          </button>
+          <button class="btn btn-primary" style="flex: 1" onclick="saveUrl()">
+            <i class="fa fa-save"></i> Save & Continue
+          </button>
+        </div>
 
-      <div style="text-align:center;margin-top:20px;padding-top:16px;border-top:1px solid var(--border);">
-        <a href="admin-login.html" style="color:var(--text-muted);font-size:.78rem;text-decoration:none;">
-          <i class="fa fa-arrow-right"></i> Go to Admin Login
-        </a>
-        &nbsp;·&nbsp;
-        <a href="member-login.html" style="color:var(--text-muted);font-size:.78rem;text-decoration:none;">
-          Member Login
-        </a>
+        <div
+          style="
+            text-align: center;
+            margin-top: 20px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+          "
+        >
+          <a
+            href="admin-login.html"
+            style="
+              color: var(--text-muted);
+              font-size: 0.78rem;
+              text-decoration: none;
+            "
+          >
+            <i class="fa fa-arrow-right"></i> Go to Admin Login
+          </a>
+          &nbsp;·&nbsp;
+          <a
+            href="member-login.html"
+            style="
+              color: var(--text-muted);
+              font-size: 0.78rem;
+              text-decoration: none;
+            "
+          >
+            Member Login
+          </a>
+        </div>
       </div>
     </div>
-  </div>
 
-  <div id="toast-container"></div>
-  <script src="js/erp-common.js"></script>
-  <script>
-    // Load existing URL
-    const saved = localStorage.getItem('erp_webapp_url');
-    if (saved) document.getElementById('webAppUrl').value = saved;
+    <div id="toast-container"></div>
+    <script src="js/erp-common.js"></script>
+    <script>
+      // Load existing URL
+      const saved = localStorage.getItem("erp_webapp_url");
+      if (saved) document.getElementById("webAppUrl").value = saved;
 
-    async function testConnection() {
-      const url = document.getElementById('webAppUrl').value.trim();
-      if (!url) { showToast('Enter a URL first', 'warning'); return; }
-      const result = document.getElementById('testResult');
-      result.style.display = 'block';
-      result.innerHTML = '<div style="background:#f1f5f9;border-radius:6px;padding:10px 14px;font-size:.8rem;"><div class="spinner"></div> Testing connection...</div>';
-      try {
-        const qs = new URLSearchParams({ action: 'getManuscripts' }).toString();
-        const res = await fetch(url + '?' + qs, { method: 'GET', redirect: 'follow' });
-        const data = await res.json();
-        if (data.status === 'success') {
-          result.innerHTML = '<div style="background:#dcfce7;border-radius:6px;padding:10px 14px;font-size:.8rem;color:#15803d;"><i class="fa fa-check-circle"></i> Connection successful! Found ' + (data.data?.length || 0) + ' records.</div>';
-        } else {
-          result.innerHTML = `<div style="background:#fee2e2;border-radius:6px;padding:10px 14px;font-size:.8rem;color:#b91c1c;"><i class="fa fa-exclamation-circle"></i> ${data.message || 'Unknown error'}</div>`;
+      async function testConnection() {
+        const url = document.getElementById("webAppUrl").value.trim();
+        if (!url) {
+          showToast("Enter a URL first", "warning");
+          return;
         }
-      } catch (ex) {
-        result.innerHTML = `<div style="background:#fee2e2;border-radius:6px;padding:10px 14px;font-size:.8rem;color:#b91c1c;"><i class="fa fa-exclamation-circle"></i> Connection failed: ${ex.message}</div>`;
+        const result = document.getElementById("testResult");
+        result.style.display = "block";
+        result.innerHTML =
+          '<div style="background:#f1f5f9;border-radius:6px;padding:10px 14px;font-size:.8rem;"><div class="spinner"></div> Testing connection...</div>';
+        try {
+          const qs = new URLSearchParams({
+            action: "getManuscripts",
+          }).toString();
+          const res = await fetch(url + "?" + qs, {
+            method: "GET",
+            redirect: "follow",
+          });
+          const data = await res.json();
+          if (data.status === "success") {
+            result.innerHTML =
+              '<div style="background:#dcfce7;border-radius:6px;padding:10px 14px;font-size:.8rem;color:#15803d;"><i class="fa fa-check-circle"></i> Connection successful! Found ' +
+              (data.data?.length || 0) +
+              " records.</div>";
+          } else {
+            result.innerHTML = `<div style="background:#fee2e2;border-radius:6px;padding:10px 14px;font-size:.8rem;color:#b91c1c;"><i class="fa fa-exclamation-circle"></i> ${data.message || "Unknown error"}</div>`;
+          }
+        } catch (ex) {
+          result.innerHTML = `<div style="background:#fee2e2;border-radius:6px;padding:10px 14px;font-size:.8rem;color:#b91c1c;"><i class="fa fa-exclamation-circle"></i> Connection failed: ${ex.message}</div>`;
+        }
       }
-    }
 
-    function saveUrl() {
-      const url = document.getElementById('webAppUrl').value.trim();
-      if (!url) { showToast('Enter a URL', 'warning'); return; }
-      if (!url.startsWith('https://script.google.com/')) { showToast('URL must be a Google Apps Script URL', 'warning'); return; }
-      localStorage.setItem('erp_webapp_url', url);
-      showToast('Web App URL saved!', 'success');
-      setTimeout(() => window.location.href = 'admin-login.html', 1000);
-    }
-  </script>
-</body>
+      function saveUrl() {
+        const url = document.getElementById("webAppUrl").value.trim();
+        if (!url) {
+          showToast("Enter a URL", "warning");
+          return;
+        }
+        if (!url.startsWith("https://script.google.com/")) {
+          showToast("URL must be a Google Apps Script URL", "warning");
+          return;
+        }
+        localStorage.setItem("erp_webapp_url", url);
+        showToast("Web App URL saved!", "success");
+        setTimeout(() => (window.location.href = "admin-login.html"), 1000);
+      }
+    </script>
+  </body>
 </html>

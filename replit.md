@@ -51,6 +51,7 @@ Preferred communication style: Simple, everyday language.
 - **Permanent URLs**: Stable landing pages for issues, articles, and PDFs.
 - **Services Offered**: Book Publication (with DOI, ISBN), Conference & Seminars (special issue publication), and Other Services (editing, plagiarism check, translation).
 - **Reviewer/Editor System**: Application system, Admin Dashboard for manuscript assignment (auto/manual, due dates), reviewer management, tracking, comprehensive 4-part peer review form (Part 1: Review Comments, Part 2: Ethics & Integrity, Part 3: Declaration, Part 4: Objective Evaluation with recommendation dropdown), approval workflow, password management. Reviewer and Editor dashboards display assigned manuscripts, performance metrics, deadlines, and a messaging system.
+- **Final Submission Workflow**: Unified 3-step submission form (`/final-paper`, `/copyright-form` both route to FinalPaperForm.tsx) combining: Step 1 (Final Paper Submission with author details and manuscript upload), Step 2 (Copyright Form with ethics declarations, conflict of interest, funding information, and signed copyright form upload), Step 3 (Payment Details with method, transaction ID). Single endpoint `/api/final-paper-unified` records to both Final Paper and Copyright sheets, handles multi-file uploads, and records payment information.
 - **APC & Payment**: Clear pricing for Indian and International authors with payment submission form.
 - **Contact & Communication**: Contact form with automated email confirmation.
 - **Email Automation**: Specific confirmation emails for submissions and inquiries.
@@ -63,6 +64,7 @@ Preferred communication style: Simple, everyday language.
 - **User Deactivation**: Admin portal feature to deactivate reviewers/editors, updating status in Google Sheets.
 - **Admin Dashboard**: Features CSV export for various data, enforces max 3 reviewers per manuscript, shows full review details before decision, includes reviewer performance tab, and offers reminder/revoke options for assignments.
 - **ID Generation**: Auto-generated IDs for Manuscript, Editor, and Reviewer with a new format including month (e.g., MANSJCM251200AB).
+- **UI Color Consistency**: All page hero/banner sections use navy blue (`bg-[#213361]`), all card headers use navy blue with white text, info boxes use neutral gray (`bg-gray-50 dark:bg-gray-800`), brand accent boxes use navy with low opacity (`bg-[#213361]/5 dark:bg-[#213361]/10`).
 
 ## External Dependencies
 

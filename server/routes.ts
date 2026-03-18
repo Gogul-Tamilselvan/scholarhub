@@ -3533,6 +3533,11 @@ Sitemap: ${protocol}://${domain}/sitemap.xml
     limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
   });
 
+  const unifiedFormUpload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
+  });
+
   // Get Manuscript details by ID
   app.get('/api/manuscripts/:id', async (req: Request, res: Response) => {
     try {
@@ -3602,6 +3607,172 @@ Sitemap: ${protocol}://${domain}/sitemap.xml
       res.json({ success: true });
     } catch (error: any) {
       res.status(500).json({ message: 'Error checking manuscript' });
+    }
+  });
+
+  // Unified Final Paper + Copyright + Payment Submission
+  app.post('/api/final-paper-unified', unifiedFormUpload.fields([
+    { name: 'finalPaper', maxCount: 1 },
+    { name: 'copyrightForm', maxCount: 1 }
+  ]), async (req: Request, res: Response) => {
+    try {
+      const {
+        publicationType,
+        manuscriptId,
+        articleTitle,
+        correspondingAuthorName,
+        correspondingEmail,
+        correspondingPhone,
+        correspondingAuthorAddress,
+        correspondingAuthorAffiliation,
+        supportingAuthors,
+        revisionNotes,
+        conflictOfInterest,
+        conflictDetails,
+        fundingSupport,
+        fundingDetails,
+        agreementAccepted,
+        paymentMethod,
+        transactionId,
+        paymentNotes,
+        authors
+      } = req.body;
+
+      // Validate required fields
+      if (!publicationType || !manuscriptId || !articleTitle || !correspondingAuthorName || 
+          !correspondingEmail || !correspondingPhone || !correspondingAuthorAddress || !correspondingAuthorAffiliation) {
+        return res.status(400).json({ success: false, message: 'Missing required fields' });
+      }
+
+      const files = req.files as { [fieldname: string]: Express.Multer.File[] } || {};
+      const finalPaperFile = files.finalPaper?.[0];
+      const copyrightFormFile = files.copyrightForm?.[0];
+
+      if (!finalPaperFile) {
+        return res.status(400).json({ success: false, message: 'Final paper file is required' });
+      }
+
+      if (!copyrightFormFile) {
+        return res.status(400).json({ success: false, message: 'Copyright form file is required' });
+      }
+
+      // Parse authors if provided
+      let authorsList = [];
+      try {
+        authorsList = authors ? JSON.parse(authors) : [];
+      } catch (e) {
+        console.error('Error parsing authors:', e);
+      }
+
+      // Combine authors into a single string for Google Sheets
+      const combinedAuthors = authorsList.map((a: any) => `${a.name} (${a.affiliation}, ${a.email})`).join('; ');
+
+      // Upload files to Google Drive
+      let paperFileUrl = '';
+      let copyrightFileUrl = '';
+      
+      const { uploadFileToGoogleDrive } = await import('./google-drive-client');
+      
+      try {
+        const paperResult = await uploadFileToGoogleDrive({
+          buffer: finalPaperFile.buffer,
+          originalname: `FinalPaper_${manuscriptId}_${Date.now()}.${finalPaperFile.originalname.split('.').pop()}`,
+          mimetype: finalPaperFile.mimetype
+        });
+        paperFileUrl = paperResult.url || paperResult.id || '';
+      } catch (driveError: any) {
+        console.warn('Failed to upload final paper to Drive:', driveError?.message || driveError);
+        paperFileUrl = 'Upload pending - Drive error';
+      }
+
+      try {
+        const copyrightResult = await uploadFileToGoogleDrive({
+          buffer: copyrightFormFile.buffer,
+          originalname: `Copyright_${manuscriptId}_${Date.now()}.${copyrightFormFile.originalname.split('.').pop()}`,
+          mimetype: copyrightFormFile.mimetype
+        });
+        copyrightFileUrl = copyrightResult.url || copyrightResult.id || '';
+      } catch (driveError: any) {
+        console.warn('Failed to upload copyright form to Drive:', driveError?.message || driveError);
+        copyrightFileUrl = 'Upload pending - Drive error';
+      }
+
+      // Map publication type to readable name
+      const publicationTypeMap: Record<string, string> = {
+        'sjcm': 'Scholar Journal of Commerce and Management',
+        'sjhss': 'Scholar Journal of Humanities and Social Sciences',
+        'book': 'Book / Book Chapter'
+      };
+
+      // Record in Google Sheets
+      const { appendToSheet } = await import('./google-sheets-client');
+
+      // Record to Final Paper sheet
+      try {
+        await appendToSheet('Final Paper', [
+          new Date().toISOString(),
+          manuscriptId,
+          publicationTypeMap[publicationType] || publicationType,
+          articleTitle,
+          combinedAuthors || correspondingAuthorName,
+          correspondingEmail,
+          correspondingPhone,
+          revisionNotes || '',
+          paperFileUrl,
+          'Submitted'
+        ]);
+      } catch (sheetError: any) {
+        console.error('Failed to record final paper in Google Sheets:', sheetError?.message);
+      }
+
+      // Record to Copyright sheet
+      try {
+        await appendToSheet('Copyright', [
+          new Date().toISOString(),
+          manuscriptId,
+          publicationTypeMap[publicationType] || publicationType,
+          articleTitle,
+          correspondingAuthorName,
+          correspondingAuthorAffiliation,
+          correspondingAuthorAddress,
+          supportingAuthors || '',
+          correspondingEmail,
+          correspondingPhone,
+          conflictOfInterest === 'yes' ? 'Yes' : 'No',
+          conflictDetails || '',
+          fundingSupport === 'yes' ? 'Yes' : 'No',
+          fundingDetails || '',
+          agreementAccepted === 'true' ? 'Accepted' : 'Not Accepted',
+          copyrightFileUrl,
+          'Submitted'
+        ]);
+      } catch (sheetError: any) {
+        console.error('Failed to record copyright form in Google Sheets:', sheetError?.message);
+      }
+
+      // Record payment information if provided
+      if (paymentMethod || transactionId) {
+        try {
+          await appendToSheet('Payment', [
+            new Date().toISOString(),
+            manuscriptId,
+            correspondingAuthorName,
+            correspondingEmail,
+            paymentMethod || '',
+            transactionId || '',
+            paymentNotes || '',
+            'Submitted'
+          ]);
+        } catch (sheetError: any) {
+          console.error('Failed to record payment in Google Sheets:', sheetError?.message);
+        }
+      }
+
+      console.log(`✅ Unified submission completed for manuscript: ${manuscriptId}`);
+      res.json({ success: true, message: 'All documents submitted successfully' });
+    } catch (error: any) {
+      console.error('Error submitting unified form:', error);
+      res.status(500).json({ success: false, message: error.message });
     }
   });
 

@@ -32,7 +32,6 @@ import EditorDashboard from "@/pages/EditorDashboard";
 import EditorProfile from "@/pages/EditorProfile";
 import AdminLogin from "@/pages/AdminLogin";
 import AdminDashboard from "@/pages/AdminDashboard";
-import CopyrightForm from "@/pages/CopyrightForm";
 import FinalPaperForm from "@/pages/FinalPaperForm";
 
 function ScrollToTop() {
@@ -75,7 +74,7 @@ function Router() {
       <Route path="/admin/dashboard" component={AdminDashboard} />
       <Route path="/admin/certificate-editor" component={AdminCertificateEditor} />
       <Route path="/payment" component={PublicationPayment} />
-      <Route path="/copyright-form" component={CopyrightForm} />
+      <Route path="/copyright-form" component={FinalPaperForm} />
       <Route path="/final-paper" component={FinalPaperForm} />
       <Route path="/article/:id">
         {(params) => {

@@ -9,6 +9,7 @@ export default function Header() {
   const [journalsOpen, setJournalsOpen] = useState(false);
   const [booksOpen, setBooksOpen] = useState(false);
   const [servicesOpen, setServicesOpen] = useState(false);
+  const [submitOpen, setSubmitOpen] = useState(false);
 
   return (
     <header className="sticky top-0 z-50 w-full bg-gradient-to-r from-white to-blue-50 dark:from-slate-950 dark:to-blue-950/20 border-b-2 border-blue-200 dark:border-blue-900 shadow-lg">
@@ -136,11 +137,30 @@ export default function Header() {
                   Reviewer Login
                 </Link>
               </Button>
-              <Button className="bg-[#213361] dark:bg-blue-800 text-white hover:bg-[#2a4078] font-semibold transition-all duration-200 shadow-none hover:shadow-none" data-testid="button-submit" asChild>
-                <Link href="/submit" data-testid="link-nav-submit" className="flex items-center gap-1">
-                  Submit Manuscript
-                </Link>
-              </Button>
+              
+              {/* Submit Dropdown */}
+              <div className="relative group">
+                <Button className="bg-[#F59E0B] dark:bg-[#D97706] text-white hover:bg-[#D97706] dark:hover:bg-[#B45309] font-semibold transition-all duration-200 flex items-center gap-1 shadow-none hover:shadow-none" data-testid="button-submit">
+                  Submit
+                  <ChevronDown className="h-4 w-4 transition-transform duration-300 group-hover:rotate-180" />
+                </Button>
+                <div className="absolute top-full right-0 hidden group-hover:block pt-2 z-50">
+                  <div className="bg-white dark:bg-slate-900 border border-blue-200 dark:border-blue-800 rounded-lg shadow-xl p-2 space-y-1 min-w-56 backdrop-blur-sm">
+                    <Link href="/call-for-books" data-testid="link-submit-book">
+                      <div className="px-4 py-2 rounded hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors duration-200 cursor-pointer">
+                        <div className="font-medium text-gray-900 dark:text-gray-100">Book</div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">Submit your book for publication</div>
+                      </div>
+                    </Link>
+                    <Link href="/submit" data-testid="link-submit-manuscript">
+                      <div className="px-4 py-2 rounded hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors duration-200 cursor-pointer">
+                        <div className="font-medium text-gray-900 dark:text-gray-100">Manuscript</div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">Submit your manuscript for review</div>
+                      </div>
+                    </Link>
+                  </div>
+                </div>
+              </div>
             </div>
           </nav>
         </div>
@@ -261,12 +281,33 @@ export default function Header() {
                 </Link>
               </Button>
 
-              <Button className="w-full bg-gradient-to-r from-blue-700 to-blue-900 dark:from-blue-800 dark:to-blue-950 text-white hover:shadow-lg transition-all font-semibold flex items-center justify-center gap-2" asChild>
-                <Link href="/submit" onClick={() => setMobileMenuOpen(false)}>
+              {/* Mobile Submit Dropdown */}
+              <div>
+                <Button
+                  className="w-full bg-gradient-to-r from-amber-500 to-amber-600 dark:from-amber-600 dark:to-amber-700 text-white hover:shadow-lg transition-all font-semibold flex items-center justify-center gap-2"
+                  onClick={() => setSubmitOpen(!submitOpen)}
+                >
                   <FileText className="h-4 w-4" />
-                  Submit Manuscript
-                </Link>
-              </Button>
+                  Submit
+                  <ChevronDown className={`h-4 w-4 transition-transform ${submitOpen ? 'rotate-180' : ''}`} />
+                </Button>
+                {submitOpen && (
+                  <div className="pl-4 space-y-1 mt-2 bg-blue-50/50 dark:bg-blue-900/20 rounded-lg p-2">
+                    <Link href="/call-for-books" onClick={() => { setMobileMenuOpen(false); setSubmitOpen(false); }} data-testid="link-submit-book-mobile">
+                      <div className="px-3 py-2 rounded hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors">
+                        <div className="font-medium text-gray-900 dark:text-gray-100 text-sm">Book</div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">Submit your book</div>
+                      </div>
+                    </Link>
+                    <Link href="/submit" onClick={() => { setMobileMenuOpen(false); setSubmitOpen(false); }} data-testid="link-submit-manuscript-mobile">
+                      <div className="px-3 py-2 rounded hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors">
+                        <div className="font-medium text-gray-900 dark:text-gray-100 text-sm">Manuscript</div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">Submit your manuscript</div>
+                      </div>
+                    </Link>
+                  </div>
+                )}
+              </div>
             </div>
           </nav>
         )}

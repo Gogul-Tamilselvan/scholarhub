@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Member Dashboard — SIP Portal</title>
+  <link rel="icon" href="assets/sip-logo.png" type="image/png">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="css/erp-style.css">
+</head>
+<body>
+  <script>if (sessionStorage.getItem('memberLoggedIn') !== 'true') window.location.href = 'member-login.html';</script>
+
+  <div class="erp-layout">
+    <main class="erp-main">
+      <header class="erp-header">
+        <div class="header-left">
+          <div>
+            <div class="header-title">Dashboard</div>
+            <div class="header-breadcrumb">Welcome, <span id="header-user-name">Member</span></div>
+          </div>
+        </div>
+        <div class="header-right">
+          <a href="member-messages.html" class="header-bell" title="Messages">
+            <i class="fa fa-bell"></i>
+            <span class="bell-dot" id="global-bell"></span>
+          </a>
+          <div class="header-user" onclick="window.location.href='member-profile.html'">
+            <div class="user-avatar" id="header-avatar">RV</div>
+            <div class="user-info">
+              <div class="user-name" id="header-user-name2">Member</div>
+              <div class="user-role" id="header-user-role">Reviewer</div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <div class="erp-content">
+        <!-- Stats -->
+        <div class="stats-grid" id="statsGrid">
+          <div class="stat-card">
+            <div class="stat-icon si-blue"><i class="fa fa-tasks"></i></div>
+            <div class="stat-info"><h3 id="s-assigned">—</h3><p>Assigned</p></div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon si-orange"><i class="fa fa-clock"></i></div>
+            <div class="stat-info"><h3 id="s-pending">—</h3><p>Pending Review</p></div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon si-green"><i class="fa fa-check-circle"></i></div>
+            <div class="stat-info"><h3 id="s-completed">—</h3><p>Completed</p></div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon si-red"><i class="fa fa-envelope"></i></div>
+            <div class="stat-info"><h3 id="s-unread">—</h3><p>Unread Messages</p></div>
+          </div>
+        </div>
+
+        <!-- Active Assignments -->
+        <div class="table-wrapper mb-24">
+          <div class="table-toolbar">
+            <span style="font-size:.9rem;font-weight:700;color:var(--text);">Active Assignments</span>
+            <a href="member-reviews.html" class="btn btn-gray btn-sm">View All</a>
+          </div>
+          <div class="table-scroll">
+            <table class="erp-table">
+              <thead><tr><th>Manuscript</th><th>Journal</th><th>Due Date</th><th>Status</th><th>Action</th></tr></thead>
+              <tbody id="assignBody">
+                <tr class="loading-row"><td colspan="5"><div class="spinner"></div> Loading...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Recent Messages -->
+        <div class="card">
+          <div class="card-header">
+            <h3><i class="fa fa-comments" style="color:var(--accent);margin-right:8px;"></i> Recent Messages</h3>
+            <a href="member-messages.html" class="btn btn-gray btn-sm">Open Inbox</a>
+          </div>
+          <div class="card-body" id="recentMessages" style="padding:0;">
+            <div style="text-align:center;padding:32px;color:var(--text-muted);"><div class="spinner"></div> Loading...</div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <div id="toast-container"></div>
+  <script src="js/erp-common.js"></script>
+  <script>
+    buildMemberSidebar('dashboard');
+
+    const userId = sessionStorage.getItem('userId') || '';
+    const userRole = sessionStorage.getItem('userRole') || 'Reviewer';
+    document.getElementById('header-user-role').textContent = userRole;
+
+    async function loadDashboard() {
+      try {
+        const res = await apiBatchGet([
+          { action: 'getAssignments', reviewerId: userId },
+          { action: 'getMessages', userId }
+        ]);
+        if (res.status !== 'success') throw new Error(res.message);
+        const batch = res.data;
+
+        const asRes = batch['getAssignments'];
+        const allAssignments = asRes.status === 'success' ? asRes.data : [];
+        const myAssignments = allAssignments.filter(a => String(a['ReviewerID'] || a['Reviewer ID'] || '').trim() === userId);
+
+        document.getElementById('s-assigned').textContent = myAssignments.length;
+        document.getElementById('s-pending').textContent = myAssignments.filter(a => {
+          const s = String(a['Status'] || a['Assignment Status'] || '').toLowerCase();
+          return s === 'pending' || s === 'accepted' || s === 'in review';
+        }).length;
+        document.getElementById('s-completed').textContent = myAssignments.filter(a => {
+          const s = String(a['Status'] || a['Assignment Status'] || '').toLowerCase();
+          return s === 'completed' || s === 'approved';
+        }).length;
+
+        const msgRes = batch['getMessages'];
+        const msgs = msgRes.status === 'success' ? msgRes.data : [];
+        const unread = msgs.filter(m => String(m['To']) === userId && String(m['Read']) !== 'true');
+        document.getElementById('s-unread').textContent = unread.length;
+        document.getElementById('global-bell').classList.toggle('show', unread.length > 0);
+
+        // Assignments table
+        const tbody = document.getElementById('assignBody');
+        const active = myAssignments.filter(a => {
+          const s = String(a['Status'] || '').toLowerCase();
+          return s !== 'revoked' && s !== 'completed' && s !== 'approved';
+        }).slice(0, 8);
+        tbody.innerHTML = active.length ? active.map(a => `
+          <tr>
+            <td>
+              <strong style="font-size:.82rem;">${String(a['ManuscriptTitle'] || a['Manuscript Title'] || '').substring(0,40) || '—'}</strong>
+              <div class="td-muted">${a['ManuscriptID'] || a['Manuscript ID'] || ''}</div>
+            </td>
+            <td class="td-muted">${a['Journal'] || '—'}</td>
+            <td>${fmtDate(a['DueDate'] || a['Due Date'])}</td>
+            <td>${statusBadge(a['Status'] || a['Assignment Status'] || 'Pending')}</td>
+            <td><a href="member-reviews.html" class="btn btn-primary btn-xs"><i class="fa fa-edit"></i> Review</a></td>
+          </tr>`).join('') : `<tr><td colspan="5" style="text-align:center;padding:32px;color:#94a3b8;">No active assignments</td></tr>`;
+
+        // Recent messages
+        const recentMsgs = msgs.filter(m => m['From'] === userId || m['To'] === userId)
+          .sort((a,b) => new Date(b['Timestamp']) - new Date(a['Timestamp'])).slice(0,5);
+        const msgContainer = document.getElementById('recentMessages');
+        msgContainer.innerHTML = recentMsgs.length ? recentMsgs.map(m => {
+          const isMe = m['From'] === userId;
+          const unreadDot = !isMe && m['Read'] !== 'true' ? '<span style="width:7px;height:7px;background:var(--accent);border-radius:50%;display:inline-block;margin-left:6px;"></span>' : '';
+          return `<div style="display:flex;align-items:center;gap:12px;padding:12px 20px;border-bottom:1px solid var(--border);">
+            <div style="width:34px;height:34px;border-radius:50%;background:${isMe ? 'var(--success)' : 'var(--accent)'};color:#fff;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:700;flex-shrink:0;">${(isMe ? 'ME' : String(m['From Name']||'AD').substring(0,2).toUpperCase())}</div>
+            <div style="flex:1;overflow:hidden;">
+              <div style="font-size:.8rem;font-weight:600;color:var(--text);">${isMe ? 'You → ' + (m['To Name']||'Admin') : (m['From Name']||'Admin')} ${unreadDot}</div>
+              <div style="font-size:.75rem;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${m['Message']||''}</div>
+            </div>
+            <div style="font-size:.7rem;color:var(--text-muted);white-space:nowrap;">${fmtDate(m['Timestamp'])}</div>
+          </div>`;
+        }).join('') : `<div style="text-align:center;padding:32px;color:var(--text-muted);font-size:.83rem;">No messages yet. <a href="member-messages.html" style="color:var(--accent);font-weight:600;">Send a message</a></div>`;
+
+      } catch (err) {
+        showToast('Error loading dashboard: ' + err.message, 'error');
+      }
+    }
+
+    loadDashboard();
+  </script>
+</body>
+</html>

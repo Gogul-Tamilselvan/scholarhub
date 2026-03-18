@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Popup Messages — SIP Admin</title>
+    <link rel="icon" href="assets/logo.png" type="image/png">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="css/erp-style.css">
+</head>
+
+<body>
+    <script>if (sessionStorage.getItem('adminLoggedIn') !== 'true') window.location.href = 'admin-login.html';</script>
+    <div class="erp-layout">
+        <main class="erp-main">
+            <header class="erp-header">
+                <div class="header-left">
+                    <div class="header-title">Popup Messages</div>
+                </div>
+                <div class="header-right">
+                    <div class="header-user">
+                        <div class="user-avatar" id="header-avatar">AD</div>
+                        <div class="user-info">
+                            <div class="user-name" id="header-user-name">Admin</div>
+                            <div class="user-role">Administrator</div>
+                        </div>
+                    </div>
+                </div>
+            </header>
+            <div class="erp-content">
+                <div class="page-header">
+                    <div class="page-header-left">
+                        <h1>Popup &amp; Broadcast Messages</h1>
+                        <p>Create timed popup announcements for all or specific members.</p>
+                    </div>
+                    <div class="page-header-actions">
+                        <button class="btn btn-primary" onclick="openCreate()"><i class="fa fa-plus"></i> New
+                            Popup</button>
+                        <button class="btn btn-gray" onclick="loadData()"><i class="fa fa-sync"></i> Refresh</button>
+                    </div>
+                </div>
+
+                <!-- Create Popup Form -->
+                <div class="card mb-24" id="createForm" style="display:none;">
+                    <div class="card-header">
+                        <h3><i class="fa fa-bullhorn" style="color:var(--accent);margin-right:8px;"></i> Create Popup
+                            Message</h3><button class="btn btn-gray btn-sm" onclick="closeCreate()"><i
+                                class="fa fa-times"></i> Cancel</button>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-grid">
+                            <div class="form-group"><label class="form-label">Title <span>*</span></label><input
+                                    type="text" id="pop-title" class="form-control"
+                                    placeholder="e.g. System Maintenance Notice"></div>
+                            <div class="form-group"><label class="form-label">Target <span>*</span></label>
+                                <select id="pop-target" class="form-control">
+                                    <option value="all">All Members</option>
+                                </select>
+                            </div>
+                            <div class="form-group"><label class="form-label">Start Time</label><input
+                                    type="datetime-local" id="pop-start" class="form-control"></div>
+                            <div class="form-group"><label class="form-label">End Time</label><input
+                                    type="datetime-local" id="pop-end" class="form-control"></div>
+                        </div>
+                        <div class="form-group"><label class="form-label">Message <span>*</span></label><textarea
+                                id="pop-message" class="form-control" rows="3"
+                                placeholder="Type your announcement..."></textarea></div>
+                        <div style="margin-top:4px;">
+                            <!-- Preview -->
+                            <div
+                                style="background:#1e293b;border:1px solid rgba(59,130,246,.3);border-radius:12px;padding:16px 18px;max-width:340px;position:relative;">
+                                <div style="color:#93c5fd;font-size:.82rem;font-weight:700;margin-bottom:6px;"
+                                    id="prevTitle">Notice</div>
+                                <div style="color:#cbd5e1;font-size:.8rem;line-height:1.5;" id="prevMsg">Your message
+                                    preview will appear here...</div>
+                                <div style="font-size:.65rem;color:#475569;margin-top:8px;">This is how members will see
+                                    the popup</div>
+                            </div>
+                        </div>
+                        <button class="btn btn-success mt-0" style="margin-top:16px;" onclick="createPopup()"><i
+                                class="fa fa-paper-plane"></i> Broadcast Popup</button>
+                    </div>
+                </div>
+
+                <!-- Existing Popups Table -->
+                <div class="table-wrapper">
+                    <div class="table-toolbar"><span style="font-size:.9rem;font-weight:700;color:var(--text);">Recent
+                            Popups</span><span id="countLabel" style="font-size:.82rem;color:var(--text-muted);"></span>
+                    </div>
+                    <div class="table-scroll">
+                        <table class="erp-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Title</th>
+                                    <th>Message</th>
+                                    <th>Target</th>
+                                    <th>Start</th>
+                                    <th>End</th>
+                                    <th>Created By</th>
+                                    <th>Created At</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tableBody">
+                                <tr class="loading-row">
+                                    <td colspan="8">
+                                        <div class="spinner"></div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    <div id="toast-container"></div>
+    <script src="js/erp-common.js"></script>
+    <script>
+        buildAdminSidebar('popup');
+        let popups = [], reviewers = [];
+
+        async function init() {
+            await loadData();
+            const rvRes = await apiGet({ action: 'getReviewers' });
+            reviewers = rvRes.status === 'success' ? rvRes.data.filter(r => String(r['Status'] || '').toLowerCase() === 'active') : [];
+            const sel = document.getElementById('pop-target');
+            reviewers.forEach(r => {
+                const opt = document.createElement('option');
+                opt.value = r['Reviewer ID'];
+                opt.textContent = r['First Name'] + ' ' + r['Last Name'] + ' (' + (r['Role'] || 'Member') + ')';
+                sel.appendChild(opt);
+            });
+            // Live preview
+            document.getElementById('pop-title').addEventListener('input', e => document.getElementById('prevTitle').textContent = e.target.value || 'Notice');
+            document.getElementById('pop-message').addEventListener('input', e => document.getElementById('prevMsg').textContent = e.target.value || 'Your message preview will appear here...');
+        }
+
+        async function loadData() {
+            document.getElementById('tableBody').innerHTML = '<tr class="loading-row"><td colspan="8"><div class="spinner"></div></td></tr>';
+            const res = await apiGet({ action: 'getPopups' });
+            popups = res.status === 'success' ? res.data : [];
+            document.getElementById('countLabel').textContent = popups.length + ' popup(s)';
+            const tbody = document.getElementById('tableBody');
+            if (!popups.length) { tbody.innerHTML = '<tr><td colspan="8"><div class="empty-state"><i class="fa fa-bullhorn"></i><h4>No popups created yet</h4></div></td></tr>'; return; }
+            tbody.innerHTML = popups.map(p => `<tr>
+        <td style="font-size:.78rem;">${String(p['Popup ID'] || '').replace('POP', '')}</td>
+        <td><strong style="font-size:.83rem;">${p['Title'] || '—'}</strong></td>
+        <td style="font-size:.8rem;max-width:200px;">${String(p['Message'] || '').substring(0, 60)}${p['Message'] && p['Message'].length > 60 ? '…' : ''}</td>
+        <td style="font-size:.78rem;">${p['Target'] === 'all' ? '<span class="badge badge-info">All Members</span>' : (p['Target'] || '—')}</td>
+        <td style="font-size:.78rem;">${fmtDT(p['Start Time']) || 'Immediate'}</td>
+        <td style="font-size:.78rem;">${fmtDT(p['End Time']) || 'No expiry'}</td>
+        <td style="font-size:.78rem;">${p['Created By'] || 'Admin'}</td>
+        <td style="font-size:.78rem;">${fmtDT(p['Created At'])}</td>
+      </tr>`).join('');
+        }
+
+        function openCreate() { document.getElementById('createForm').style.display = 'block'; }
+        function closeCreate() { document.getElementById('createForm').style.display = 'none'; }
+
+        async function createPopup() {
+            const title = document.getElementById('pop-title').value.trim();
+            const message = document.getElementById('pop-message').value.trim();
+            const target = document.getElementById('pop-target').value;
+            const start = document.getElementById('pop-start').value;
+            const end = document.getElementById('pop-end').value;
+            if (!title || !message) { showToast('Title and message are required', 'warning'); return; }
+            const adminName = sessionStorage.getItem('userName') || 'Admin';
+            const res = await apiPost({ action: 'broadcastPopup', title, message, target, startTime: start, endTime: end, createdBy: adminName });
+            if (res.status === 'success') {
+                showToast('✓ Popup broadcast sent!', 'success');
+                logActivity('Popup', `Created popup "${title}" → ${target}`, 'popup');
+                closeCreate();
+                // Reset form
+                ['pop-title', 'pop-message', 'pop-start', 'pop-end'].forEach(id => document.getElementById(id).value = '');
+                document.getElementById('pop-target').value = 'all';
+                document.getElementById('prevTitle').textContent = 'Notice';
+                document.getElementById('prevMsg').textContent = 'Your message preview will appear here...';
+                loadData();
+            } else showToast('Error: ' + res.message, 'error');
+        }
+
+        init();
+    </script>
+</body>
+
+</html>

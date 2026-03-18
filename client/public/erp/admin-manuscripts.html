@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manuscripts — SIP Admin</title>
+    <link rel="icon" href="assets/logo.png" type="image/png">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="css/erp-style.css">
+</head>
+
+<body>
+    <script>if (sessionStorage.getItem('adminLoggedIn') !== 'true') window.location.href = 'admin-login.html';</script>
+    <div class="erp-layout">
+        <main class="erp-main">
+            <header class="erp-header">
+                <div class="header-left">
+                    <div class="header-title">Manuscript Management</div>
+                </div>
+                <div class="header-right">
+                    <div class="header-user">
+                        <div class="user-avatar" id="header-avatar">AD</div>
+                        <div class="user-info">
+                            <div class="user-name" id="header-user-name">Admin</div>
+                            <div class="user-role">Administrator</div>
+                        </div>
+                    </div>
+                </div>
+            </header>
+            <div class="erp-content">
+                <div class="page-header">
+                    <div class="page-header-left">
+                        <h1>All Manuscripts</h1>
+                        <p>Manage submission status. Published manuscripts are hidden by default.</p>
+                    </div>
+                    <div class="page-header-actions">
+                        <label
+                            style="display:flex;align-items:center;gap:6px;font-size:.82rem;font-weight:600;cursor:pointer;">
+                            <input type="checkbox" id="showPublished" onchange="applyFilters()"> Show Published
+                        </label>
+                        <button class="btn btn-gray" onclick="loadData()"><i class="fa fa-sync"></i> Refresh</button>
+                        <button class="btn btn-gray" onclick="printTable('Manuscripts')"><i class="fa fa-print"></i>
+                            Print</button>
+                        <button class="btn btn-primary" onclick="exportCSV(filtered,'manuscripts')"><i
+                                class="fa fa-download"></i> Export CSV</button>
+                    </div>
+                </div>
+                <div class="table-wrapper">
+                    <div class="table-toolbar">
+                        <div class="search-box"><i class="fa fa-search"></i><input type="text" id="searchInput"
+                                placeholder="Search by title, author, journal..." oninput="applyFilters()"></div>
+                        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                            <select id="journalFilter" class="form-control" style="width:160px;padding:7px 10px;"
+                                onchange="applyFilters()">
+                                <option value="">All Journals</option>
+                                <option>Scholar Journal of Humanities and Social Sciences</option>
+                                <option>Scholar Journal of Commerce and Management</option>
+                            </select>
+                            <select id="statusFilter" class="form-control" style="width:150px;padding:7px 10px;"
+                                onchange="applyFilters()">
+                                <option value="">All Statuses</option>
+                                <option>Submitted</option>
+                                <option>Under Review</option>
+                                <option>Accepted</option>
+                                <option>Rejected</option>
+                                <option>Published</option>
+                                <option>Hold</option>
+                                <option>Complement</option>
+                            </select>
+                            <span id="countLabel"
+                                style="font-size:.82rem;color:var(--text-muted);white-space:nowrap;"></span>
+                        </div>
+                    </div>
+                    <div class="table-scroll">
+                        <table class="erp-table">
+                            <thead>
+                                <tr>
+                                    <th onclick="sortBy('Manuscript ID')">Manuscript Details ↕</th>
+                                    <th onclick="sortBy('Submitted Date')">Date ↕</th>
+                                    <th onclick="sortBy('Journal')">Journal ↕</th>
+                                    <th onclick="sortBy('Status')">Status ↕</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tableBody">
+                                <tr class="loading-row">
+                                    <td colspan="7">
+                                        <div class="spinner"></div> Loading...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Detail Modal -->
+    <div class="modal-overlay" id="detailModal">
+        <div class="modal modal-lg">
+            <div class="modal-header">
+                <h3><i class="fa fa-file-alt"></i> Manuscript Details</h3><button class="modal-close"
+                    onclick="closeModal('detailModal')">×</button>
+            </div>
+            <div class="modal-body" id="detailContent"></div>
+            <div class="modal-footer">
+                <button class="btn btn-gray" onclick="closeModal('detailModal')">Close</button>
+                <button id="detailEditBtn" class="btn btn-primary"><i class="fa fa-edit"></i> Edit Manuscript</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Modal -->
+    <div class="modal-overlay" id="editModal">
+        <div class="modal modal-lg">
+            <div class="modal-header">
+                <h3><i class="fa fa-edit"></i> Edit Manuscript</h3>
+                <button class="modal-close" onclick="closeModal('editModal')">×</button>
+            </div>
+            <div class="modal-body">
+                <form id="editForm">
+                    <input type="hidden" id="editMsId">
+                    <div class="form-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:15px;">
+                        <div class="form-group">
+                            <label class="form-label">Manuscript Title</label>
+                            <input type="text" id="editTitle" class="form-control"
+                                style="width:100%;padding:8px;border:1px solid var(--border);border-radius:6px;">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Journal</label>
+                            <input type="text" id="editJournal" class="form-control"
+                                style="width:100%;padding:8px;border:1px solid var(--border);border-radius:6px;">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Author Name</label>
+                            <input type="text" id="editAuthor" class="form-control"
+                                style="width:100%;padding:8px;border:1px solid var(--border);border-radius:6px;">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Email</label>
+                            <input type="email" id="editEmail" class="form-control"
+                                style="width:100%;padding:8px;border:1px solid var(--border);border-radius:6px;">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">DOI</label>
+                            <input type="text" id="editDoi" class="form-control"
+                                style="width:100%;padding:8px;border:1px solid var(--border);border-radius:6px;">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Plagiarism (%)</label>
+                            <input type="text" id="editPlagiarism" class="form-control"
+                                style="width:100%;padding:8px;border:1px solid var(--border);border-radius:6px;">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-gray" onclick="closeModal('editModal')">Cancel</button>
+                <button class="btn btn-primary" id="saveEditBtn">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast-container"></div>
+    <script src="js/erp-common.js"></script>
+    <script>
+        buildAdminSidebar('manuscripts');
+        let allData = [], filtered = [], sortKey = '', sortAsc = true;
+
+        async function loadData() {
+            document.getElementById('tableBody').innerHTML = '<tr class="loading-row"><td colspan="7"><div class="spinner"></div></td></tr>';
+            const res = await apiGet({ action: 'getManuscripts' });
+            allData = res.status === 'success' ? res.data : [];
+            applyFilters();
+        }
+
+        function applyFilters() {
+            const q = document.getElementById('searchInput').value.toLowerCase();
+            const sf = document.getElementById('statusFilter').value;
+            const jf = document.getElementById('journalFilter').value;
+            const sp = document.getElementById('showPublished').checked;
+            filtered = allData.filter(m => {
+                const st = String(getVal(m, ['Status'])).trim();
+                const journal = String(getVal(m, ['Journal']) || getVal(m, ['Journal Type']));
+
+                if (!sp && st.toLowerCase() === 'published') return false;
+                if (sf) {
+                    const searchStatus = sf.toLowerCase().trim();
+                    if (st.toLowerCase().trim() !== searchStatus) return false;
+                }
+                if (jf && journal !== jf) return false;
+                if (q) return ['Manuscript Title', 'Author Name', 'Journal', 'Manuscript ID', 'Email', 'Mobile'].some(k => String(getVal(m, [k])).toLowerCase().includes(q));
+                return true;
+            });
+            if (sortKey) filtered = sortTable(filtered, sortKey, sortAsc);
+            renderTable();
+        }
+
+        function sortBy(key) {
+            if (sortKey === key) sortAsc = !sortAsc; else { sortKey = key; sortAsc = true; }
+            applyFilters();
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('tableBody');
+            document.getElementById('countLabel').textContent = filtered.length + ' record(s)';
+            if (!filtered.length) { tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state"><i class="fa fa-file-alt"></i><h4>No manuscripts</h4><p>No records match your filters</p></div></td></tr>'; return; }
+            tbody.innerHTML = filtered.map((m, i) => {
+                const st = String(getVal(m, ['Status']) || 'Submitted').trim();
+                const msId = getVal(m, ['Manuscript ID', 'ManuscriptID']);
+                const fileLink = getVal(m, ['File URL', 'Uploaded File']);
+                const isUnread = (m['Read'] || 'No') !== 'Yes';
+                return `<tr style="${isUnread ? 'background-color: #fffbeb; font-weight: 500;' : ''}">
+          <td>
+            <div style="font-weight:700;color:var(--text-muted);font-size:.7rem;margin-bottom:4px;">${msId} ${isUnread ? '<span class="badge badge-danger" style="font-size: .6rem; padding: 1px 4px;">NEW</span>' : ''}</div>
+            <strong style="font-size:.88rem;display:block;">${String(getVal(m, ['Manuscript Title']) || 'Untitled').substring(0, 60)}</strong>
+            <div style="font-size:.78rem;color:var(--text-muted);margin-top:6px;line-height:1.5;">
+                <i class="fa fa-user" style="width:14px;color:var(--accent);"></i> ${getVal(m, ['Author Name']) || '—'}<br>
+                <i class="fa fa-envelope" style="width:14px;color:var(--accent);"></i> ${getVal(m, ['Email']) || '—'}<br>
+                <i class="fa fa-phone" style="width:14px;color:var(--success);"></i> ${getVal(m, ['Mobile']) || '—'}
+            </div>
+          </td>
+          <td style="font-size:.78rem;">${fmtDate(getVal(m, ['Timestamp', 'Submitted Date']))}</td>
+          <td style="font-size:.8rem;">${getVal(m, ['Journal']) || '—'}</td>
+          <td>${statusBadge(st)}</td>
+          <td>
+            <div class="action-wrap">
+              <button class="action-toggle" onclick="toggleActionMenu(this)"><i class="fa fa-ellipsis-v"></i></button>
+              <div class="action-menu">
+                <a href="#" onclick="viewDetails(${i});return false;"><i class="fa fa-eye" style="color:var(--accent);"></i> View Details</a>
+                <a href="#" onclick="editManuscript(${i});return false;"><i class="fa fa-edit" style="color:var(--purple);"></i> Edit Manuscript</a>
+                ${fileLink ? `<a href="${fileLink}" target="_blank"><i class="fa fa-file-pdf" style="color:var(--danger);"></i> View Document</a>` : ''}
+                <div class="separator"></div>
+                <button onclick="setStatus('${msId}','Under Review')"><i class="fa fa-clock" style="color:var(--warning);"></i> Under Review</button>
+                <button onclick="setStatus('${msId}','Accepted')"><i class="fa fa-check" style="color:var(--success);"></i> Accept</button>
+                <button onclick="setStatus('${msId}','Rejected')"><i class="fa fa-times" style="color:var(--danger);"></i> Reject</button>
+                 <button onclick="setStatus('${msId}','Hold')"><i class="fa fa-pause" style="color:var(--text-muted);"></i> Hold</button>
+                <button onclick="setStatus('${msId}','Complement')"><i class="fa fa-plus-circle" style="color:var(--info);"></i> Complement</button>
+                <button onclick="setStatus('${msId}','Published')"><i class="fa fa-globe" style="color:var(--purple);"></i> Mark Published</button>
+              </div>
+            </div>
+          </td>
+        </tr>`;
+            }).join('');
+        }
+
+        function viewDetails(idx) {
+            const m = filtered[idx];
+
+            // Map our ideal field names to the actual Google Sheet column names
+            const fieldMapping = {
+                'Manuscript ID': 'Manuscript ID',
+                'Submitted Date': ['Timestamp', 'Submitted Date'],
+                'Author Name': ['First Author Name', 'Author Name', 'Author Name '],
+                'Email': 'Email',
+                'Mobile': 'Mobile',
+                'Journal': ['Journal Type', 'Journal', 'Journal '],
+                'Manuscript Title': ['Manuscript Title', 'Manuscript Title '],
+                'Area': ['Research Field', 'Area'],
+                'Designation': 'Designation',
+                'Department': 'Department',
+                'Organization': ['Affiliation', 'Organization'],
+                'Author Count': 'Author Count',
+                'Authors Details': ['Author Names', 'Authors Details'],
+                'Status': ['Status', 'Status '],
+                'DOI': 'DOI',
+                'Plagiarism': 'Plagiarism'
+            };
+
+            let html = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">';
+            Object.keys(fieldMapping).forEach(f => {
+                const keysToCheck = Array.isArray(fieldMapping[f]) ? fieldMapping[f] : [fieldMapping[f]];
+                let val = '—';
+                for (let key of keysToCheck) {
+                    if (m[key]) {
+                        val = m[key];
+                        // special date formatting for 'Submitted Date'
+                        if (f === 'Submitted Date') val = fmtDate(val);
+                        break;
+                    }
+                }
+
+                html += `<div style="background:var(--bg);padding:10px;border-radius:8px;">
+          <div style="font-size:.65rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;margin-bottom:3px;">${f}</div>
+          <div style="font-weight:500;font-size:.85rem;">${val}</div>
+        </div>`;
+            });
+            html += '</div>';
+
+            const fileUrl = m['File URL'] || m['Uploaded File'] || m['Uploaded File '];
+            if (fileUrl) {
+                html += `<div style="margin-top:16px;padding:14px;background:#eff6ff;border-radius:8px;border-left:4px solid var(--accent);">
+        <i class="fa fa-file-pdf" style="color:var(--accent);margin-right:8px;"></i>
+        <a href="${fileUrl}" target="_blank" style="color:var(--accent);font-weight:600;">View / Download Manuscript Document</a>
+      </div>`;
+            }
+            document.getElementById('detailContent').innerHTML = html;
+
+            // Set edit button action
+            document.getElementById('detailEditBtn').onclick = () => {
+                closeModal('detailModal');
+                editManuscript(idx);
+            };
+
+            document.getElementById('detailModal').classList.add('show');
+            if ((m['Read'] || 'No') !== 'Yes') markAsRead(msId);
+        }
+
+        async function markAsRead(msId) {
+            await apiPost({
+                action: 'updateStatus',
+                sheetName: 'Manuscript',
+                idColumn: 'Manuscript ID',
+                idValue: msId,
+                updates: { 'Read': 'Yes' }
+            });
+            // We don't reload immediately to avoid flicker, badge will update on next refresh
+        }
+
+        function editManuscript(idx) {
+            const m = filtered[idx];
+            const msId = getVal(m, ['Manuscript ID', 'ManuscriptID']);
+
+            document.getElementById('editMsId').value = msId;
+            document.getElementById('editTitle').value = getVal(m, ['Manuscript Title']) || '';
+            document.getElementById('editJournal').value = getVal(m, ['Journal', 'Journal Type']) || '';
+            document.getElementById('editAuthor').value = getVal(m, ['First Author Name', 'Author Name']) || '';
+            document.getElementById('editEmail').value = getVal(m, ['Email']) || '';
+            document.getElementById('editDoi').value = getVal(m, ['DOI']) || '';
+            document.getElementById('editPlagiarism').value = getVal(m, ['Plagiarism']) || '';
+
+            document.getElementById('saveEditBtn').onclick = () => saveManuscript(msId);
+            document.getElementById('editModal').classList.add('show');
+        }
+
+        async function saveManuscript(msId) {
+            const updates = {
+                'Manuscript Title': document.getElementById('editTitle').value,
+                'Journal': document.getElementById('editJournal').value,
+                'First Author Name': document.getElementById('editAuthor').value,
+                'Email': document.getElementById('editEmail').value,
+                'DOI': document.getElementById('editDoi').value,
+                'Plagiarism': document.getElementById('editPlagiarism').value
+            };
+
+            const btn = document.getElementById('saveEditBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Saving...';
+
+            const res = await apiPost({
+                action: 'updateStatus',
+                sheetName: 'Manuscript',
+                idColumn: 'Manuscript ID',
+                idValue: msId,
+                updates: updates
+            });
+
+            if (res.status === 'success') {
+                showToast('✓ Manuscript updated successfully', 'success');
+                closeModal('editModal');
+                loadData();
+            } else {
+                showToast('Error: ' + res.message, 'error');
+            }
+            btn.disabled = false;
+            btn.innerHTML = 'Save Changes';
+        }
+
+        async function setStatus(msId, newStatus) {
+            document.querySelectorAll('.action-menu.open').forEach(m => m.classList.remove('open'));
+            if (!confirm(`Change status to "${newStatus}" for ${msId}?`)) return;
+            showToast('Updating...', 'info');
+            const res = await apiPost({ action: 'updateStatus', sheetName: 'Manuscript', idColumn: 'Manuscript ID', idValue: msId, updates: { 'Status': newStatus } });
+            if (res.status === 'success') { showToast('✓ Status: ' + newStatus, 'success'); logActivity('Status Update', `Manuscript ${msId} → ${newStatus}`, 'manuscripts'); loadData(); }
+            else showToast('Error: ' + res.message, 'error');
+        }
+
+        function closeModal(id) {
+            if (id) document.getElementById(id).classList.remove('show');
+            else document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('show'));
+        }
+        loadData();
+    </script>
+</body>
+
+</html>

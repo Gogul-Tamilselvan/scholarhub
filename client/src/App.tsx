@@ -1,5 +1,5 @@
 import { Switch, Route, useLocation } from "wouter";
-import { useEffect } from "react";
+import { useEffect, useLayoutEffect } from "react";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -44,6 +44,13 @@ function ScrollToTop() {
   return null;
 }
 
+function ErpRedirect({ to }: { to: string }) {
+  useLayoutEffect(() => {
+    window.location.href = to;
+  }, [to]);
+  return null;
+}
+
 function Router() {
   return (
     <Switch>
@@ -66,12 +73,22 @@ function Router() {
       <Route path="/join-reviewer" component={ReviewerApplication} />
       <Route path="/reviewer-search" component={ReviewerSearch} />
       <Route path="/manuscript-track" component={ManuscriptTrack} />
-      <Route path="/reviewer-login" component={ReviewerLogin} />
-      <Route path="/reviewer-dashboard" component={ReviewerDashboard} />
-      <Route path="/editor-dashboard" component={EditorDashboard} />
+      <Route path="/reviewer-login">
+        {() => <ErpRedirect to="/erp/member-login.html" />}
+      </Route>
+      <Route path="/reviewer-dashboard">
+        {() => <ErpRedirect to="/erp/member-dashboard.html" />}
+      </Route>
+      <Route path="/editor-dashboard">
+        {() => <ErpRedirect to="/erp/member-dashboard.html" />}
+      </Route>
       <Route path="/editor-profile/:name" component={EditorProfile} />
-      <Route path="/admin/login" component={AdminLogin} />
-      <Route path="/admin/dashboard" component={AdminDashboard} />
+      <Route path="/admin/login">
+        {() => <ErpRedirect to="/erp/admin-login.html" />}
+      </Route>
+      <Route path="/admin/dashboard">
+        {() => <ErpRedirect to="/erp/admin-dashboard.html" />}
+      </Route>
       <Route path="/admin/certificate-editor" component={AdminCertificateEditor} />
       <Route path="/payment" component={PublicationPayment} />
       <Route path="/copyright-form" component={FinalPaperForm} />

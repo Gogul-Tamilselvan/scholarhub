@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Messages — SIP Portal</title>
+  <link rel="icon" href="assets/sip-logo.png" type="image/png">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="css/erp-style.css">
+</head>
+<body>
+  <script>if (sessionStorage.getItem('memberLoggedIn') !== 'true') window.location.href = 'member-login.html';</script>
+
+  <div class="erp-layout">
+    <main class="erp-main">
+      <header class="erp-header">
+        <div class="header-left"><div class="header-title">Messages</div></div>
+        <div class="header-right">
+          <div class="header-user">
+            <div class="user-avatar" id="header-avatar">RV</div>
+            <div class="user-info">
+              <div class="user-name" id="header-user-name">Member</div>
+              <div class="user-role" id="header-user-role">Reviewer</div>
+            </div>
+          </div>
+        </div>
+      </header>
+      <div class="erp-content" style="padding-bottom:0;">
+        <div class="chat-layout">
+          <div class="chat-sidebar">
+            <div class="chat-sidebar-header">
+              <i class="fa fa-comments" style="color:var(--accent);margin-right:8px;"></i> Messages
+              <span id="unreadCount" style="font-size:.72rem;background:var(--danger);color:#fff;padding:2px 7px;border-radius:10px;margin-left:6px;display:none;"></span>
+            </div>
+            <div style="padding:10px 12px;border-bottom:1px solid var(--border);">
+              <button class="btn btn-primary w-100 btn-sm" onclick="startAdminChat()"><i class="fa fa-headset"></i> Message Admin</button>
+            </div>
+            <div class="chat-list" id="chatList">
+              <div style="text-align:center;padding:30px;color:var(--text-muted);font-size:.82rem;"><div class="spinner"></div></div>
+            </div>
+          </div>
+          <div class="chat-main">
+            <div class="chat-header" id="chatHeader">
+              <div style="text-align:center;width:100%;color:var(--text-muted);font-size:.85rem;">
+                <i class="fa fa-comments" style="font-size:2rem;opacity:.2;display:block;margin-bottom:8px;"></i>
+                Select a conversation or message the admin
+              </div>
+            </div>
+            <div class="chat-messages" id="chatMessages"></div>
+            <div class="chat-input-area" id="chatInputArea" style="display:none;">
+              <textarea class="chat-input" id="msgInput" placeholder="Type a message... (Enter to send)" rows="1" onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+              <button class="btn btn-primary" onclick="sendMessage()"><i class="fa fa-paper-plane"></i></button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <div id="toast-container"></div>
+  <script src="js/erp-common.js"></script>
+  <script>
+    buildMemberSidebar('messages');
+    document.getElementById('header-user-role').textContent = sessionStorage.getItem('userRole') || 'Reviewer';
+
+    const userId = sessionStorage.getItem('userId') || '';
+    const userName = sessionStorage.getItem('userName') || 'Member';
+    let allMessages = [], currentChatWith = null, pollTimer = null;
+
+    async function loadMessages() {
+      try {
+        const res = await apiGet({ action: 'getMessages', userId });
+        if (res.status !== 'success') throw new Error(res.message);
+        allMessages = res.data.filter(m => m['From'] === userId || m['To'] === userId);
+
+        const unread = allMessages.filter(m => m['To'] === userId && m['Read'] !== 'true').length;
+        const uc = document.getElementById('unreadCount');
+        uc.textContent = unread;
+        uc.style.display = unread > 0 ? 'inline' : 'none';
+
+        // Build conversation list - always show Admin
+        const chatList = document.getElementById('chatList');
+        const partners = {};
+        allMessages.forEach(m => {
+          const other = m['From'] === userId ? m['To'] : m['From'];
+          const otherName = m['From'] === userId ? (m['To Name'] || other) : (m['From Name'] || other);
+          if (!partners[other]) partners[other] = { id: other, name: otherName, msgs: [] };
+          partners[other].msgs.push(m);
+        });
+        if (!partners['admin']) partners['admin'] = { id: 'admin', name: 'Admin', msgs: [] };
+
+        chatList.innerHTML = Object.values(partners).map(p => {
+          const lastMsg = p.msgs.sort((a,b) => new Date(b['Timestamp']) - new Date(a['Timestamp']))[0];
+          const hasUnread = p.msgs.some(m => m['To'] === userId && m['Read'] !== 'true');
+          return `<div class="chat-item${currentChatWith === p.id ? ' active' : ''}" onclick="selectChat('${p.id}','${p.name.replace(/'/g,"\\'")}')">
+            <div class="ci-avatar">${p.name.substring(0,2).toUpperCase()}</div>
+            <div class="ci-info">
+              <div class="ci-name">${p.name}</div>
+              <div class="ci-preview">${lastMsg ? String(lastMsg['Message']||'').substring(0,40) : 'Start conversation'}</div>
+            </div>
+            ${hasUnread ? '<div class="ci-unread"></div>' : ''}
+          </div>`;
+        }).join('');
+
+        if (currentChatWith) renderThread();
+      } catch(err) {
+        showToast('Error loading messages: ' + err.message, 'error');
+      }
+    }
+
+    function startAdminChat() { selectChat('admin', 'Admin'); }
+
+    function selectChat(partnerId, partnerName) {
+      currentChatWith = partnerId;
+      document.querySelectorAll('.chat-item').forEach(i => i.classList.remove('active'));
+      document.querySelectorAll('.chat-item').forEach(i => {
+        if (i.onclick?.toString().includes(partnerId)) i.classList.add('active');
+      });
+      document.getElementById('chatHeader').innerHTML = `
+        <div style="width:34px;height:34px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:700;">${partnerName.substring(0,2).toUpperCase()}</div>
+        <div>
+          <div style="font-size:.85rem;font-weight:700;color:var(--text);">${partnerName}</div>
+          <div style="font-size:.72rem;color:var(--text-muted);">Scholar India Publishers</div>
+        </div>`;
+      document.getElementById('chatInputArea').style.display = 'flex';
+      markRead(partnerId);
+      renderThread();
+    }
+
+    function renderThread() {
+      const thread = allMessages.filter(m =>
+        (m['From'] === userId && m['To'] === currentChatWith) ||
+        (m['To'] === userId && m['From'] === currentChatWith)
+      ).sort((a,b) => new Date(a['Timestamp']) - new Date(b['Timestamp']));
+
+      const container = document.getElementById('chatMessages');
+      container.innerHTML = thread.length ? thread.map(m => {
+        const isMe = m['From'] === userId;
+        return `<div class="msg-bubble-wrap ${isMe ? 'mine' : ''}">
+          <div class="msg-bubble">
+            ${m['Message'] || ''}
+            <div class="msg-meta">${fmtDT(m['Timestamp'])}</div>
+          </div>
+        </div>`;
+      }).join('') : `<div style="text-align:center;padding:48px;color:var(--text-muted);font-size:.83rem;">No messages yet. Say hello!</div>`;
+      container.scrollTop = container.scrollHeight;
+    }
+
+    async function markRead(partnerId) {
+      const unread = allMessages.filter(m => m['From'] === partnerId && m['To'] === userId && m['Read'] !== 'true');
+      for (const m of unread) {
+        apiPost({ action: 'markMessageRead', messageId: m['Message ID'] }).catch(() => {});
+      }
+    }
+
+    async function sendMessage() {
+      const input = document.getElementById('msgInput');
+      const msg = input.value.trim();
+      if (!msg || !currentChatWith) return;
+      input.value = '';
+      input.style.height = '';
+      const partnerName = document.querySelector('.chat-item.active .ci-name')?.textContent || currentChatWith;
+      try {
+        const res = await apiPost({
+          action: 'sendMessage',
+          from: userId,
+          fromName: userName,
+          to: currentChatWith,
+          toName: partnerName,
+          message: msg
+        });
+        if (res.status === 'success') {
+          await loadMessages();
+          logActivity('Message Sent', 'To: ' + currentChatWith, 'member-messages');
+        }
+      } catch(err) {
+        showToast('Failed to send: ' + err.message, 'error');
+      }
+    }
+
+    function handleKey(e) {
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+    }
+
+    function autoResize(el) {
+      el.style.height = 'auto';
+      el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+    }
+
+    loadMessages();
+    pollTimer = setInterval(loadMessages, 10000);
+  </script>
+</body>
+</html>

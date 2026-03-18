@@ -1,6 +1,6 @@
 ## Overview
 
-Scholar India Publishers is an academic publishing platform for international peer-reviewed journals, "Scholar Journal of Commerce and Management" and "Scholar Journal of Humanities and Social Sciences". The platform aims to provide a modern, efficient, and SEO-optimized online presence for academic publishing, offering comprehensive journal information, author guidelines, manuscript submission, and various publishing services (book publication with DOI, conference proceedings) to a global audience of authors.
+Scholar India Publishers is an academic publishing platform and ERP management system for international peer-reviewed journals, "Scholar Journal of Commerce and Management" and "Scholar Journal of Humanities and Social Sciences". The platform aims to provide a modern, efficient, and SEO-optimized online presence for academic publishing, offering comprehensive journal information, author guidelines, manuscript submission, and various publishing services (book publication with DOI, conference proceedings) to a global audience of authors.
 
 ## User Preferences
 
@@ -65,6 +65,16 @@ Preferred communication style: Simple, everyday language.
 - **Admin Dashboard**: Features CSV export for various data, enforces max 3 reviewers per manuscript, shows full review details before decision, includes reviewer performance tab, and offers reminder/revoke options for assignments.
 - **ID Generation**: Auto-generated IDs for Manuscript, Editor, and Reviewer with a new format including month (e.g., MANSJCM251200AB).
 - **UI Color Consistency**: All page hero/banner sections use navy blue (`bg-[#213361]`), all card headers use navy blue with white text, info boxes use neutral gray (`bg-gray-50 dark:bg-gray-800`), brand accent boxes use navy with low opacity (`bg-[#213361]/5 dark:bg-[#213361]/10`).
+
+### ERP Portal (HTML-based)
+- **Location**: `client/public/erp/` — served as static files at `/erp/`
+- **Admin Portal**: `/erp/admin-login.html` → Full ERP with 18 pages (manuscripts, assignments, payments, users, messages, etc.)
+- **Member Portal**: `/erp/member-login.html` → Reviewer/Editor dashboard (assignments, reviews, messages, profile)
+- **Backend**: Google Apps Script web app (`backend.gs`) — connects to Google Sheets via `WEB_APP_URL` in localStorage
+- **Setup**: `/erp/setup.html` — configure the Google Apps Script web app URL
+- **React redirects**: `/admin/login` → `/erp/admin-login.html`, `/reviewer-login` → `/erp/member-login.html`, `/reviewer-dashboard` and `/editor-dashboard` → `/erp/member-dashboard.html`
+- **Auth**: SessionStorage-based (adminLoggedIn/memberLoggedIn flags) separate from React app session
+- **Sheet ID**: `1J2v7detA06MC3xmNCjVt0QGOi98Myo446kBPlMKfDKg` (configured in backend.gs)
 
 ## External Dependencies
 

@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Assignments — SIP Portal</title>
+  <link rel="icon" href="assets/sip-logo.png" type="image/png">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="css/erp-style.css">
+</head>
+<body>
+  <script>if (sessionStorage.getItem('memberLoggedIn') !== 'true') window.location.href = 'member-login.html';</script>
+
+  <div class="erp-layout">
+    <main class="erp-main">
+      <header class="erp-header">
+        <div class="header-left"><div class="header-title">My Assignments</div></div>
+        <div class="header-right">
+          <div class="header-user">
+            <div class="user-avatar" id="header-avatar">RV</div>
+            <div class="user-info">
+              <div class="user-name" id="header-user-name">Member</div>
+              <div class="user-role" id="header-user-role">Reviewer</div>
+            </div>
+          </div>
+        </div>
+      </header>
+      <div class="erp-content">
+        <div class="page-header">
+          <div class="page-header-left">
+            <h1>My Assignments</h1>
+            <p>View and submit reviews for your assigned manuscripts</p>
+          </div>
+        </div>
+
+        <div class="tab-bar">
+          <button class="tab-btn active" onclick="filterTab('all', this)">All</button>
+          <button class="tab-btn" onclick="filterTab('pending', this)">Pending</button>
+          <button class="tab-btn" onclick="filterTab('completed', this)">Completed</button>
+          <button class="tab-btn" onclick="filterTab('revoked', this)">Revoked</button>
+        </div>
+
+        <div class="table-wrapper">
+          <div class="table-toolbar">
+            <div class="search-box"><i class="fa fa-search"></i><input type="text" id="searchInput" placeholder="Search manuscripts..." oninput="applyFilters()"></div>
+            <span id="countLabel" style="font-size:.82rem;color:var(--text-muted);"></span>
+          </div>
+          <div class="table-scroll">
+            <table class="erp-table">
+              <thead><tr><th>Manuscript ID</th><th>Title</th><th>Assigned</th><th>Due Date</th><th>Status</th><th>Action</th></tr></thead>
+              <tbody id="tableBody">
+                <tr class="loading-row"><td colspan="6"><div class="spinner"></div> Loading assignments...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Review Modal -->
+  <div class="modal-overlay" id="reviewModal">
+    <div class="modal modal-xl">
+      <div class="modal-header">
+        <h3><i class="fa fa-edit" style="color:var(--accent);"></i> Submit Review</h3>
+        <button class="modal-close" onclick="closeModal('reviewModal')">×</button>
+      </div>
+      <div class="modal-body">
+        <div id="reviewModalContent"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-gray" onclick="closeModal('reviewModal')">Cancel</button>
+        <button class="btn btn-primary" onclick="submitReview()" id="submitReviewBtn"><i class="fa fa-paper-plane"></i> Submit Review</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Certificate Modal -->
+  <div class="modal-overlay" id="certModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3><i class="fa fa-certificate" style="color:var(--warning);"></i> Review Certificate</h3>
+        <button class="modal-close" onclick="closeModal('certModal')">×</button>
+      </div>
+      <div class="modal-body" id="certContent" style="text-align:center;"></div>
+      <div class="modal-footer">
+        <button class="btn btn-gray" onclick="closeModal('certModal')">Close</button>
+        <button class="btn btn-primary" onclick="window.print()"><i class="fa fa-print"></i> Print Certificate</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast-container"></div>
+  <script src="js/erp-common.js"></script>
+  <script>
+    buildMemberSidebar('reviews');
+    document.getElementById('header-user-role').textContent = sessionStorage.getItem('userRole') || 'Reviewer';
+
+    const userId = sessionStorage.getItem('userId') || '';
+    let allData = [], filtered = [], currentTab = 'all';
+    let currentAssignment = null;
+
+    async function loadAssignments() {
+      try {
+        const res = await apiGet({ action: 'getAssignments', reviewerId: userId });
+        if (res.status !== 'success') throw new Error(res.message);
+        allData = res.data.filter(a => String(a['ReviewerID'] || a['Reviewer ID'] || '').trim() === userId);
+        applyFilters();
+      } catch (err) {
+        showToast('Error loading assignments: ' + err.message, 'error');
+        document.getElementById('tableBody').innerHTML = `<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--danger);">${err.message}</td></tr>`;
+      }
+    }
+
+    function filterTab(tab, btn) {
+      currentTab = tab;
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      applyFilters();
+    }
+
+    function applyFilters() {
+      const q = (document.getElementById('searchInput')?.value || '').toLowerCase();
+      filtered = allData.filter(a => {
+        const s = String(a['Status'] || a['Assignment Status'] || '').toLowerCase();
+        const matchTab = currentTab === 'all' || s.includes(currentTab);
+        const matchQ = !q || JSON.stringify(a).toLowerCase().includes(q);
+        return matchTab && matchQ;
+      });
+      renderTable();
+    }
+
+    function renderTable() {
+      document.getElementById('countLabel').textContent = filtered.length + ' record(s)';
+      const tbody = document.getElementById('tableBody');
+      tbody.innerHTML = filtered.length ? filtered.map(a => {
+        const status = a['Status'] || a['Assignment Status'] || 'Pending';
+        const isDone = status.toLowerCase() === 'completed' || status.toLowerCase() === 'approved';
+        const isRevoked = status.toLowerCase() === 'revoked';
+        const hasCert = a['CertificateNo'];
+        return `<tr>
+          <td class="td-muted">${a['ManuscriptID'] || a['Manuscript ID'] || '—'}</td>
+          <td>
+            <strong style="font-size:.82rem;">${String(a['ManuscriptTitle'] || a['Manuscript Title'] || '—').substring(0,50)}</strong>
+            ${a['ManuscriptLink'] ? `<br><a href="${a['ManuscriptLink']}" target="_blank" style="font-size:.73rem;color:var(--accent);"><i class="fa fa-external-link-alt"></i> View Manuscript</a>` : ''}
+          </td>
+          <td class="td-muted">${fmtDate(a['AssignedAt'] || a['Assigned At'])}</td>
+          <td>${fmtDate(a['DueDate'] || a['Due Date'])}</td>
+          <td>${statusBadge(status)}</td>
+          <td>
+            ${isDone
+              ? (hasCert ? `<button class="btn btn-success btn-xs" onclick="viewCertificate(${JSON.stringify(a).replace(/"/g,'&quot;')})"><i class="fa fa-certificate"></i> Certificate</button>` : '<span class="badge badge-success">Submitted</span>')
+              : isRevoked ? '<span class="badge badge-danger">Revoked</span>'
+              : `<button class="btn btn-primary btn-xs" onclick="openReviewModal(${JSON.stringify(a).replace(/"/g,'&quot;')})"><i class="fa fa-edit"></i> Submit Review</button>`}
+          </td>
+        </tr>`;
+      }).join('') : `<tr><td colspan="6" style="text-align:center;padding:40px;color:#94a3b8;"><i class="fa fa-tasks" style="font-size:2rem;opacity:.2;display:block;margin-bottom:8px;"></i>No assignments found</td></tr>`;
+    }
+
+    function openReviewModal(a) {
+      currentAssignment = a;
+      document.getElementById('reviewModalContent').innerHTML = `
+        <div class="info-banner"><i class="fa fa-info-circle"></i> Manuscript: <strong>${a['ManuscriptTitle'] || a['Manuscript Title'] || '—'}</strong> (${a['ManuscriptID'] || a['Manuscript ID'] || ''})</div>
+
+        <h4 style="font-size:.85rem;font-weight:700;margin-bottom:12px;color:var(--text);border-bottom:1px solid var(--border);padding-bottom:8px;"><i class="fa fa-comment-alt" style="color:var(--accent);margin-right:6px;"></i>Part 1: Review Comments</h4>
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label">Importance / Relevance</label>
+            <select id="rv-importance" class="form-control">
+              <option value="">Select...</option>
+              <option>High</option><option>Medium</option><option>Low</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Language Quality</label>
+            <select id="rv-language" class="form-control">
+              <option value="">Select...</option>
+              <option>Excellent</option><option>Good</option><option>Acceptable</option><option>Needs Improvement</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Title Feedback</label>
+          <textarea id="rv-title" class="form-control" rows="2" placeholder="Comment on the title clarity and accuracy..."></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Abstract Feedback</label>
+          <textarea id="rv-abstract" class="form-control" rows="2" placeholder="Comment on the abstract..."></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Scientific Correctness</label>
+          <select id="rv-scientific" class="form-control">
+            <option value="">Select...</option>
+            <option>Correct</option><option>Minor Issues</option><option>Major Issues</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">References Feedback</label>
+          <textarea id="rv-references" class="form-control" rows="2" placeholder="Comment on references..."></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">General Comments</label>
+          <textarea id="rv-general" class="form-control" rows="3" placeholder="Overall comments and suggestions for the author..."></textarea>
+        </div>
+
+        <h4 style="font-size:.85rem;font-weight:700;margin:16px 0 12px;color:var(--text);border-bottom:1px solid var(--border);padding-bottom:8px;"><i class="fa fa-shield-alt" style="color:var(--warning);margin-right:6px;"></i>Part 2: Ethics & Integrity</h4>
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label">Ethical Issues Identified?</label>
+            <select id="rv-ethical" class="form-control">
+              <option value="">Select...</option>
+              <option>No</option><option>Yes - Minor</option><option>Yes - Major</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Competing Interests</label>
+            <select id="rv-competing" class="form-control">
+              <option value="">Select...</option>
+              <option>None</option><option>Minor</option><option>Significant</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Ethical Details (if any)</label>
+          <textarea id="rv-ethicaldetails" class="form-control" rows="2" placeholder="Describe any ethical concerns..."></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Plagiarism Suspected?</label>
+          <select id="rv-plagiarism" class="form-control">
+            <option value="">Select...</option>
+            <option>No</option><option>Minor concern</option><option>Significant concern</option>
+          </select>
+        </div>
+
+        <h4 style="font-size:.85rem;font-weight:700;margin:16px 0 12px;color:var(--text);border-bottom:1px solid var(--border);padding-bottom:8px;"><i class="fa fa-star" style="color:var(--success);margin-right:6px;"></i>Part 3: Objective Evaluation</h4>
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label">Overall Marks (out of 100)</label>
+            <input type="number" id="rv-marks" class="form-control" placeholder="e.g., 75" min="0" max="100">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Recommendation <span style="color:var(--danger)">*</span></label>
+            <select id="rv-recommendation" class="form-control" required>
+              <option value="">Select recommendation...</option>
+              <option>Accept as is</option>
+              <option>Minor Revision</option>
+              <option>Major Revision</option>
+              <option>Reject</option>
+            </select>
+          </div>
+        </div>
+
+        <h4 style="font-size:.85rem;font-weight:700;margin:16px 0 12px;color:var(--text);border-bottom:1px solid var(--border);padding-bottom:8px;"><i class="fa fa-user-check" style="color:var(--purple);margin-right:6px;"></i>Part 4: Declaration</h4>
+        <div class="form-group">
+          <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;font-size:.82rem;color:var(--text);">
+            <input type="checkbox" id="rv-declare" style="margin-top:2px;flex-shrink:0;">
+            I declare that I have reviewed this manuscript impartially and have no undisclosed conflict of interest. The review is my own work and reflects my honest academic judgment.
+          </label>
+        </div>`;
+      openModal('reviewModal');
+    }
+
+    async function submitReview() {
+      const rec = document.getElementById('rv-recommendation')?.value;
+      const declared = document.getElementById('rv-declare')?.checked;
+      if (!rec) { showToast('Please select a recommendation', 'warning'); return; }
+      if (!declared) { showToast('Please confirm the declaration', 'warning'); return; }
+
+      const btn = document.getElementById('submitReviewBtn');
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Submitting...';
+
+      try {
+        const payload = {
+          action: 'submitReview',
+          assignedAt: currentAssignment['AssignedAt'] || currentAssignment['Assigned At'],
+          importance: document.getElementById('rv-importance')?.value || '',
+          titleFeedback: document.getElementById('rv-title')?.value || '',
+          abstractFeedback: document.getElementById('rv-abstract')?.value || '',
+          scientific: document.getElementById('rv-scientific')?.value || '',
+          referencesFeedback: document.getElementById('rv-references')?.value || '',
+          language: document.getElementById('rv-language')?.value || '',
+          generalComments: document.getElementById('rv-general')?.value || '',
+          ethicalIssues: document.getElementById('rv-ethical')?.value || '',
+          ethicalDetails: document.getElementById('rv-ethicaldetails')?.value || '',
+          competingInterests: document.getElementById('rv-competing')?.value || '',
+          plagiarismSuspected: document.getElementById('rv-plagiarism')?.value || '',
+          marks: document.getElementById('rv-marks')?.value || '',
+          recommendation: rec
+        };
+        const res = await apiPost(payload);
+        if (res.status === 'success') {
+          showToast('Review submitted successfully!', 'success');
+          closeModal('reviewModal');
+          logActivity('Review Submitted', 'Manuscript: ' + (currentAssignment['ManuscriptID'] || ''), 'member-reviews');
+          setTimeout(loadAssignments, 800);
+        } else {
+          showToast(res.message || 'Submission failed', 'error');
+        }
+      } catch (err) {
+        showToast('Error: ' + err.message, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa fa-paper-plane"></i> Submit Review';
+      }
+    }
+
+    function viewCertificate(a) {
+      const certNo = a['CertificateNo'] || '—';
+      const reviewerName = sessionStorage.getItem('userName') || 'Reviewer';
+      const manuscriptTitle = a['ManuscriptTitle'] || a['Manuscript Title'] || '—';
+      document.getElementById('certContent').innerHTML = `
+        <div style="border:3px double #1e40af;padding:32px;border-radius:10px;margin:10px 0;background:#fafbff;">
+          <div style="font-size:.75rem;text-transform:uppercase;letter-spacing:.1em;color:var(--text-muted);margin-bottom:8px;">Scholar India Publishers</div>
+          <div style="font-size:1.3rem;font-weight:800;color:var(--text);margin-bottom:6px;">Certificate of Review</div>
+          <div style="font-size:.8rem;color:var(--text-muted);margin-bottom:20px;">This is to certify that</div>
+          <div style="font-size:1.2rem;font-weight:700;color:var(--accent);margin-bottom:4px;">${reviewerName}</div>
+          <div style="font-size:.8rem;color:var(--text-muted);margin-bottom:20px;">has successfully reviewed the manuscript</div>
+          <div style="font-size:.88rem;font-weight:600;color:var(--text);margin-bottom:20px;padding:10px;background:#f1f5f9;border-radius:6px;">${manuscriptTitle}</div>
+          <div style="font-size:.75rem;color:var(--text-muted);margin-bottom:6px;">Certificate No: <strong style="color:var(--text);">${certNo}</strong></div>
+          <div style="font-size:.75rem;color:var(--text-muted);">Date: ${fmtDate(a['Submission Date'] || new Date().toISOString())}</div>
+        </div>`;
+      openModal('certModal');
+    }
+
+    loadAssignments();
+  </script>
+</body>
+</html>

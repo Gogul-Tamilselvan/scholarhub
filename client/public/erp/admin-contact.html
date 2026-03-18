@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contact Leads — Scholar India Publishers ERP</title>
+    <link rel="icon" href="sip-logo.png" type="image/png">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="css/erp-style.css">
+</head>
+
+<body>
+    <div class="erp-layout">
+        <main class="erp-main">
+            <header class="erp-header">
+                <div class="header-left">
+                    <div class="header-title">Contact Inquiries</div>
+                    <div class="header-breadcrumb">Manage and respond to website visitors</div>
+                </div>
+            </header>
+
+            <div class="erp-content">
+                <div class="page-header">
+                    <div class="page-header-left">
+                        <h1>Contact Leads</h1>
+                        <p id="countLabel">Loading inquiries...</p>
+                    </div>
+                    <div class="page-header-actions">
+                        <div class="search-box">
+                            <i class="fa fa-search"></i>
+                            <input type="text" id="searchInput" placeholder="Search leads..." onkeyup="applyFilters()">
+                        </div>
+                        <button class="btn btn-outline" onclick="loadData()"><i class="fa fa-sync"></i> Refresh</button>
+                    </div>
+                </div>
+
+                <div class="table-wrapper">
+                    <div class="table-scroll">
+                        <table class="erp-table">
+                            <thead>
+                                <tr>
+                                    <th style="width:130px;" onclick="sortBy('Submitted At')">Date <i
+                                            class="fa fa-sort"></i></th>
+                                    <th style="width:180px;" onclick="sortBy('First Name')">Contact Name <i
+                                            class="fa fa-sort"></i></th>
+                                    <th style="width:220px;" onclick="sortBy('Email')">Email / Phone <i
+                                            class="fa fa-sort"></i></th>
+                                    <th>Message</th>
+                                    <th style="width:100px;" onclick="sortBy('Status')">Status <i
+                                            class="fa fa-sort"></i></th>
+                                    <th style="width:80px;">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Detail Modal -->
+    <div id="detailModal" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h3><i class="fa fa-envelope-open"></i> Message Details</h3>
+                <button class="modal-close" onclick="closeModal('detailModal')">&times;</button>
+            </div>
+            <div class="modal-body" id="detailContent"></div>
+            <div class="modal-footer">
+                <button class="btn btn-gray" onclick="closeModal('detailModal')">Close</button>
+                <button id="markReadBtn" class="btn btn-primary">Mark as Read</button>
+                <button id="markRepliedBtn" class="btn btn-success">Mark as Replied</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast-container"></div>
+    <script src="js/erp-common.js"></script>
+    <script>
+        buildAdminSidebar('contact');
+        let allData = [], filtered = [], sortKey = 'Submitted At', sortAsc = false;
+
+        async function loadData() {
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = '<tr class="loading-row"><td colspan="6"><div class="spinner"></div></td></tr>';
+            try {
+                const res = await apiGet({ action: 'getContact' });
+                allData = res.status === 'success' ? res.data : [];
+                applyFilters();
+            } catch (e) {
+                showToast('Failed to load inquiries', 'error');
+            }
+        }
+
+        function applyFilters() {
+            const q = document.getElementById('searchInput').value.toLowerCase();
+            filtered = allData.filter(c => {
+                if (!q) return true;
+                return ['First Name', 'Last Name', 'Email', 'Phone Number', 'Message'].some(k =>
+                    String(c[k] || '').toLowerCase().includes(q)
+                );
+            });
+            if (sortKey) filtered = sortTable(filtered, sortKey, sortAsc);
+            renderTable();
+        }
+
+        function sortBy(key) {
+            if (sortKey === key) sortAsc = !sortAsc;
+            else { sortKey = key; sortAsc = true; }
+            applyFilters();
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('tableBody');
+            document.getElementById('countLabel').textContent = filtered.length + ' inquiries';
+
+            if (!filtered.length) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--text-muted);">No inquiries found</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = filtered.map((c, i) => {
+                let status = 'New';
+                if (c['Replied'] === 'Yes') status = 'Replied';
+                else if (c['Make as Read'] === 'Yes') status = 'Read';
+
+                const isUnread = (c['Make as Read'] || 'No') !== 'Yes' && (c['Replied'] || 'No') !== 'Yes';
+                return `
+                <tr style="${isUnread ? 'background-color: #fffbeb; font-weight: 500;' : ''}">
+                    <td style="font-size:.8rem;">${fmtDate(c['Submitted At'])} ${isUnread ? '<span class="badge badge-danger" style="font-size: .6rem; padding: 1px 4px;">NEW</span>' : ''}</td>
+                    <td><strong>${c['First Name'] || ''} ${c['Last Name'] || ''}</strong></td>
+                    <td style="font-size:.8rem;">
+                        <div>${c['Email'] || '—'}</div>
+                        <div style="color:var(--text-muted);">${c['Phone Number'] || ''}</div>
+                    </td>
+                    <td style="max-width:300px;font-size:.82rem;">${String(c['Message'] || '').substring(0, 80)}${String(c['Message']).length > 80 ? '...' : ''}</td>
+                    <td>${statusBadge(status)}</td>
+                    <td>
+                        <button class="btn btn-primary btn-xs" onclick="viewDetails(${i})">View</button>
+                    </td>
+                </tr>
+            `;}).join('');
+        }
+
+        function viewDetails(idx) {
+            const c = filtered[idx];
+            const html = `
+                <div style="margin-bottom:15px;">
+                    <div style="font-size:.7rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;">From</div>
+                    <div style="font-weight:600;font-size:1rem;">${c['First Name']} ${c['Last Name']}</div>
+                    <div style="color:var(--accent);">${c['Email']} | ${c['Phone Number']}</div>
+                </div>
+                <div style="background:var(--bg);padding:15px;border-radius:10px;line-height:1.6;font-size:.9rem;white-space:pre-wrap;">${c['Message']}</div>
+                <div style="margin-top:10px;font-size:10px;color:var(--text-muted);">Received: ${fmtDT(c['Submitted At'])}</div>
+            `;
+            document.getElementById('detailContent').innerHTML = html;
+
+            const rbtn = document.getElementById('markReadBtn');
+            rbtn.onclick = () => markRead(c['Email'], c['Submitted At']);
+            rbtn.style.display = (c['Make as Read'] !== 'Yes' && c['Replied'] !== 'Yes') ? 'block' : 'none';
+
+            const btn = document.getElementById('markRepliedBtn');
+            btn.onclick = () => markReplied(c['Email'], c['Submitted At']);
+            btn.style.display = (c['Replied'] !== 'Yes') ? 'block' : 'none';
+
+            document.getElementById('detailModal').classList.add('show');
+            if ((c['Make as Read'] || 'No') !== 'Yes' && (c['Replied'] || 'No') !== 'Yes') {
+                markRead(c['Email'], c['Submitted At']);
+            }
+        }
+
+        async function markRead(email, time) {
+            const res = await apiPost({
+                action: 'updateStatus',
+                sheetName: 'Contact',
+                idColumn: 'Submitted At',
+                idValue: time,
+                updates: { 'Make as Read': 'Yes' }
+            });
+            if (res.status === 'success') {
+                showToast('Marked as read', 'success');
+                closeModal('detailModal');
+                loadData();
+            } else {
+                showToast('Error: ' + res.message, 'error');
+            }
+        }
+
+        async function markReplied(email, time) {
+            const res = await apiPost({
+                action: 'updateStatus',
+                sheetName: 'Contact',
+                idColumn: 'Submitted At',
+                idValue: time,
+                updates: { 'Replied': 'Yes', 'Make as Read': 'Yes' }
+            });
+            if (res.status === 'success') {
+                showToast('Marked as replied', 'success');
+                closeModal('detailModal');
+                loadData();
+            } else {
+                showToast('Error: ' + res.message, 'error');
+            }
+        }
+
+        loadData();
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Approve Reviewers & Board — SIP Admin</title>
+    <link rel="icon" href="assets/logo.png" type="image/png">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="css/erp-style.css">
+</head>
+
+<body>
+    <script>if (sessionStorage.getItem('adminLoggedIn') !== 'true') window.location.href = 'admin-login.html';</script>
+    <div class="erp-layout">
+        <main class="erp-main">
+            <header class="erp-header">
+                <div class="header-left">
+                    <div class="header-title">Approve Reviewers &amp; Board Members</div>
+                </div>
+                <div class="header-right">
+                    <div class="header-user">
+                        <div class="user-avatar" id="header-avatar">AD</div>
+                        <div class="user-info">
+                            <div class="user-name" id="header-user-name">Admin</div>
+                            <div class="user-role">Administrator</div>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <div class="erp-content">
+                <div class="page-header" style="margin-bottom:16px;">
+                    <div class="page-header-left">
+                        <p>Review applications and update status from the Google Sheet.</p>
+                    </div>
+                    <div class="page-header-actions">
+                        <button class="btn btn-gray" onclick="loadData()"><i class="fa fa-sync"></i> Refresh</button>
+                        <button class="btn btn-primary" onclick="exportCSV(filteredData,'reviewers_approvals')"><i
+                                class="fa fa-download"></i> Export CSV</button>
+                    </div>
+                </div>
+
+                <!-- Filter tabs -->
+                <div class="tab-bar">
+                    <button class="tab-btn active" onclick="filterTab('all',this)">All Applications</button>
+                    <button class="tab-btn" onclick="filterTab('reviewer',this)">Reviewers</button>
+                    <button class="tab-btn" onclick="filterTab('board',this)">Editorial Board</button>
+                    <button class="tab-btn" onclick="filterTab('pending',this)">Pending Only</button>
+                    <button class="tab-btn" onclick="filterTab('approved',this)">Active Records</button>
+                </div>
+
+                <div class="table-wrapper">
+                    <div class="table-toolbar" style="flex-wrap: wrap;">
+                        <div class="search-box">
+                            <i class="fa fa-search"></i>
+                            <input type="text" id="searchInput" placeholder="Search by name, email, journal..."
+                                oninput="applyFilters()">
+                        </div>
+                        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                            <select id="roleFilter" class="form-control" style="width:130px;padding:7px 10px;"
+                                onchange="applyFilters()">
+                                <option value="">All Roles</option>
+                                <option>Reviewer</option>
+                                <option>Editorial board member</option>
+                            </select>
+                            <select id="statusFilter" class="form-control" style="width:130px;padding:7px 10px;"
+                                onchange="applyFilters()">
+                                <option value="">All Statuses</option>
+                                <option>Pending</option>
+                                <option>Active</option>
+                                <option>Rejected</option>
+                                <option>Hold</option>
+                            </select>
+                            <select id="journalFilter" class="form-control" style="width:160px;padding:7px 10px;"
+                                onchange="applyFilters()">
+                                <option value="">All Journals</option>
+                                <option>Scholar Journal of Humanities and Social Sciences</option>
+                                <option>Scholar Journal of Commerce and Management</option>
+                            </select>
+                            <button class="btn btn-gray" onclick="printTable('Approve Reviewers')"><i
+                                    class="fa fa-print"></i> Print</button>
+                            <span id="countLabel"
+                                style="font-size:.82rem;color:var(--text-muted);white-space:nowrap;">Loading...</span>
+                        </div>
+                    </div>
+                    <div class="table-scroll">
+                        <table class="erp-table">
+                            <thead>
+                                <tr>
+                                    <th onclick="sortBy('Reviewer ID')">Reviewer Details ↕</th>
+                                    <th onclick="sortBy('Role')">Role ↕</th>
+                                    <th onclick="sortBy('Journal')">Journal ↕</th>
+                                    <th onclick="sortBy('Institution')">Institution ↕</th>
+                                    <th onclick="sortBy('Submitted Date')">Applied ↕</th>
+                                    <th onclick="sortBy('Status')">Status ↕</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tableBody">
+                                <tr class="loading-row">
+                                    <td colspan="7">
+                                        <div class="spinner"></div> Loading from Google Sheets...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- View Modal -->
+    <div class="modal-overlay" id="viewModal">
+        <div class="modal modal-lg">
+            <div class="modal-header">
+                <h3><i class="fa fa-user"></i> Reviewer Details</h3>
+                <button class="modal-close" onclick="closeModal('viewModal')">×</button>
+            </div>
+            <div class="modal-body" id="viewContent"></div>
+            <div class="modal-footer">
+                <button class="btn btn-success" id="approveBtn" onclick="currentAction('Approved')"><i
+                        class="fa fa-check"></i> Approve</button>
+                <button class="btn btn-danger" id="rejectBtn" onclick="currentAction('Rejected')"><i
+                        class="fa fa-times"></i> Reject</button>
+                <button class="btn btn-gray" id="holdBtn" onclick="currentAction('Hold')"><i class="fa fa-pause"></i>
+                    Hold</button>
+                <button class="btn btn-gray" onclick="closeModal('viewModal')">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast-container"></div>
+    <script src="js/erp-common.js"></script>
+    <script>
+        buildAdminSidebar('approve-reviewers');
+        let allData = [], filteredData = [], currentTabFilter = 'all', currentReviewerId = '';
+        let sortKey = '', sortAsc = true;
+
+        async function loadData() {
+            document.getElementById('tableBody').innerHTML = '<tr class="loading-row"><td colspan="9"><div class="spinner"></div> Loading...</td></tr>';
+            try {
+                const res = await apiGet({ action: 'getReviewers' });
+                if (res.status === 'success') {
+                    allData = res.data;
+                    applyFilters();
+                } else {
+                    document.getElementById('tableBody').innerHTML = `<tr><td colspan="9" style="text-align:center;padding:40px;color:var(--danger);">Error: ${res.message}</td></tr>`;
+                }
+            } catch (e) {
+                document.getElementById('tableBody').innerHTML = '<tr><td colspan="9" style="text-align:center;padding:40px;color:var(--danger);">Connection error</td></tr>';
+            }
+        }
+
+        function filterTab(tab, btn) {
+            currentTabFilter = tab;
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            applyFilters();
+        }
+
+        function applyFilters() {
+            const q = document.getElementById('searchInput').value.toLowerCase();
+            const rf = document.getElementById('roleFilter').value;
+            const sf = document.getElementById('statusFilter').value;
+            const jf = document.getElementById('journalFilter').value;
+
+            let data = [...allData];
+
+            // Tab filter
+            if (currentTabFilter === 'reviewer') data = data.filter(r => String(r['Role'] || '').toLowerCase().includes('reviewer'));
+            if (currentTabFilter === 'board') data = data.filter(r => String(r['Role'] || '').toLowerCase().includes('editorial board member'));
+            if (currentTabFilter === 'pending') data = data.filter(r => !r['Status'] || String(r['Status']).toLowerCase() === 'pending');
+            if (currentTabFilter === 'approved') data = data.filter(r => ['approved', 'active'].includes(String(r['Status'] || '').toLowerCase()));
+
+            // Dropdown filters
+            if (rf) data = data.filter(r => String(r['Role'] || '').toLowerCase().includes(rf.toLowerCase()));
+            if (sf) {
+                const searchStatus = sf.toLowerCase().trim();
+                data = data.filter(r => {
+                    const rStatus = String(r['Status'] || 'Pending').toLowerCase().trim();
+                    if (searchStatus === 'active' || searchStatus === 'approved') {
+                        return rStatus === 'active' || rStatus === 'approved';
+                    }
+                    return rStatus === searchStatus;
+                });
+            }
+            if (jf) data = data.filter(r => String(r['Journal'] || '') === jf);
+
+            // Search
+            if (q) data = data.filter(r =>
+                String(r['First Name'] || '').toLowerCase().includes(q) ||
+                String(r['Last Name'] || '').toLowerCase().includes(q) ||
+                String(r['Email'] || '').toLowerCase().includes(q) ||
+                String(r['Journal'] || '').toLowerCase().includes(q)
+            );
+
+            if (sortKey) data = sortTable(data, sortKey, sortAsc);
+
+            filteredData = data;
+            renderTable();
+        }
+
+        function sortBy(key) {
+            if (sortKey === key) sortAsc = !sortAsc; else { sortKey = key; sortAsc = true; }
+            applyFilters();
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('tableBody');
+            document.getElementById('countLabel').textContent = filteredData.length + ' record(s)';
+            if (!filteredData.length) {
+                tbody.innerHTML = '<tr><td colspan="9"><div class="empty-state"><i class="fa fa-users"></i><h4>No records found</h4><p>Adjust filters or search query</p></div></td></tr>';
+                return;
+            }
+            tbody.innerHTML = filteredData.map((r, i) => {
+                const st = String(r['Status'] || 'Pending');
+                return `<tr>
+          <td>
+            <div style="font-weight:700;color:var(--text-muted);font-size:.7rem;margin-bottom:4px;">${r['Reviewer ID'] || '—'}</div>
+            <strong style="font-size:.88rem;display:block;">${r['First Name'] || ''} ${r['Last Name'] || ''}</strong>
+            <div style="font-size:.78rem;color:var(--text-muted);margin-top:6px;line-height:1.5;">
+                <i class="fa fa-envelope" style="width:14px;color:var(--accent);"></i> ${r['Email'] || '—'}<br>
+                <i class="fa fa-phone" style="width:14px;color:var(--success);"></i> ${r['Mobile'] || '—'}
+            </div>
+          </td>
+          <td>${statusBadge(r['Role'] || 'Reviewer')}</td>
+          <td style="font-size:.8rem;">${r['Journal'] || '—'}</td>
+          <td style="font-size:.8rem;">${r['Institution'] || '—'}</td>
+          <td style="font-size:.8rem;">${fmtDate(r['Submitted Date'])}</td>
+          <td>${statusBadge(st)}</td>
+          <td>
+            <div class="action-wrap">
+              <button class="action-toggle" onclick="toggleActionMenu(this)"><i class="fa fa-ellipsis-v"></i></button>
+              <div class="action-menu">
+                <a href="#" onclick="viewReviewer(${i});return false;"><i class="fa fa-eye" style="color:var(--accent);"></i> View Details</a>
+                <div class="separator"></div>
+                <button onclick="quickStatus('${r['Reviewer ID']}','Approved')"><i class="fa fa-check-circle" style="color:var(--success);"></i> Activate</button>
+                <button onclick="quickStatus('${r['Reviewer ID']}','Rejected')"><i class="fa fa-times-circle" style="color:var(--danger);"></i> Reject</button>
+                <button onclick="quickStatus('${r['Reviewer ID']}','Hold')"><i class="fa fa-pause-circle" style="color:var(--warning);"></i> Hold</button>
+                <div class="separator"></div>
+                <button onclick="changePassword('${r['Reviewer ID']}','${r['First Name']} ${r['Last Name']}')"><i class="fa fa-key" style="color:var(--purple);"></i> Change Password</button>
+              </div>
+            </div>
+          </td>
+        </tr>`;
+            }).join('');
+        }
+
+        function viewReviewer(idx) {
+            const r = filteredData[idx];
+            if (!r) return;
+            currentReviewerId = r['Reviewer ID'];
+            const fields = Object.keys(r).filter(k => k && String(k).trim() && k !== 'Password');
+            let html = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">';
+            fields.forEach(k => {
+                let val = r[k] || '—';
+                const lowerK = k.toLowerCase();
+
+                if (k === 'ORCID' && val !== '—') val = `<a href="https://orcid.org/${val}" target="_blank" style="color:var(--accent);">${val}</a>`;
+                else if (k === 'Google Scholar' && val !== '—') val = `<a href="${val}" target="_blank" style="color:var(--accent);">View Profile</a>`;
+                else if (lowerK.includes('institutional profile') && val !== '—' && val.startsWith('http')) val = `<a href="${val}" target="_blank" style="color:var(--accent);font-weight:600;"><i class="fa fa-external-link-alt"></i> View Profile Page</a>`;
+                else if (lowerK.includes('pdf') && val !== '—' && val.startsWith('http')) val = `<a href="${val}" target="_blank" style="color:var(--danger);font-weight:600;"><i class="fa fa-file-pdf"></i> View PDF</a>`;
+                else if (String(val).startsWith('http')) val = `<a href="${val}" target="_blank" style="color:var(--accent);"><i class="fa fa-link"></i> ${val.substring(0, 30)}...</a>`;
+
+                html += `<div style="padding:8px;background:var(--bg);border-radius:8px;">
+          <div style="font-size:.65rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;margin-bottom:3px;">${k}</div>
+          <div style="font-size:.85rem;font-weight:500;word-break:break-word;">${val}</div>
+        </div>`;
+            });
+            html += '</div>';
+            document.getElementById('viewContent').innerHTML = html;
+            document.getElementById('viewModal').classList.add('show');
+        }
+
+        function currentAction(status) {
+            if (currentReviewerId) quickStatus(currentReviewerId, status);
+        }
+
+        async function quickStatus(id, status) {
+            if (!id) return;
+            document.querySelectorAll('.action-menu.open').forEach(m => m.classList.remove('open'));
+            if (!confirm(`Set status "${status}" for ${id}?`)) return;
+            showToast('Updating...', 'info');
+            try {
+                const res = await apiPost({ action: 'updateStatus', sheetName: 'Reviewers', idColumn: 'Reviewer ID', idValue: id, updates: { 'Status': status } });
+                if (res.status === 'success') {
+                    showToast('✓ Status updated to ' + (status === 'Approved' ? 'Active' : status), 'success');
+                    logActivity('Status Update', `Reviewer ${id} → ${status}`, 'approve-reviewers');
+                    closeModal('viewModal');
+                    loadData();
+                } else {
+                    showToast('Error: ' + res.message, 'error');
+                }
+            } catch (e) { showToast('Connection error', 'error'); }
+        }
+
+        async function changePassword(id, name) {
+            document.querySelectorAll('.action-menu.open').forEach(m => m.classList.remove('open'));
+            const pwd = prompt(`Set new password for ${name} (${id}):`);
+            if (!pwd || pwd.length < 4) { if (pwd !== null) alert('Password must be at least 4 characters.'); return; }
+            try {
+                const res = await apiPost({ action: 'changePassword', reviewerId: id, newPassword: pwd });
+                if (res.status === 'success') {
+                    showToast('✓ Password updated for ' + name, 'success');
+                    logActivity('Password Change', `Password changed for ${id} (${name})`, 'approve-reviewers');
+                } else { showToast('Error: ' + res.message, 'error'); }
+            } catch (e) { showToast('Connection error', 'error'); }
+        }
+
+        function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+
+        loadData();
+    </script>
+</body>
+
+</html>

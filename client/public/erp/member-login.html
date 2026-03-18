@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Member Login — Scholar India Publishers</title>
+  <link rel="icon" href="assets/sip-logo.png" type="image/png">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="css/erp-style.css">
+</head>
+<body>
+  <div class="login-page">
+    <div class="login-box">
+      <div class="login-brand">
+        <img src="assets/sip-logo.png" style="height:80px;margin-bottom:12px;background:#fff;padding:6px;border-radius:12px;" onerror="this.style.display='none'">
+        <h2>Scholar India Publishers</h2>
+        <p>Reviewer / Editor Portal</p>
+      </div>
+
+      <div class="login-error" id="loginError"></div>
+
+      <form class="login-form" onsubmit="handleLogin(event)">
+        <div class="form-group">
+          <label class="form-label">Email Address</label>
+          <input type="email" id="loginEmail" class="form-control" placeholder="Your registered email" required autocomplete="username">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <div style="position:relative;">
+            <input type="password" id="loginPassword" class="form-control" placeholder="Your password or Reviewer ID" required autocomplete="current-password">
+            <button type="button" onclick="togglePwd()" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;color:#64748b;cursor:pointer;">
+              <i class="fa fa-eye" id="eyeIcon" style="color:#94a3b8;"></i>
+            </button>
+          </div>
+          <div style="font-size:.73rem;color:var(--text-muted);margin-top:4px;"><i class="fa fa-info-circle"></i> Default password is your Reviewer / Editor ID</div>
+        </div>
+        <button type="submit" class="login-btn" id="loginBtn">
+          <i class="fa fa-sign-in-alt"></i> Sign In
+        </button>
+      </form>
+
+      <div style="text-align:center;margin-top:24px;padding-top:16px;border-top:1px solid #e2e8f0;">
+        <a href="admin-login.html" style="color:var(--text-muted);font-size:.78rem;text-decoration:none;font-weight:500;">
+          <i class="fa fa-shield-alt"></i> Admin Portal Login
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast-container"></div>
+  <script src="js/erp-common.js"></script>
+  <script>
+    if (sessionStorage.getItem('memberLoggedIn') === 'true') {
+      window.location.href = 'member-dashboard.html';
+    }
+
+    function togglePwd() {
+      const input = document.getElementById('loginPassword');
+      const icon = document.getElementById('eyeIcon');
+      const show = input.type === 'password';
+      input.type = show ? 'text' : 'password';
+      icon.className = show ? 'fa fa-eye-slash' : 'fa fa-eye';
+    }
+
+    async function handleLogin(e) {
+      e.preventDefault();
+      const email = document.getElementById('loginEmail').value.trim().toLowerCase();
+      const pwd = document.getElementById('loginPassword').value.trim();
+      const btn = document.getElementById('loginBtn');
+      const errEl = document.getElementById('loginError');
+      errEl.classList.remove('show');
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Signing in...';
+
+      try {
+        const res = await apiGet({ action: 'login', email, password: pwd, role: 'member' });
+        if (res.status === 'success') {
+          sessionStorage.setItem('memberLoggedIn', 'true');
+          sessionStorage.setItem('userId', res.data.id);
+          sessionStorage.setItem('userName', res.data.name);
+          sessionStorage.setItem('userEmail', email);
+          sessionStorage.setItem('userRole', res.data.role);
+          apiPost({ action: 'logActivity', action_type: 'Login', userId: res.data.id, userName: res.data.name, role: res.data.role, details: 'Member logged in', page: 'member-login' });
+          window.location.href = 'member-dashboard.html';
+        } else {
+          errEl.textContent = res.message || 'Invalid credentials. Please check your email and password.';
+          errEl.classList.add('show');
+          btn.disabled = false;
+          btn.innerHTML = '<i class="fa fa-sign-in-alt"></i> Sign In';
+        }
+      } catch (ex) {
+        errEl.textContent = 'Connection error. Please check your internet and try again.';
+        errEl.classList.add('show');
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa fa-sign-in-alt"></i> Sign In';
+      }
+    }
+  </script>
+</body>
+</html>

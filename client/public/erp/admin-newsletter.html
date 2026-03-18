@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Newsletter — SIP Admin</title>
+    <link rel="icon" href="assets/logo.png" type="image/png">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="css/erp-style.css">
+</head>
+
+<body>
+    <script>if (sessionStorage.getItem('adminLoggedIn') !== 'true') window.location.href = 'admin-login.html';</script>
+    <div class="erp-layout">
+        <main class="erp-main">
+            <header class="erp-header">
+                <div class="header-left">
+                    <div class="header-title">Newsletter Subscribers</div>
+                </div>
+                <div class="header-right">
+                    <div class="header-user">
+                        <div class="user-avatar" id="header-avatar">AD</div>
+                        <div class="user-info">
+                            <div class="user-name" id="header-user-name">Admin</div>
+                            <div class="user-role">Administrator</div>
+                        </div>
+                    </div>
+                </div>
+            </header>
+            <div class="erp-content">
+                <div class="page-header">
+                    <div class="page-header-left">
+                        <h1>Newsletter Subscribers</h1>
+                        <p>View and export all newsletter subscribers from the Newsletter sheet.</p>
+                    </div>
+                    <div class="page-header-actions">
+                        <button class="btn btn-gray" onclick="loadData()"><i class="fa fa-sync"></i> Refresh</button>
+                        <button class="btn btn-primary" onclick="exportCSV(filtered,'newsletter_subscribers')"><i
+                                class="fa fa-download"></i> Export CSV</button>
+                    </div>
+                </div>
+                <div class="table-wrapper">
+                    <div class="table-toolbar">
+                        <div class="search-box"><i class="fa fa-search"></i><input type="text" id="searchInput"
+                                placeholder="Search by email or name..." oninput="applyFilters()"></div>
+                        <span id="countLabel" style="font-size:.82rem;color:var(--text-muted);"></span>
+                    </div>
+                    <div class="table-scroll">
+                        <table class="erp-table">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Email</th>
+                                    <th>Name</th>
+                                    <th>Subscribed On</th>
+                                    <th>Journal Interest</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tableBody">
+                                <tr class="loading-row">
+                                    <td colspan="5">
+                                        <div class="spinner"></div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    <div id="toast-container"></div>
+    <script src="js/erp-common.js"></script>
+    <script>
+        buildAdminSidebar('newsletter');
+        let allData = [];
+
+        async function loadData() {
+            document.getElementById('tableBody').innerHTML = '<tr class="loading-row"><td colspan="5"><div class="spinner"></div></td></tr>';
+            const res = await apiGet({ action: 'getNewsletter' });
+            allData = res.status === 'success' ? res.data : [];
+            applyFilters();
+        }
+
+        function applyFilters() {
+            const q = document.getElementById('searchInput').value.toLowerCase();
+            const filtered = q ? allData.filter(r => JSON.stringify(r).toLowerCase().includes(q)) : allData;
+            document.getElementById('countLabel').textContent = filtered.length + ' subscriber(s)';
+            const tbody = document.getElementById('tableBody');
+            if (!filtered.length) { tbody.innerHTML = '<tr><td colspan="6"><div class="empty-state"><i class="fa fa-newspaper"></i><h4>No subscribers yet</h4><p>Newsletter subscribers will appear here</p></div></td></tr>'; return; }
+            
+            tbody.innerHTML = filtered.map((r, i) => {
+                const isUnread = (r['Read'] || 'No') !== 'Yes';
+                return `<tr style="${isUnread ? 'background-color: #fffbeb; font-weight: 500;' : ''}">
+                <td>${i + 1}</td>
+                <td><strong>${r['Email'] || r['email'] || '—'}</strong></td>
+                <td>${r['Name'] || r['name'] || r['First Name'] || '—'}</td>
+                <td style="font-size:.78rem;">${fmtDate(r['Date'] || r['Subscribed Date'] || r['Timestamp'])}</td>
+                <td style="font-size:.78rem;">${r['Journal Interest'] || r['Journal'] || r['interest'] || '—'}</td>
+                <td>${isUnread ? '<span class="badge badge-danger">New</span>' : '<span class="badge badge-gray">Read</span>'}</td>
+                <td>
+                    ${isUnread ? `<button class="btn btn-xs btn-outline" onclick="markRead('${r['Email'] || r['email']}')"><i class="fa fa-check"></i> Read</button>` : '—'}
+                </td>
+              </tr>`;
+            }).join('');
+        }
+
+        async function markRead(email) {
+            const res = await apiPost({
+                action: 'updateStatus',
+                sheetName: 'Newsletter',
+                idColumn: 'Email',
+                idValue: email,
+                updates: { 'Read': 'Yes' }
+            });
+            if (res.status === 'success') {
+                showToast('Subscriber marked as read', 'success');
+                loadData();
+            }
+        }
+
+        loadData();
+    </script>
+</body>
+
+</html>

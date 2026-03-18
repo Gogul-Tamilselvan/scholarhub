@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Users — SIP Admin</title>
+    <link rel="icon" href="assets/logo.png" type="image/png">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="css/erp-style.css">
+</head>
+
+<body>
+    <script>if (sessionStorage.getItem('adminLoggedIn') !== 'true') window.location.href = 'admin-login.html';</script>
+    <div class="erp-layout">
+        <main class="erp-main">
+            <header class="erp-header">
+                <div class="header-left">
+                    <div class="header-title">User Management</div>
+                </div>
+                <div class="header-right">
+                    <div class="header-user">
+                        <div class="user-avatar" id="header-avatar">AD</div>
+                        <div class="user-info">
+                            <div class="user-name" id="header-user-name">Admin</div>
+                            <div class="user-role">Administrator</div>
+                        </div>
+                    </div>
+                </div>
+            </header>
+            <div class="erp-content">
+                <div class="page-header">
+                    <div class="page-header-left">
+                        <h1>User Management</h1>
+                        <p>Create users, manage accounts, and submit manuscripts manually.</p>
+                    </div>
+                    <div class="page-header-actions">
+                        <button class="btn btn-success" onclick="openCreateUser()"><i class="fa fa-user-plus"></i>
+                            Create User</button>
+                        <button class="btn btn-primary" onclick="openManualManuscript()"><i class="fa fa-file-plus"></i>
+                            Submit Manuscript</button>
+                        <button class="btn btn-gray" onclick="exportCSV(filtered,'users')"><i
+                                class="fa fa-download"></i> Export CSV</button>
+                    </div>
+                </div>
+
+                <!-- Change Admin Password -->
+                <div class="card mb-24">
+                    <div class="card-header">
+                        <h3><i class="fa fa-key" style="color:var(--purple);margin-right:8px;"></i> Change Admin
+                            Password</h3>
+                    </div>
+                    <div class="card-body" style="display:flex;gap:16px;align-items:flex-end;flex-wrap:wrap;">
+                        <div class="form-group mb-0" style="flex:1;min-width:200px;"><label class="form-label">New
+                                Password</label><input type="password" id="adminPwd" class="form-control"
+                                placeholder="Min 6 characters"></div>
+                        <div class="form-group mb-0" style="flex:1;min-width:200px;"><label class="form-label">Confirm
+                                Password</label><input type="password" id="adminPwd2" class="form-control"
+                                placeholder="Confirm new password"></div>
+                        <button class="btn btn-primary" onclick="changeAdminPwd()"><i class="fa fa-save"></i>
+                            Update</button>
+                    </div>
+                </div>
+
+                <div class="table-wrapper">
+                    <div class="table-toolbar">
+                        <div class="search-box"><i class="fa fa-search"></i><input type="text" id="searchInput"
+                                placeholder="Search users..." oninput="applyFilters()"></div>
+                        <div style="display:flex;gap:8px;align-items:center;">
+                            <select id="roleFilter" class="form-control" style="width:140px;padding:7px 10px;"
+                                onchange="applyFilters()">
+                                <option value="">All Roles</option>
+                                <option>Admin</option>
+                                <option>Reviewer</option>
+                                <option>Editorial Board Member</option>
+                            </select>
+                            <span id="countLabel"
+                                style="font-size:.82rem;color:var(--text-muted);white-space:nowrap;"></span>
+                        </div>
+                    </div>
+                    <div class="table-scroll">
+                        <table class="erp-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th>Role</th>
+                                    <th>Journal</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tableBody">
+                                <tr class="loading-row">
+                                    <td colspan="7">
+                                        <div class="spinner"></div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Create User Modal -->
+    <div class="modal-overlay" id="createUserModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3><i class="fa fa-user-plus"></i> Create New User</h3><button class="modal-close"
+                    onclick="closeModal('createUserModal')">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-grid">
+                    <div class="form-group"><label class="form-label">First Name <span>*</span></label><input
+                            type="text" id="cu-fname" class="form-control" placeholder="First name"></div>
+                    <div class="form-group"><label class="form-label">Last Name <span>*</span></label><input type="text"
+                            id="cu-lname" class="form-control" placeholder="Last name"></div>
+                    <div class="form-group"><label class="form-label">Email <span>*</span></label><input type="email"
+                            id="cu-email" class="form-control" placeholder="user@email.com"></div>
+                    <div class="form-group"><label class="form-label">Mobile</label><input type="text" id="cu-phone"
+                            class="form-control" placeholder="Phone number"></div>
+                    <div class="form-group"><label class="form-label">Role <span>*</span></label>
+                        <select id="cu-role" class="form-control">
+                            <option>Reviewer</option>
+                            <option>Editorial Board Member</option>
+                            <option>Admin</option>
+                        </select>
+                    </div>
+                    <div class="form-group"><label class="form-label">Journal</label><input type="text" id="cu-journal"
+                            class="form-control" placeholder="Journal name"></div>
+                    <div class="form-group"><label class="form-label">Institution</label><input type="text"
+                            id="cu-institution" class="form-control" placeholder="University / Organization"></div>
+                    <div class="form-group"><label class="form-label">Designation</label><input type="text"
+                            id="cu-designation" class="form-control" placeholder="e.g. Professor"></div>
+                    <div class="form-group"><label class="form-label">Password <span>*</span></label><input
+                            type="password" id="cu-password" class="form-control" placeholder="Set login password">
+                    </div>
+                    <div class="form-group"><label class="form-label">Status</label>
+                        <select id="cu-status" class="form-control">
+                            <option value="Active">Active</option>
+                            <option value="Pending">Pending</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-success" onclick="createUser()"><i class="fa fa-check"></i> Create User</button>
+                <button class="btn btn-gray" onclick="closeModal('createUserModal')">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Manual Manuscript Modal -->
+    <div class="modal-overlay" id="manualMsModal">
+        <div class="modal modal-lg">
+            <div class="modal-header">
+                <h3><i class="fa fa-file-plus"></i> Submit Manuscript</h3><button class="modal-close"
+                    onclick="closeModal('manualMsModal')">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-grid">
+                    <div class="form-group"><label class="form-label">Manuscript Title <span>*</span></label><input
+                            type="text" id="ms-title" class="form-control" placeholder="Full title"></div>
+                    <div class="form-group"><label class="form-label">Journal <span>*</span></label><input type="text"
+                            id="ms-journal" class="form-control" placeholder="Journal name"></div>
+                    <div class="form-group"><label class="form-label">Author Name <span>*</span></label><input
+                            type="text" id="ms-author" class="form-control" placeholder="Corresponding author"></div>
+                    <div class="form-group"><label class="form-label">Email <span>*</span></label><input type="email"
+                            id="ms-email" class="form-control" placeholder="author@email.com"></div>
+                    <div class="form-group"><label class="form-label">Mobile</label><input type="text" id="ms-phone"
+                            class="form-control" placeholder="Phone"></div>
+                    <div class="form-group"><label class="form-label">Designation</label><input type="text"
+                            id="ms-designation" class="form-control" placeholder="Author designation"></div>
+                    <div class="form-group"><label class="form-label">Institution</label><input type="text"
+                            id="ms-institution" class="form-control" placeholder="University"></div>
+                    <div class="form-group"><label class="form-label">Area / Subject</label><input type="text"
+                            id="ms-area" class="form-control" placeholder="Research area"></div>
+                    <div class="form-group"><label class="form-label">Google Drive File URL</label><input type="url"
+                            id="ms-fileurl" class="form-control" placeholder="https://drive.google.com/..."></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="submitManualMs()"><i class="fa fa-paper-plane"></i>
+                    Submit</button>
+                <button class="btn btn-gray" onclick="closeModal('manualMsModal')">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast-container"></div>
+    <script src="js/erp-common.js"></script>
+    <script>
+        buildAdminSidebar('users');
+        let allUsers = [], filtered = [];
+
+        async function loadUsers() {
+            document.getElementById('tableBody').innerHTML = '<tr class="loading-row"><td colspan="7"><div class="spinner"></div></td></tr>';
+            const res = await apiGet({ action: 'getReviewers' });
+            allUsers = res.status === 'success' ? res.data : [];
+            applyFilters();
+        }
+
+        function applyFilters() {
+            const q = document.getElementById('searchInput').value.toLowerCase();
+            const rf = document.getElementById('roleFilter').value;
+            filtered = allUsers.filter(u => {
+                if (rf && String(u['Role'] || '') !== rf) return false;
+                if (q) return String(u['First Name'] + ' ' + u['Last Name'] + ' ' + u['Email'] + ' ' + u['Reviewer ID']).toLowerCase().includes(q);
+                return true;
+            });
+            document.getElementById('countLabel').textContent = filtered.length + ' user(s)';
+            const tbody = document.getElementById('tableBody');
+            if (!filtered.length) { tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state"><i class="fa fa-users"></i><h4>No users found</h4></div></td></tr>'; return; }
+            tbody.innerHTML = filtered.map(u => `<tr>
+        <td><strong style="font-size:.8rem;">${u['Reviewer ID'] || '—'}</strong></td>
+        <td><strong>${u['First Name'] || ''} ${u['Last Name'] || ''}</strong></td>
+        <td style="font-size:.8rem;">${u['Email'] || '—'}</td>
+        <td style="font-size:.8rem;">${u['Role'] || '—'}</td>
+        <td style="font-size:.8rem;">${u['Journal'] || '—'}</td>
+        <td>${statusBadge(u['Status'] || 'Pending')}</td>
+        <td>
+          <div class="action-wrap">
+            <button class="action-toggle" onclick="toggleActionMenu(this)"><i class="fa fa-ellipsis-v"></i></button>
+            <div class="action-menu">
+              <button onclick="changePwd('${u['Reviewer ID']}','${(u['First Name'] + ' ' + u['Last Name']).trim()}')"><i class="fa fa-key" style="color:var(--purple);"></i> Change Password</button>
+              <button onclick="setStatus('${u['Reviewer ID']}','Active')"><i class="fa fa-check" style="color:var(--success);"></i> Activate</button>
+              <button onclick="setStatus('${u['Reviewer ID']}','Inactive')"><i class="fa fa-user-slash" style="color:var(--danger);"></i> Deactivate</button>
+            </div>
+          </div>
+        </td>
+      </tr>`).join('');
+        }
+
+        function openCreateUser() { document.getElementById('createUserModal').classList.add('show'); }
+        function openManualManuscript() { document.getElementById('manualMsModal').classList.add('show'); }
+        function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+
+        async function createUser() {
+            const fname = document.getElementById('cu-fname').value.trim();
+            const lname = document.getElementById('cu-lname').value.trim();
+            const email = document.getElementById('cu-email').value.trim();
+            const pwd = document.getElementById('cu-password').value.trim();
+            if (!fname || !email || !pwd) { showToast('Fill in required fields', 'warning'); return; }
+            const res = await apiPost({
+                action: 'createUser', firstName: fname, lastName: lname, email,
+                phone: document.getElementById('cu-phone').value, role: document.getElementById('cu-role').value,
+                journal: document.getElementById('cu-journal').value, institution: document.getElementById('cu-institution').value,
+                designation: document.getElementById('cu-designation').value, password: pwd,
+                status: document.getElementById('cu-status').value
+            });
+            if (res.status === 'success') { showToast('✓ User created! ID: ' + res.data.reviewerId, 'success'); logActivity('Create User', `Created ${fname} ${lname} as ${document.getElementById('cu-role').value}`, 'users'); closeModal('createUserModal'); loadUsers(); }
+            else showToast('Error: ' + res.message, 'error');
+        }
+
+        async function submitManualMs() {
+            const title = document.getElementById('ms-title').value.trim();
+            const journal = document.getElementById('ms-journal').value.trim();
+            const author = document.getElementById('ms-author').value.trim();
+            const email = document.getElementById('ms-email').value.trim();
+            if (!title || !journal || !author || !email) { showToast('Fill in required fields', 'warning'); return; }
+            const res = await apiPost({
+                action: 'submitManuscript', title, journal, authorName: author, email,
+                phone: document.getElementById('ms-phone').value, designation: document.getElementById('ms-designation').value,
+                institution: document.getElementById('ms-institution').value, area: document.getElementById('ms-area').value,
+                fileUrl: document.getElementById('ms-fileurl').value
+            });
+            if (res.status === 'success') { showToast('✓ Manuscript submitted! ID: ' + res.data.manuscriptId, 'success'); closeModal('manualMsModal'); }
+            else showToast('Error: ' + res.message, 'error');
+        }
+
+        async function changePwd(id, name) {
+            document.querySelectorAll('.action-menu.open').forEach(m => m.classList.remove('open'));
+            const pwd = prompt(`New password for ${name}:`);
+            if (!pwd || pwd.length < 4) { if (pwd !== null) alert('Min 4 characters'); return; }
+            const res = await apiPost({ action: 'changePassword', reviewerId: id, newPassword: pwd });
+            if (res.status === 'success') { showToast('✓ Password updated for ' + name, 'success'); logActivity('Password Change', `Changed pwd for ${id} (${name})`, 'users'); }
+            else showToast('Error: ' + res.message, 'error');
+        }
+
+        async function setStatus(id, status) {
+            document.querySelectorAll('.action-menu.open').forEach(m => m.classList.remove('open'));
+            const res = await apiPost({ action: 'updateStatus', sheetName: 'Reviewers', idColumn: 'Reviewer ID', idValue: id, updates: { 'Status': status } });
+            if (res.status === 'success') { showToast('✓ Status updated to ' + status, 'success'); loadUsers(); }
+            else showToast('Error: ' + res.message, 'error');
+        }
+
+        async function changeAdminPwd() {
+            const p1 = document.getElementById('adminPwd').value;
+            const p2 = document.getElementById('adminPwd2').value;
+            if (!p1 || p1.length < 6) { showToast('Password must be at least 6 characters', 'warning'); return; }
+            if (p1 !== p2) { showToast('Passwords do not match', 'error'); return; }
+            // For demo: save in session. In production, update in Reviewers sheet keyed by current admin ID.
+            const adminId = sessionStorage.getItem('userId');
+            if (adminId && adminId !== 'ADMIN001') {
+                await apiPost({ action: 'changePassword', reviewerId: adminId, newPassword: p1 });
+            }
+            showToast('✓ Admin password updated', 'success');
+            logActivity('Password Change', 'Admin changed own password', 'users');
+            document.getElementById('adminPwd').value = ''; document.getElementById('adminPwd2').value = '';
+        }
+
+        loadUsers();
+    </script>
+</body>
+
+</html>

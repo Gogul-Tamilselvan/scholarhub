@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login Activity — SIP Admin</title>
+    <link rel="icon" href="assets/logo.png" type="image/png">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="css/erp-style.css">
+</head>
+
+<body>
+    <script>if (sessionStorage.getItem('adminLoggedIn') !== 'true') window.location.href = 'admin-login.html';</script>
+    <div class="erp-layout">
+        <main class="erp-main">
+            <header class="erp-header">
+                <div class="header-left">
+                    <div class="header-title">Login &amp; Activity Log</div>
+                </div>
+                <div class="header-right">
+                    <div class="header-user">
+                        <div class="user-avatar" id="header-avatar">AD</div>
+                        <div class="user-info">
+                            <div class="user-name" id="header-user-name">Admin</div>
+                            <div class="user-role">Administrator</div>
+                        </div>
+                    </div>
+                </div>
+            </header>
+            <div class="erp-content">
+                <div class="page-header">
+                    <div class="page-header-left">
+                        <h1>Login &amp; Activity Log</h1>
+                        <p>Complete audit trail of all admin and member actions in the system.</p>
+                    </div>
+                    <div class="page-header-actions">
+                        <button class="btn btn-gray" onclick="loadData()"><i class="fa fa-sync"></i> Refresh</button>
+                        <button class="btn btn-primary" onclick="exportCSV(filtered,'activity_log')"><i
+                                class="fa fa-download"></i> Export CSV</button>
+                    </div>
+                </div>
+                <div class="table-wrapper">
+                    <div class="table-toolbar">
+                        <div class="search-box"><i class="fa fa-search"></i><input type="text" id="searchInput"
+                                placeholder="Search by user, action..." oninput="applyFilters()"></div>
+                        <div style="display:flex;gap:8px;align-items:center;">
+                            <select id="actionFilter" class="form-control" style="width:150px;padding:7px 10px;"
+                                onchange="applyFilters()">
+                                <option value="">All Actions</option>
+                                <option>Login</option>
+                                <option>Status Update</option>
+                                <option>Assign Work</option>
+                                <option>Revoke</option>
+                                <option>Password Change</option>
+                                <option>Create User</option>
+                            </select>
+                            <span id="countLabel"
+                                style="font-size:.82rem;color:var(--text-muted);white-space:nowrap;"></span>
+                        </div>
+                    </div>
+                    <div class="table-scroll">
+                        <table class="erp-table">
+                            <thead>
+                                <tr>
+                                    <th>Last Visit</th>
+                                    <th>User</th>
+                                    <th>Role</th>
+                                    <th>Recent Actions</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tableBody">
+                                <tr class="loading-row">
+                                    <td colspan="6">
+                                        <div class="spinner"></div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Activity Detail Modal -->
+    <div class="modal-overlay" id="detailModal">
+        <div class="modal modal-lg">
+            <div class="modal-header">
+                <h3><i class="fa fa-history"></i> Activity Detail</h3>
+                <button class="modal-close" onclick="closeDetail()">×</button>
+            </div>
+            <div class="modal-body" id="detailContent" style="padding:0 20px 20px;"></div>
+            <div class="modal-footer">
+                <button class="btn btn-gray" onclick="closeDetail()">Close</button>
+            </div>
+        </div>
+    </div>
+    <div id="toast-container"></div>
+    <script src="js/erp-common.js"></script>
+    <script>
+        buildAdminSidebar('activity');
+        let allData = [], userSummaries = [], filtered = [];
+        const actionColors = { 'login': '#16a34a', 'status update': '#0891b2', 'assign work': '#7c3aed', 'revoke': '#dc2626', 'password change': '#d97706', 'create user': '#1e40af' };
+
+        async function loadData() {
+            document.getElementById('tableBody').innerHTML = '<tr class="loading-row"><td colspan="5"><div class="spinner"></div></td></tr>';
+            const res = await apiGet({ action: 'getLoginActivity' });
+            allData = (res.status === 'success' ? res.data : []).reverse();
+
+            // Group by User ID to create summaries
+            const groups = {};
+            allData.forEach(r => {
+                const uid = r['User ID'] || 'Guest';
+                if (!groups[uid]) {
+                    groups[uid] = {
+                        id: uid,
+                        name: r['User Name'] || '—',
+                        role: r['Role'] || '—',
+                        lastVisit: r['Timestamp'],
+                        actions: new Set(),
+                        history: []
+                    };
+                }
+                groups[uid].history.push(r);
+                if (groups[uid].actions.size < 3) groups[uid].actions.add(r['Action']);
+            });
+
+            userSummaries = Object.values(groups).sort((a, b) => new Date(b.lastVisit) - new Date(a.lastVisit));
+            applyFilters();
+        }
+
+        function applyFilters() {
+            const q = document.getElementById('searchInput').value.toLowerCase();
+            const af = document.getElementById('actionFilter').value;
+
+            filtered = userSummaries.filter(u => {
+                if (q && !String(u.id + ' ' + u.name + ' ' + u.role).toLowerCase().includes(q)) return false;
+                if (af) {
+                    const hasAction = u.history.some(h => String(h['Action']).toLowerCase() === af.toLowerCase());
+                    if (!hasAction) return false;
+                }
+                return true;
+            });
+
+            document.getElementById('countLabel').textContent = filtered.length + ' user(s)';
+            const tbody = document.getElementById('tableBody');
+            if (!filtered.length) { tbody.innerHTML = '<tr><td colspan="5"><div class="empty-state"><i class="fa fa-history"></i><h4>No activity records</h4></div></td></tr>'; return; }
+
+            tbody.innerHTML = filtered.map(u => {
+                const actionsHtml = Array.from(u.actions).map(act => {
+                    const col = actionColors[String(act).toLowerCase()] || '#64748b';
+                    return `<span style="background:${col}1a;color:${col};padding:2px 8px;border-radius:12px;font-size:.68rem;font-weight:700;margin-right:4px;">${act}</span>`;
+                }).join('');
+
+                return `<tr>
+                    <td style="font-size:.78rem;white-space:nowrap;">${fmtDT(u.lastVisit)}</td>
+                    <td><strong style="font-size:.82rem;">${u.name}</strong><span class="td-muted">${u.id}</span></td>
+                    <td style="font-size:.78rem;">${u.role}</td>
+                    <td>${actionsHtml}</td>
+                    <td>
+                        <button class="btn btn-primary btn-xs" onclick="viewHistory('${u.id}')"><i class="fa fa-eye"></i> View History</button>
+                    </td>
+                </tr>`;
+            }).join('');
+        }
+
+        function viewHistory(uid) {
+            const user = userSummaries.find(u => u.id === uid);
+            if (!user) return;
+
+            let html = `
+                <div style="margin-bottom:15px;padding:12px;background:var(--bg);border-radius:8px;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;">
+                        <div>
+                            <div class="form-label" style="margin-bottom:2px;">User</div>
+                            <div style="font-weight:700;font-size:1.1rem;">${user.name} <span style="font-weight:400;color:var(--text-muted);font-size:.85rem;">(${user.id})</span></div>
+                        </div>
+                        <div style="text-align:right;">
+                            <div class="form-label" style="margin-bottom:2px;">Role</div>
+                            <div class="badge badge-gray">${user.role}</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="table-scroll" style="max-height:60vh;">
+                    <table class="erp-table erp-table-sm">
+                        <thead>
+                            <tr>
+                                <th>Timestamp</th>
+                                <th>Action</th>
+                                <th>Details</th>
+                                <th>Page</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${user.history.map(h => {
+                const act = String(h['Action'] || '').toLowerCase();
+                const col = actionColors[act] || '#64748b';
+                return `<tr>
+                                    <td style="font-size:.75rem;white-space:nowrap;">${fmtDT(h['Timestamp'])}</td>
+                                    <td><span style="display:inline-flex;align-items:center;background:${col}1a;color:${col};padding:2px 8px;border-radius:12px;font-size:.68rem;font-weight:700;">${h['Action']}</span></td>
+                                    <td style="font-size:.78rem;">${h['Details'] || '—'}</td>
+                                    <td style="font-size:.75rem;color:var(--text-muted);">${h['Page'] || '—'}</td>
+                                </tr>`;
+            }).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+
+            document.getElementById('detailContent').innerHTML = html;
+            document.getElementById('detailModal').classList.add('show');
+        }
+
+        function closeDetail() { document.getElementById('detailModal').classList.remove('show'); }
+
+        loadData();
+    </script>
+</body>
+
+</html>

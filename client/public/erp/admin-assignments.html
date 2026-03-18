@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Assignments — SIP Admin</title>
+    <link rel="icon" href="assets/logo.png" type="image/png">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="css/erp-style.css">
+</head>
+
+<body>
+    <script>if (sessionStorage.getItem('adminLoggedIn') !== 'true') window.location.href = 'admin-login.html';</script>
+    <div class="erp-layout">
+        <main class="erp-main">
+            <header class="erp-header">
+                <div class="header-left">
+                    <div class="header-title">Assignments Management</div>
+                </div>
+                <div class="header-right">
+                    <div class="header-user">
+                        <div class="user-avatar" id="header-avatar">AD</div>
+                        <div class="user-info">
+                            <div class="user-name" id="header-user-name">Admin</div>
+                            <div class="user-role">Administrator</div>
+                        </div>
+                    </div>
+                </div>
+            </header>
+            <div class="erp-content">
+                <div class="page-header">
+                    <div class="page-header-left">
+                        <h1>All Assignments</h1>
+                        <p>Track reviewer assignments with status, ranking, and performance indicators.</p>
+                    </div>
+                    <div class="page-header-actions">
+                        <label
+                            style="display:flex;align-items:center;gap:6px;font-size:.82rem;font-weight:600;cursor:pointer;">
+                            <input type="checkbox" id="showRevoked" onchange="applyFilters()"> Show Revoked
+                        </label>
+                        <button class="btn btn-gray" onclick="loadData()"><i class="fa fa-sync"></i> Refresh</button>
+                        <button class="btn btn-gray" onclick="printTable('Assignments')"><i class="fa fa-print"></i>
+                            Print</button>
+                        <button class="btn btn-primary" onclick="exportCSV(filtered,'assignments')"><i
+                                class="fa fa-download"></i> Export CSV</button>
+                    </div>
+                </div>
+
+                <!-- Stats -->
+                <div class="stats-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:20px;"
+                    id="assignStats">
+                    <div class="stat-card">
+                        <div class="stat-icon si-blue"><i class="fa fa-tasks"></i></div>
+                        <div class="stat-info">
+                            <h3 id="st-total">0</h3>
+                            <p>Total</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon si-orange"><i class="fa fa-clock"></i></div>
+                        <div class="stat-info">
+                            <h3 id="st-pending">0</h3>
+                            <p>Pending</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon si-green"><i class="fa fa-check-circle"></i></div>
+                        <div class="stat-info">
+                            <h3 id="st-completed">0</h3>
+                            <p>Completed</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon si-red"><i class="fa fa-ban"></i></div>
+                        <div class="stat-info">
+                            <h3 id="st-revoked">0</h3>
+                            <p>Revoked</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="table-wrapper">
+                    <div class="table-toolbar">
+                        <div class="search-box"><i class="fa fa-search"></i><input type="text" id="searchInput"
+                                placeholder="Search by manuscript, reviewer..." oninput="applyFilters()"></div>
+                        <div style="display:flex;gap:8px;">
+                            <select id="statusFilter" class="form-control" style="width:150px;padding:7px 10px;"
+                                onchange="applyFilters()">
+                                <option value="">All Statuses</option>
+                                <option>Pending</option>
+                                <option>Completed</option>
+                                <option>Approved</option>
+                                <option>Revoked</option>
+                            </select>
+                            <span id="countLabel"
+                                style="font-size:.82rem;color:var(--text-muted);align-self:center;white-space:nowrap;"></span>
+                        </div>
+                    </div>
+                    <div class="table-scroll">
+                        <table class="erp-table">
+                            <thead>
+                                <tr>
+                                    <th onclick="sortBy('AssignedAt')">Assignment / Manuscript Details ↕</th>
+                                    <th onclick="sortBy('ReviewerFullName')">Reviewer ↕</th>
+                                    <th onclick="sortBy('AssignedAt')">Assigned ↕</th>
+                                    <th onclick="sortBy('DueDate')">Due Date ↕</th>
+                                    <th onclick="sortBy('Status')">Status ↕</th>
+                                    <th onclick="sortBy('OverallMarks')">Rank ↕</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tableBody">
+                                <tr class="loading-row">
+                                    <td colspan="8">
+                                        <div class="spinner"></div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div id="toast-container"></div>
+    <script src="js/erp-common.js"></script>
+    <script>
+        buildAdminSidebar('assignments');
+        let allData = [], filtered = [], sortKey = '', sortAsc = true;
+
+        function sortBy(key) {
+            if (sortKey === key) sortAsc = !sortAsc; else { sortKey = key; sortAsc = true; }
+            applyFilters();
+        }
+
+        async function loadData() {
+            document.getElementById('tableBody').innerHTML = '<tr><td colspan="8"><div class="spinner"></div></td></tr>';
+            const res = await apiGet({ action: 'getAssignments' });
+            allData = res.status === 'success' ? res.data : [];
+            // Compute stats
+            const total = allData.length;
+            const pending = allData.filter(a => String(a['Status'] || '').toLowerCase() === 'pending').length;
+            const completed = allData.filter(a => ['completed', 'approved'].includes(String(a['Status'] || '').toLowerCase())).length;
+            const revoked = allData.filter(a => String(a['Status'] || '').toLowerCase() === 'revoked').length;
+            document.getElementById('st-total').textContent = total;
+            document.getElementById('st-pending').textContent = pending;
+            document.getElementById('st-completed').textContent = completed;
+            document.getElementById('st-revoked').textContent = revoked;
+            applyFilters();
+        }
+
+        function applyFilters() {
+            const q = document.getElementById('searchInput').value.toLowerCase();
+            const sf = document.getElementById('statusFilter').value;
+            const sr = document.getElementById('showRevoked').checked;
+            filtered = allData.filter(a => {
+                const st = String(a['Status'] || '').toLowerCase();
+                if (!sr && st === 'revoked') return false;
+                if (sf && String(a['Status'] || '') !== sf) return false;
+                if (q) return ['ManuscriptID', 'ManuscriptTitle', 'ReviewerID', 'ReviewerFullName', 'ReviewerEmail'].some(k => String(a[k] || '').toLowerCase().includes(q));
+                return true;
+            });
+
+            if (sortKey) filtered = sortTable(filtered, sortKey, sortAsc);
+
+            document.getElementById('countLabel').textContent = filtered.length + ' record(s)';
+            const tbody = document.getElementById('tableBody');
+            if (!filtered.length) { tbody.innerHTML = '<tr><td colspan="8"><div class="empty-state"><i class="fa fa-tasks"></i><h4>No assignments</h4></div></td></tr>'; return; }
+            tbody.innerHTML = filtered.map((a, i) => {
+                const st = String(a['Status'] || 'Pending');
+                const revEmail = a['ReviewerEmail'] || '—';
+                const revMobile = a['Mobile'] || '—';
+
+                const due = a['DueDate'] ? new Date(a['DueDate']) : null;
+                const isOverdue = due && due < new Date() && st.toLowerCase() === 'pending';
+                const marks = a['OverallMarks'];
+                const rank = marks ? (marks >= 9 ? '🥇 Excellent' : marks >= 7 ? '🥈 Good' : marks >= 5 ? '🥉 Average' : '⚠️ Low') : '—';
+                return `<tr style="${a['Status'] === 'Revoked' ? 'opacity:.5;' : ''}">
+          <td>
+            <div style="font-weight:700;color:var(--text-muted);font-size:.7rem;margin-bottom:4px;">${fmtDate(a['AssignedAt'])}</div>
+            <strong style="font-size:.85rem;display:block;">${String(a['ManuscriptTitle'] || '').substring(0, 50)}</strong>
+            <div style="font-size:.75rem;color:var(--text-muted);margin-top:4px;">MS ID: ${a['ManuscriptID'] || ''}</div>
+          </td>
+          <td>
+            <strong style="font-size:.82rem;">${a['ReviewerFullName'] || '—'}</strong>
+            <div style="font-size:.72rem;color:var(--text-muted);margin-top:2px;">
+                <i class="fa fa-envelope" style="width:12px;"></i> ${revEmail}<br>
+                <i class="fa fa-phone" style="width:12px;"></i> ${revMobile}
+            </div>
+            <span class="td-muted">${a['ReviewerID'] || ''}</span>
+          </td>
+          <td style="font-size:.78rem;">${fmtDate(a['AssignedAt'])}</td>
+          <td style="font-size:.78rem;${isOverdue ? 'color:var(--danger);font-weight:700;' : ''}">${fmtDate(a['DueDate'])}${isOverdue ? ' ⚠️' : ''}</td>
+          <td>${statusBadge(st)}</td>
+          <td style="font-size:.78rem;">${rank}</td>
+          <td>
+            ${st !== 'Revoked' ? `<div class="action-wrap">
+              <button class="action-toggle" onclick="toggleActionMenu(this)"><i class="fa fa-ellipsis-v"></i></button>
+              <div class="action-menu">
+                <button onclick="sendReminder('${a['AssignedAt']}','${a['ReviewerFullName']}')"><i class="fa fa-bell" style="color:var(--warning);"></i> Send Reminder</button>
+                <button onclick="revokeAssignment('${a['AssignedAt']}')"><i class="fa fa-ban" style="color:var(--danger);"></i> Revoke</button>
+              </div>
+            </div>` : '<span style="font-size:.78rem;color:var(--text-muted);">Revoked</span>'}
+          </td>
+        </tr>`;
+            }).join('');
+        }
+
+        async function sendReminder(at, name) {
+            document.querySelectorAll('.action-menu.open').forEach(m => m.classList.remove('open'));
+            if (!confirm(`Send reminder to ${name}?`)) return;
+            const res = await apiPost({ action: 'sendReminder', assignedAt: at });
+            if (res.status === 'success') { showToast('✓ Reminder recorded for ' + name, 'success'); loadData(); }
+            else showToast('Error: ' + res.message, 'error');
+        }
+
+        async function revokeAssignment(at) {
+            document.querySelectorAll('.action-menu.open').forEach(m => m.classList.remove('open'));
+            const note = prompt('Enter reason for revocation:');
+            if (note === null) return;
+            const res = await apiPost({ action: 'revokeAssignment', assignedAt: at, note });
+            if (res.status === 'success') { showToast('✓ Assignment revoked', 'success'); logActivity('Revoke', 'Assignment at ' + at + ' revoked', 'assignments'); loadData(); }
+            else showToast('Error: ' + res.message, 'error');
+        }
+
+        loadData();
+    </script>
+</body>
+
+</html>

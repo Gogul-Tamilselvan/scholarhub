@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Profile — SIP Portal</title>
+  <link rel="icon" href="assets/sip-logo.png" type="image/png">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="css/erp-style.css">
+</head>
+<body>
+  <script>if (sessionStorage.getItem('memberLoggedIn') !== 'true') window.location.href = 'member-login.html';</script>
+
+  <div class="erp-layout">
+    <main class="erp-main">
+      <header class="erp-header">
+        <div class="header-left"><div class="header-title">My Profile</div></div>
+        <div class="header-right">
+          <div class="header-user">
+            <div class="user-avatar" id="header-avatar">RV</div>
+            <div class="user-info">
+              <div class="user-name" id="header-user-name">Member</div>
+              <div class="user-role" id="header-user-role">Reviewer</div>
+            </div>
+          </div>
+        </div>
+      </header>
+      <div class="erp-content">
+        <div class="page-header">
+          <div class="page-header-left">
+            <h1>My Profile</h1>
+            <p>View your profile details and update your password</p>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;" id="profileGrid">
+          <!-- Profile Info -->
+          <div class="card">
+            <div class="card-header"><h3><i class="fa fa-user-circle" style="color:var(--accent);margin-right:8px;"></i> Profile Details</h3></div>
+            <div class="card-body" id="profileContent">
+              <div style="text-align:center;padding:32px;"><div class="spinner"></div> Loading...</div>
+            </div>
+          </div>
+
+          <!-- Change Password -->
+          <div class="card">
+            <div class="card-header"><h3><i class="fa fa-key" style="color:var(--warning);margin-right:8px;"></i> Change Password</h3></div>
+            <div class="card-body">
+              <div class="info-banner"><i class="fa fa-info-circle"></i> Your default password is your Reviewer/Editor ID. Change it to something secure.</div>
+              <div class="form-group">
+                <label class="form-label">Current Password</label>
+                <input type="password" id="currentPwd" class="form-control" placeholder="Current password">
+              </div>
+              <div class="form-group">
+                <label class="form-label">New Password</label>
+                <input type="password" id="newPwd" class="form-control" placeholder="Min 6 characters">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Confirm New Password</label>
+                <input type="password" id="confirmPwd" class="form-control" placeholder="Repeat new password">
+              </div>
+              <button class="btn btn-primary w-100" onclick="changePwd()"><i class="fa fa-save"></i> Update Password</button>
+            </div>
+          </div>
+
+          <!-- Performance -->
+          <div class="card" style="grid-column:1/-1;">
+            <div class="card-header"><h3><i class="fa fa-chart-bar" style="color:var(--success);margin-right:8px;"></i> Review Performance</h3></div>
+            <div class="card-body" id="perfContent">
+              <div style="text-align:center;padding:24px;"><div class="spinner"></div> Loading...</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <div id="toast-container"></div>
+  <script src="js/erp-common.js"></script>
+  <script>
+    buildMemberSidebar('profile');
+    const userId = sessionStorage.getItem('userId') || '';
+    const userRole = sessionStorage.getItem('userRole') || 'Reviewer';
+    document.getElementById('header-user-role').textContent = userRole;
+
+    let profileData = null;
+
+    async function loadProfile() {
+      try {
+        const [rvRes, asRes] = await Promise.all([
+          apiGet({ action: 'getReviewers' }),
+          apiGet({ action: 'getAssignments' })
+        ]);
+
+        if (rvRes.status === 'success') {
+          const reviewer = rvRes.data.find(r =>
+            String(r['Reviewer ID'] || r['ReviewerID'] || '').trim() === userId ||
+            String(r['Email'] || '').toLowerCase().trim() === (sessionStorage.getItem('userEmail') || '').toLowerCase()
+          );
+          profileData = reviewer;
+          if (reviewer) {
+            const firstName = reviewer['First Name'] || reviewer['Name'] || '';
+            const lastName = reviewer['Last Name'] || '';
+            const initials = (firstName[0] || '') + (lastName[0] || firstName[1] || '');
+            document.getElementById('header-avatar').textContent = initials.toUpperCase() || 'RV';
+            document.getElementById('profileContent').innerHTML = `
+              <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--border);">
+                <div style="width:56px;height:56px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:1.2rem;font-weight:800;flex-shrink:0;">${(initials || 'RV').toUpperCase()}</div>
+                <div>
+                  <div style="font-size:1.05rem;font-weight:800;color:var(--text);">${firstName} ${lastName}</div>
+                  <div>${statusBadge(userRole)}</div>
+                </div>
+              </div>
+              ${[
+                ['Reviewer ID', reviewer['Reviewer ID'] || userId],
+                ['Email', reviewer['Email']],
+                ['Mobile', reviewer['Mobile']],
+                ['Designation', reviewer['Designation']],
+                ['Institution', reviewer['Institution']],
+                ['Area of Interest', reviewer['Area of Interest']],
+                ['Journal', reviewer['Journal']],
+                ['ORCID', reviewer['ORCID']],
+                ['Google Scholar', reviewer['Google Scholar']],
+                ['Status', reviewer['Status']]
+              ].map(([k,v]) => v ? `
+                <div style="display:flex;gap:12px;margin-bottom:10px;align-items:flex-start;">
+                  <div style="font-size:.75rem;font-weight:600;color:var(--text-muted);width:120px;flex-shrink:0;padding-top:1px;">${k}</div>
+                  <div style="font-size:.83rem;color:var(--text);font-weight:500;">${k === 'Status' ? statusBadge(v) : v}</div>
+                </div>` : '').join('')}`;
+          } else {
+            document.getElementById('profileContent').innerHTML = `<div class="empty-state"><i class="fa fa-user"></i> Profile data not found. Contact admin.</div>`;
+          }
+        }
+
+        if (asRes.status === 'success') {
+          const myAssignments = asRes.data.filter(a => String(a['ReviewerID'] || a['Reviewer ID'] || '').trim() === userId);
+          const total = myAssignments.length;
+          const completed = myAssignments.filter(a => ['completed','approved'].includes(String(a['Status']||'').toLowerCase())).length;
+          const pending = myAssignments.filter(a => ['pending','accepted','in review'].includes(String(a['Status']||'').toLowerCase())).length;
+          const revoked = myAssignments.filter(a => String(a['Status']||'').toLowerCase() === 'revoked').length;
+          const rate = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+          document.getElementById('perfContent').innerHTML = `
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:16px;margin-bottom:20px;">
+              ${[
+                ['Total Assigned', total, 'si-blue'],
+                ['Completed', completed, 'si-green'],
+                ['Pending', pending, 'si-orange'],
+                ['Revoked', revoked, 'si-red'],
+              ].map(([label, val, cls]) => `
+                <div class="stat-card">
+                  <div class="stat-icon ${cls}"><i class="fa fa-tasks"></i></div>
+                  <div class="stat-info"><h3>${val}</h3><p>${label}</p></div>
+                </div>`).join('')}
+            </div>
+            <div class="perf-bar-wrap">
+              <div class="perf-bar-label"><span>Completion Rate</span><span>${rate}%</span></div>
+              <div class="perf-bar-track"><div class="perf-bar-fill" style="width:${rate}%;background:${rate >= 75 ? 'var(--success)' : rate >= 50 ? 'var(--warning)' : 'var(--danger)'};"></div></div>
+            </div>`;
+        }
+      } catch(err) {
+        showToast('Error loading profile: ' + err.message, 'error');
+      }
+    }
+
+    async function changePwd() {
+      const current = document.getElementById('currentPwd').value.trim();
+      const newP = document.getElementById('newPwd').value.trim();
+      const confirm = document.getElementById('confirmPwd').value.trim();
+
+      if (!current || !newP || !confirm) { showToast('All fields required', 'warning'); return; }
+      if (newP.length < 6) { showToast('Password must be at least 6 characters', 'warning'); return; }
+      if (newP !== confirm) { showToast('Passwords do not match', 'warning'); return; }
+
+      try {
+        // Verify current password
+        const email = sessionStorage.getItem('userEmail') || '';
+        const loginRes = await apiGet({ action: 'login', email, password: current, role: 'member' });
+        if (loginRes.status !== 'success') { showToast('Current password is incorrect', 'error'); return; }
+
+        const res = await apiPost({ action: 'changePassword', reviewerId: userId, newPassword: newP });
+        if (res.status === 'success') {
+          showToast('Password updated successfully!', 'success');
+          document.getElementById('currentPwd').value = '';
+          document.getElementById('newPwd').value = '';
+          document.getElementById('confirmPwd').value = '';
+          logActivity('Password Changed', 'Member changed password', 'member-profile');
+        } else {
+          showToast(res.message || 'Update failed', 'error');
+        }
+      } catch(err) {
+        showToast('Error: ' + err.message, 'error');
+      }
+    }
+
+    // Responsive
+    if (window.innerWidth < 768) {
+      document.getElementById('profileGrid').style.gridTemplateColumns = '1fr';
+    }
+
+    loadProfile();
+  </script>
+</body>
+</html>

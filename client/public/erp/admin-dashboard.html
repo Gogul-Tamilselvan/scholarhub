@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard — Scholar India Publishers ERP</title>
+    <link rel="icon" href="assets/logo.png" type="image/png">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="css/erp-style.css">
+</head>
+
+<body>
+    <script>if (sessionStorage.getItem('adminLoggedIn') !== 'true') window.location.href = 'admin-login.html';</script>
+
+    <div class="erp-layout">
+        <!-- Sidebar injected by JS -->
+        <main class="erp-main">
+            <header class="erp-header">
+                <div class="header-left">
+                    <div>
+                        <div class="header-title">Overview Dashboard</div>
+                        <div class="header-breadcrumb">Welcome back, <span id="header-user-name">Admin</span></div>
+                    </div>
+                </div>
+                <div class="header-right">
+                    <a href="admin-messages.html" class="header-bell" title="Messages">
+                        <i class="fa fa-bell"></i>
+                        <span class="bell-dot" id="global-bell"></span>
+                    </a>
+                    <div class="header-user" onclick="window.location.href='admin-users.html'">
+                        <div class="user-avatar" id="header-avatar">AD</div>
+                        <div class="user-info">
+                            <div class="user-name" id="header-user-name2">Admin</div>
+                            <div class="user-role">Administrator</div>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <div class="erp-content">
+                <!-- Stats -->
+                <div class="stats-grid" id="statsGrid">
+                    <div class="stat-card">
+                        <div class="stat-icon si-blue"><i class="fa fa-file-alt"></i></div>
+                        <div class="stat-info">
+                            <h3 id="s-manuscripts">—</h3>
+                            <p>Total Manuscripts</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon si-orange"><i class="fa fa-clock"></i></div>
+                        <div class="stat-info">
+                            <h3 id="s-pending">—</h3>
+                            <p>Under Review</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon si-green"><i class="fa fa-user-check"></i></div>
+                        <div class="stat-info">
+                            <h3 id="s-reviewers">—</h3>
+                            <p>Active Reviewers</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon si-purple"><i class="fa fa-tasks"></i></div>
+                        <div class="stat-info">
+                            <h3 id="s-assignments">—</h3>
+                            <p>Active Assignments</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon si-teal"><i class="fa fa-credit-card"></i></div>
+                        <div class="stat-info">
+                            <h3 id="s-payments">—</h3>
+                            <p>Payments</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon si-red"><i class="fa fa-envelope"></i></div>
+                        <div class="stat-info">
+                            <h3 id="s-unread">—</h3>
+                            <p>Unread Messages</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon si-yellow" style="background:#fefce8;color:#854d0e;"><i
+                                class="fa fa-book"></i></div>
+                        <div class="stat-info">
+                            <h3 id="s-books">—</h3>
+                            <p>Books</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon si-indigo" style="background:#eef2ff;color:#3730a3;"><i
+                                class="fa fa-envelope-open-text"></i></div>
+                        <div class="stat-info">
+                            <h3 id="s-contacts">—</h3>
+                            <p>Contact Leads</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="card mb-24">
+                    <div class="card-header">
+                        <h3><i class="fa fa-bolt" style="color:var(--warning);margin-right:8px;"></i>Quick Actions</h3>
+                    </div>
+                    <div class="card-body"
+                        style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;padding:16px 20px;">
+                        <a href="admin-approve-reviewers.html" class="btn btn-outline"
+                            style="justify-content:center;"><i class="fa fa-user-check"></i> Approve Reviewers</a>
+                        <a href="admin-assign.html" class="btn btn-outline" style="justify-content:center;"><i
+                                class="fa fa-tasks"></i> Assign Work</a>
+                        <a href="admin-manuscripts.html" class="btn btn-outline" style="justify-content:center;"><i
+                                class="fa fa-file-alt"></i> Manuscripts</a>
+                        <a href="admin-users.html" class="btn btn-outline" style="justify-content:center;"><i
+                                class="fa fa-user-plus"></i> Add User</a>
+                        <a href="admin-messages.html" class="btn btn-outline" style="justify-content:center;"><i
+                                class="fa fa-comments"></i> Messages</a>
+                        <a href="admin-books.html" class="btn btn-outline" style="justify-content:center;"><i
+                                class="fa fa-book"></i> Books</a>
+                        <a href="admin-contact.html" class="btn btn-outline" style="justify-content:center;"><i
+                                class="fa fa-envelope-open-text"></i> Leads</a>
+                    </div>
+                </div>
+
+                <!-- Two column: Recent manuscripts + Pending assignments -->
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;"
+                    class="responsive-grid">
+                    <div class="table-wrapper">
+                        <div class="table-toolbar">
+                            <span style="font-size:.9rem;font-weight:700;color:var(--text);">Recent Manuscripts</span>
+                            <a href="admin-manuscripts.html" class="btn btn-gray btn-sm">View All</a>
+                        </div>
+                        <div class="table-scroll">
+                            <table class="erp-table" id="recentTable">
+                                <thead>
+                                    <tr>
+                                        <th>Title</th>
+                                        <th>Author</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="recentBody">
+                                    <tr class="loading-row">
+                                        <td colspan="3">
+                                            <div class="spinner"></div> Loading...
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="table-wrapper">
+                        <div class="table-toolbar">
+                            <span style="font-size:.9rem;font-weight:700;color:var(--text);">Pending Assignments</span>
+                            <a href="admin-assignments.html" class="btn btn-gray btn-sm">View All</a>
+                        </div>
+                        <div class="table-scroll">
+                            <table class="erp-table">
+                                <thead>
+                                    <tr>
+                                        <th>Manuscript</th>
+                                        <th>Reviewer</th>
+                                        <th>Due</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="assignBody">
+                                    <tr class="loading-row">
+                                        <td colspan="3">
+                                            <div class="spinner"></div> Loading...
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pending reviewer approvals -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3><i class="fa fa-user-clock" style="color:var(--warning);margin-right:8px;"></i>Pending
+                            Reviewer Approvals</h3>
+                        <a href="admin-approve-reviewers.html" class="btn btn-gray btn-sm">Manage</a>
+                    </div>
+                    <div class="table-scroll">
+                        <table class="erp-table">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th>Role</th>
+                                    <th>Applied</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="pendingReviewerBody">
+                                <tr class="loading-row">
+                                    <td colspan="5">
+                                        <div class="spinner"></div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div id="toast-container"></div>
+    <script src="js/erp-common.js"></script>
+    <script>
+        buildAdminSidebar('dashboard');
+
+        // Sync header username
+        document.querySelectorAll('#header-user-name, #header-user-name2').forEach(el => el.textContent = sessionStorage.getItem('userName') || 'Admin');
+
+        async function loadDashboard() {
+            try {
+                // Batch fetch all required data at once
+                const res = await apiBatchGet([
+                    { action: 'getManuscripts' },
+                    { action: 'getReviewers' },
+                    { action: 'getAssignments' },
+                    { action: 'getPayments' },
+                    { action: 'getBooks' },
+                    { action: 'getContact' },
+                    { action: 'getMessages', userId: 'admin' }
+                ]);
+
+                if (res.status !== 'success') throw new Error(res.message);
+                const batch = res.data;
+
+                // Manuscripts
+                const msRes = batch['getManuscripts'];
+                const manuscripts = msRes.status === 'success' ? msRes.data : [];
+                document.getElementById('s-manuscripts').textContent = manuscripts.length;
+                document.getElementById('s-pending').textContent = manuscripts.filter(m => String(m['Status'] || m['Status ']).toLowerCase().includes('review')).length;
+
+                // Reviewers
+                const rvRes = batch['getReviewers'];
+                const reviewers = rvRes.status === 'success' ? rvRes.data : [];
+                document.getElementById('s-reviewers').textContent = reviewers.filter(r => String(r['Status'] || '').toLowerCase() === 'active').length;
+
+                // Assignments
+                const asRes = batch['getAssignments'];
+                const assignments = asRes.status === 'success' ? asRes.data : [];
+                document.getElementById('s-assignments').textContent = assignments.filter(a => String(a['Assignment Status'] || '').toLowerCase() === 'pending').length;
+
+                // Payments
+                const pmRes = batch['getPayments'];
+                const payments = pmRes.status === 'success' ? pmRes.data : [];
+                document.getElementById('s-payments').textContent = payments.length;
+
+                // Messages - unread count
+                const msgRes = batch['getMessages'];
+                const msgs = msgRes.status === 'success' ? msgRes.data : [];
+                const unread = msgs.filter(m => String(m['To']) === 'admin' && String(m['Read']) !== 'true');
+                document.getElementById('s-unread').textContent = unread.length;
+                document.getElementById('global-bell').classList.toggle('show', unread.length > 0);
+
+                // Books
+                const bkRes = batch['getBooks'];
+                document.getElementById('s-books').textContent = bkRes.status === 'success' ? bkRes.data.length : 0;
+
+                // Contacts
+                const ctRes = batch['getContact'];
+                document.getElementById('s-contacts').textContent = ctRes.status === 'success' ? ctRes.data.length : 0;
+
+                // Recent manuscripts table
+                const tbody = document.getElementById('recentBody');
+                const recent = manuscripts.slice(-6).reverse();
+                tbody.innerHTML = recent.length ? recent.map(m => `
+          <tr>
+            <td><strong style="font-size:.82rem;">${(m['Manuscript Title'] || m['Manuscript Title '] || 'Untitled').substring(0, 35)}…</strong></td>
+            <td style="font-size:.8rem;">${m['Author Name'] || m['Author Name '] || '—'}</td>
+            <td>${statusBadge(m['Status'] || m['Status '] || 'Submitted')}</td>
+          </tr>`).join('') : '<tr><td colspan="3" style="text-align:center;padding:24px;color:#94a3b8;">No manuscripts yet</td></tr>';
+
+                // Assignments table
+                const tbody2 = document.getElementById('assignBody');
+                const pendingA = assignments.filter(a => a['Assignment Status'] === 'Pending').slice(0, 6);
+                tbody2.innerHTML = pendingA.length ? pendingA.map(a => `
+          <tr>
+            <td style="font-size:.8rem;">${String(a['Manuscript Title'] || '').substring(0, 28)}…</td>
+            <td style="font-size:.8rem;">${a['Reviewer Name'] || '—'}</td>
+            <td>${fmtDate(a['Due Date'])}</td>
+          </tr>`).join('') : '<tr><td colspan="3" style="text-align:center;padding:24px;color:#94a3b8;">No pending assignments</td></tr>';
+
+                // Pending reviewer approvals
+                const pendingRvBody = document.getElementById('pendingReviewerBody');
+                const pendingRv = reviewers.filter(r => !r['Status'] || String(r['Status']).toLowerCase() === 'pending').slice(0, 5);
+                pendingRvBody.innerHTML = pendingRv.length ? pendingRv.map(r => `
+          <tr>
+            <td><strong>${r['First Name'] || ''} ${r['Last Name'] || ''}</strong></td>
+            <td style="font-size:.8rem;">${r['Email'] || '—'}</td>
+            <td>${statusBadge(r['Role'] || 'Reviewer')}</td>
+            <td style="font-size:.8rem;">${fmtDate(r['Submitted Date'])}</td>
+            <td><a href="admin-approve-reviewers.html" class="btn btn-primary btn-xs">Review</a></td>
+          </tr>`).join('') : '<tr><td colspan="5" style="text-align:center;padding:20px;color:#94a3b8;">No pending approvals</td></tr>';
+
+            } catch (err) {
+                showToast('Dashboard error: ' + err.message, 'error');
+                console.error('Dashboard load failed:', err);
+            }
+        }
+
+        loadDashboard();
+
+        // Style fix for responsive grid
+        const rg = document.querySelector('.responsive-grid');
+        if (rg && window.innerWidth < 768) rg.style.gridTemplateColumns = '1fr';
+        window.addEventListener('resize', () => {
+            if (rg) rg.style.gridTemplateColumns = window.innerWidth < 768 ? '1fr' : '1fr 1fr';
+        });
+    </script>
+</body>
+
+</html>

@@ -414,11 +414,24 @@ function logActivity(actionType, details, page) {
 
 /* ─── SETUP CHECK ─────────────────────────────────────────── */
 function checkSetup() {
-  const url = localStorage.getItem('erp_webapp_url');
+  // Ensure URL is always initialized
+  let url = localStorage.getItem('erp_webapp_url');
   if (!url) {
+    url = DEFAULT_WEB_APP_URL;
+    localStorage.setItem('erp_webapp_url', url);
+  }
+  // Only show banner if URL is invalid (shouldn't happen with our auto-init)
+  if (!url || !url.includes('script.google.com')) {
     const banner = document.createElement('div');
     banner.style.cssText = 'background:#fef3c7;color:#92400e;padding:10px 20px;font-size:.8rem;font-weight:600;text-align:center;border-bottom:1px solid #fde68a;';
     banner.innerHTML = '<i class="fa fa-exclamation-triangle"></i> Google Apps Script backend not configured. <a href="setup.html" style="color:#92400e;font-weight:700;text-decoration:underline;">Click here to set up</a>.';
     document.body.insertBefore(banner, document.body.firstChild);
   }
+}
+
+// Ensure setup runs after DOM is ready if called
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', checkSetup);
+} else {
+  checkSetup();
 }

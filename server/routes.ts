@@ -3644,6 +3644,25 @@ Sitemap: ${protocol}://${domain}/sitemap.xml
         return res.status(400).json({ success: false, message: 'Missing required fields' });
       }
 
+      // Check if manuscript has "complement" status (payment would be optional)
+      let isComplementStatus = false;
+      try {
+        const { getGoogleSheetsClient } = await import('./google-sheets-client');
+        const sheets = await getGoogleSheetsClient();
+        const response = await sheets.spreadsheets.values.get({
+          spreadsheetId: '1J2v7detA06MC3xmNCjVt0QGOi98Myo446kBPlMKfDKg',
+          range: 'Manuscript!A2:Q1000'
+        });
+        const rows = response.data.values || [];
+        const manuscript = rows.find(row => (row[0] || '').toString().trim().toUpperCase() === manuscriptId.trim().toUpperCase());
+        if (manuscript) {
+          const statusValue = (manuscript[14] || '').toString().trim().toLowerCase();
+          isComplementStatus = statusValue.includes('complement');
+        }
+      } catch (e) {
+        console.warn('Could not check manuscript status:', e);
+      }
+
       const files = req.files as { [fieldname: string]: Express.Multer.File[] } || {};
       const finalPaperFile = files.finalPaper?.[0];
       const copyrightFormFile = files.copyrightForm?.[0];
@@ -3750,25 +3769,29 @@ Sitemap: ${protocol}://${domain}/sitemap.xml
         console.error('Failed to record copyright form in Google Sheets:', sheetError?.message);
       }
 
-      // Record payment information if provided
-      if (paymentMethod || transactionId) {
-        try {
-          await appendToSheet('Payment', [
-            new Date().toISOString(),
-            manuscriptId,
-            correspondingAuthorName,
-            correspondingEmail,
-            paymentMethod || '',
-            transactionId || '',
-            paymentNotes || '',
-            'Submitted'
-          ]);
-        } catch (sheetError: any) {
-          console.error('Failed to record payment in Google Sheets:', sheetError?.message);
+      // Record payment information if provided (optional for complement status)
+      if (paymentMethod || transactionId || !isComplementStatus) {
+        // For non-complement status, record payment info even if partially filled
+        // For complement status, only record if payment info is explicitly provided
+        if ((paymentMethod && transactionId) || (!isComplementStatus && paymentMethod)) {
+          try {
+            await appendToSheet('Payment', [
+              new Date().toISOString(),
+              manuscriptId,
+              correspondingAuthorName,
+              correspondingEmail,
+              paymentMethod || '',
+              transactionId || '',
+              paymentNotes || '',
+              isComplementStatus ? 'Optional - Not Provided' : 'Submitted'
+            ]);
+          } catch (sheetError: any) {
+            console.error('Failed to record payment in Google Sheets:', sheetError?.message);
+          }
         }
       }
 
-      console.log(`✅ Unified submission completed for manuscript: ${manuscriptId}`);
+      console.log(`✅ Unified submission completed for manuscript: ${manuscriptId}${isComplementStatus ? ' (Complement status - payment optional)' : ''}`);
       res.json({ success: true, message: 'All documents submitted successfully' });
     } catch (error: any) {
       console.error('Error submitting unified form:', error);

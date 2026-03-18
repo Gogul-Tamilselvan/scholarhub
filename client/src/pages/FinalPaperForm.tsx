@@ -53,6 +53,7 @@ export default function FinalPaperForm() {
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [isFetching, setIsFetching] = useState(false);
   const [authors, setAuthors] = useState([{ name: "", designation: "", affiliation: "", email: "" }]);
+  const [manuscriptStatus, setManuscriptStatus] = useState<string>("");
 
   const addAuthor = () => setAuthors([...authors, { name: "", designation: "", affiliation: "", email: "" }]);
   const removeAuthor = (index: number) => setAuthors(authors.filter((_, i) => i !== index));
@@ -91,10 +92,22 @@ export default function FinalPaperForm() {
       if (journalType?.includes("commerce")) form.setValue("publicationType", "sjcm");
       else if (journalType?.includes("humanities")) form.setValue("publicationType", "sjhss");
 
-      toast({
-        title: "Details Fetched",
-        description: "Manuscript details have been automatically filled.",
-      });
+      // Store manuscript status
+      const status = (data.status || "").toLowerCase();
+      setManuscriptStatus(status);
+
+      // Show message if complement status
+      if (status.includes("complement")) {
+        toast({
+          title: "Details Fetched",
+          description: "Manuscript status: Complement. Payment step will be optional.",
+        });
+      } else {
+        toast({
+          title: "Details Fetched",
+          description: "Manuscript details have been automatically filled.",
+        });
+      }
     } catch (error: any) {
       toast({
         title: "Fetch Failed",
@@ -203,6 +216,7 @@ export default function FinalPaperForm() {
   const watchPublicationType = form.watch("publicationType");
   const watchConflict = form.watch("conflictOfInterest");
   const watchFunding = form.watch("fundingSupport");
+  const isComplementStatus = manuscriptStatus.includes("complement");
 
   if (submitted) {
     return (
@@ -241,7 +255,7 @@ export default function FinalPaperForm() {
 
         {/* Step Indicator */}
         <div className="flex gap-4 mb-8 overflow-x-auto">
-          {[1, 2, 3].map((step) => (
+          {[1, 2, ...(isComplementStatus ? [] : [3])].map((step) => (
             <div key={step} className="flex items-center gap-2">
               <button
                 onClick={() => setCurrentStep(step)}
@@ -261,6 +275,11 @@ export default function FinalPaperForm() {
             </div>
           ))}
         </div>
+        {isComplementStatus && (
+          <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 p-3 rounded-lg mb-4 text-sm text-blue-800 dark:text-blue-300">
+            This manuscript has "Complement" status. Payment details are optional and will be skipped.
+          </div>
+        )}
 
         {showConfirmDialog && (
           <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4">
@@ -620,6 +639,11 @@ export default function FinalPaperForm() {
               >
                 Continue to Copyright Form →
               </Button>
+              {isComplementStatus && (
+                <p className="text-xs text-gray-600 dark:text-gray-400 text-center mt-2">
+                  After copyright form, you'll complete the submission
+                </p>
+              )}
             </div>
           )}
 
@@ -827,14 +851,32 @@ export default function FinalPaperForm() {
                 >
                   ← Back to Final Paper
                 </Button>
-                <Button
-                  type="button"
-                  onClick={() => setCurrentStep(3)}
-                  className="flex-1 bg-[#213361] hover:bg-[#2a4078]"
-                  data-testid="button-next-step-2"
-                >
-                  Continue to Payment →
-                </Button>
+                {isComplementStatus ? (
+                  <Button
+                    type="submit"
+                    className="flex-1 h-12 bg-green-600 hover:bg-green-700"
+                    disabled={submitMutation.isPending}
+                    data-testid="button-submit-complement"
+                  >
+                    {submitMutation.isPending ? (
+                      <>
+                        <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                        Submitting...
+                      </>
+                    ) : (
+                      "Submit All Documents"
+                    )}
+                  </Button>
+                ) : (
+                  <Button
+                    type="button"
+                    onClick={() => setCurrentStep(3)}
+                    className="flex-1 bg-[#213361] hover:bg-[#2a4078]"
+                    data-testid="button-next-step-2"
+                  >
+                    Continue to Payment →
+                  </Button>
+                )}
               </div>
             </div>
           )}

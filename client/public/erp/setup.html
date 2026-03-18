@@ -135,6 +135,20 @@
         result.innerHTML =
           '<div style="background:#f1f5f9;border-radius:6px;padding:10px 14px;font-size:.8rem;"><div class="spinner"></div> Testing connection...</div>';
         try {
+          // First, test if the URL is accessible at all
+          const testRes = await fetch(url, { 
+            method: "GET",
+            redirect: "follow",
+            timeout: 5000
+          });
+          
+          // Check response status
+          if (testRes.status === 404) {
+            result.innerHTML = `<div style="background:#fee2e2;border-radius:6px;padding:10px 14px;font-size:.8rem;color:#b91c1c;"><i class="fa fa-exclamation-circle"></i> <strong>404 Error:</strong> The URL is not accessible. Make sure:<br>1. The script is deployed as a Web App<br>2. "Who has access" is set to "Anyone"<br>3. The URL is correct</div>`;
+            return;
+          }
+
+          // Try to get actual data
           const qs = new URLSearchParams({
             action: "getManuscripts",
           }).toString();
@@ -142,17 +156,26 @@
             method: "GET",
             redirect: "follow",
           });
-          const data = await res.json();
+          
+          const text = await res.text();
+          let data;
+          try {
+            data = JSON.parse(text);
+          } catch (e) {
+            result.innerHTML = `<div style="background:#fee2e2;border-radius:6px;padding:10px 14px;font-size:.8rem;color:#b91c1c;"><i class="fa fa-exclamation-circle"></i> <strong>Invalid Response:</strong> The script returned invalid data. Response: <code>${text.substring(0, 100)}</code></div>`;
+            return;
+          }
+
           if (data.status === "success") {
             result.innerHTML =
-              '<div style="background:#dcfce7;border-radius:6px;padding:10px 14px;font-size:.8rem;color:#15803d;"><i class="fa fa-check-circle"></i> Connection successful! Found ' +
+              '<div style="background:#dcfce7;border-radius:6px;padding:10px 14px;font-size:.8rem;color:#15803d;"><i class="fa fa-check-circle"></i> <strong>✅ Connection successful!</strong><br>Found ' +
               (data.data?.length || 0) +
-              " records.</div>";
+              ' records in Manuscript sheet.</div>';
           } else {
-            result.innerHTML = `<div style="background:#fee2e2;border-radius:6px;padding:10px 14px;font-size:.8rem;color:#b91c1c;"><i class="fa fa-exclamation-circle"></i> ${data.message || "Unknown error"}</div>`;
+            result.innerHTML = `<div style="background:#fee2e2;border-radius:6px;padding:10px 14px;font-size:.8rem;color:#b91c1c;"><i class="fa fa-exclamation-circle"></i> <strong>Error:</strong> ${data.message || "Unknown error"}</div>`;
           }
         } catch (ex) {
-          result.innerHTML = `<div style="background:#fee2e2;border-radius:6px;padding:10px 14px;font-size:.8rem;color:#b91c1c;"><i class="fa fa-exclamation-circle"></i> Connection failed: ${ex.message}</div>`;
+          result.innerHTML = `<div style="background:#fee2e2;border-radius:6px;padding:10px 14px;font-size:.8rem;color:#b91c1c;"><i class="fa fa-exclamation-circle"></i> <strong>Connection Failed:</strong> ${ex.message}<br><br><small>Common causes:<br>• Script not deployed yet<br>• Wrong URL<br>• Browser CORS restrictions (test in private/incognito mode)</small></div>`;
         }
       }
 

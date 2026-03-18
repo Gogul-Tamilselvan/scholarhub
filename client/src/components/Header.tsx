@@ -10,6 +10,7 @@ export default function Header() {
   const [booksOpen, setBooksOpen] = useState(false);
   const [servicesOpen, setServicesOpen] = useState(false);
   const [submitOpen, setSubmitOpen] = useState(false);
+  const [loginOpen, setLoginOpen] = useState(false);
 
   return (
     <header className="sticky top-0 z-50 w-full bg-gradient-to-r from-white to-blue-50 dark:from-slate-950 dark:to-blue-950/20 border-b-2 border-blue-200 dark:border-blue-900 shadow-lg">
@@ -132,11 +133,29 @@ export default function Header() {
             </Button>
             
             <div className="flex items-center gap-2 ml-2 pl-2 border-l border-blue-200 dark:border-blue-800">
-              <Button className="bg-gradient-to-r from-green-500 to-green-600 dark:from-green-600 dark:to-green-700 text-white hover:from-green-600 hover:to-green-700 font-semibold transition-all duration-200 shadow-none hover:shadow-none" data-testid="button-reviewer-login" asChild>
-                <Link href="/reviewer-login" data-testid="link-nav-reviewer-login" className="flex items-center gap-1">
-                  Reviewer Login
-                </Link>
-              </Button>
+              {/* Login Dropdown */}
+              <div className="relative group">
+                <Button className="bg-gradient-to-r from-green-500 to-green-600 dark:from-green-600 dark:to-green-700 text-white hover:from-green-600 hover:to-green-700 font-semibold transition-all duration-200 flex items-center gap-1 shadow-none hover:shadow-none" data-testid="button-login">
+                  Login
+                  <ChevronDown className="h-4 w-4 transition-transform duration-300 group-hover:rotate-180" />
+                </Button>
+                <div className="absolute top-full right-0 hidden group-hover:block pt-2 z-50">
+                  <div className="bg-white dark:bg-slate-900 border border-blue-200 dark:border-blue-800 rounded-lg shadow-xl p-2 space-y-1 min-w-56 backdrop-blur-sm">
+                    <Link href="/admin/login" data-testid="link-admin-login">
+                      <div className="px-4 py-2 rounded hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors duration-200 cursor-pointer">
+                        <div className="font-medium text-gray-900 dark:text-gray-100">Admin</div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">Administrator access</div>
+                      </div>
+                    </Link>
+                    <Link href="/reviewer-login" data-testid="link-reviewer-login">
+                      <div className="px-4 py-2 rounded hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors duration-200 cursor-pointer">
+                        <div className="font-medium text-gray-900 dark:text-gray-100">Reviewer / Editor</div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">Reviewer and editor access</div>
+                      </div>
+                    </Link>
+                  </div>
+                </div>
+              </div>
               
               {/* Submit Dropdown */}
               <div className="relative group">
@@ -274,12 +293,33 @@ export default function Header() {
             </Button>
 
             <div className="space-y-2 pt-2 border-t border-blue-200 dark:border-blue-800">
-              <Button className="w-full bg-gradient-to-r from-green-500 to-green-600 dark:from-green-600 dark:to-green-700 text-white hover:shadow-lg transition-all font-semibold flex items-center justify-center gap-2" asChild>
-                <Link href="/reviewer-login" onClick={() => setMobileMenuOpen(false)}>
+              {/* Mobile Login Dropdown */}
+              <div>
+                <Button
+                  className="w-full bg-gradient-to-r from-green-500 to-green-600 dark:from-green-600 dark:to-green-700 text-white hover:shadow-lg transition-all font-semibold flex items-center justify-center gap-2"
+                  onClick={() => setLoginOpen(!loginOpen)}
+                >
                   <LogIn className="h-4 w-4" />
-                  Reviewer Login
-                </Link>
-              </Button>
+                  Login
+                  <ChevronDown className={`h-4 w-4 transition-transform ${loginOpen ? 'rotate-180' : ''}`} />
+                </Button>
+                {loginOpen && (
+                  <div className="pl-4 space-y-1 mt-2 bg-blue-50/50 dark:bg-blue-900/20 rounded-lg p-2">
+                    <Link href="/admin/login" onClick={() => { setMobileMenuOpen(false); setLoginOpen(false); }} data-testid="link-admin-login-mobile">
+                      <div className="px-3 py-2 rounded hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors">
+                        <div className="font-medium text-gray-900 dark:text-gray-100 text-sm">Admin</div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">Administrator access</div>
+                      </div>
+                    </Link>
+                    <Link href="/reviewer-login" onClick={() => { setMobileMenuOpen(false); setLoginOpen(false); }} data-testid="link-reviewer-login-mobile">
+                      <div className="px-3 py-2 rounded hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors">
+                        <div className="font-medium text-gray-900 dark:text-gray-100 text-sm">Reviewer / Editor</div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">Reviewer and editor access</div>
+                      </div>
+                    </Link>
+                  </div>
+                )}
+              </div>
 
               {/* Mobile Submit Dropdown */}
               <div>

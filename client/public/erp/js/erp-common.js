@@ -3,14 +3,21 @@
    Set WEB_APP_URL to your deployed Google Apps Script web app URL
    ============================================================ */
 
+const DEFAULT_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzxOlBhBgX3j-VmjjPfo2CwbbeHLJEex3m5OPjTKLYnnf91D7sD9zi2sPByNfI2HZW8/exec';
+
 const WEB_APP_URL = (function() {
-  // Try to get from localStorage (configurable by admin)
-  return localStorage.getItem('erp_webapp_url') || '';
+  // Try to get from localStorage (configurable by admin), fallback to default
+  let url = localStorage.getItem('erp_webapp_url');
+  if (!url) {
+    url = DEFAULT_WEB_APP_URL;
+    localStorage.setItem('erp_webapp_url', url);
+  }
+  return url;
 })();
 
 /* ─── API HELPERS ─────────────────────────────────────────── */
 async function apiGet(params) {
-  const url = WEB_APP_URL || localStorage.getItem('erp_webapp_url') || '';
+  const url = WEB_APP_URL;
   if (!url) {
     console.error('ERP: No WEB_APP_URL configured. Go to /erp/setup.html to configure.');
     return { status: 'error', message: 'Web App URL not configured. Please set up the ERP backend first.' };
@@ -22,7 +29,7 @@ async function apiGet(params) {
 }
 
 async function apiPost(data) {
-  const url = WEB_APP_URL || localStorage.getItem('erp_webapp_url') || '';
+  const url = WEB_APP_URL;
   if (!url) return { status: 'error', message: 'Web App URL not configured.' };
   const res = await fetch(url, {
     method: 'POST',

@@ -365,7 +365,7 @@ const articles: Record<string, Article> = {
       "Kalaiarasan C, Kamalesh G, Kovid Raghav R, Ishit Agarwal, Shanmugapriyan J & Joi Levis A",
     affiliation:
       "Assistant Professor, Department of B.Com Computer Applications, Loyola College (Autonomous); Students, Department of B.Com Computer Applications, Loyola College (Autonomous), Chennai, India",
-    pages: "22 - 32",
+    pages: "22 - 28",
     volume: "2",
     issue: "1",
     year: "2026",
@@ -381,6 +381,30 @@ const articles: Record<string, Article> = {
       "Financial decision-making",
     ],
     doi: "10.65219/sjcm.20260201004",
+  },
+  "sjcm-v2i1-005": {
+    id: "sjcm-v2i1-005",
+    title: "IMPACT OF INFRASTRUCTURE TRANSPARENCY ON TRUST IN BANKING CHATBOTS",
+    authors: "S. Shilpa, N. Purusothaman",
+    affiliation:
+      "Research Scholar of Commerce, Patrician College of Arts and Science; Assistant Professor and Research Supervisor, Patrician College of Arts and Science, Chennai, India",
+    pages: "29 - 37",
+    volume: "2",
+    issue: "1",
+    year: "2026",
+    journal: "Scholar Journal of Commerce and Management",
+    pdfUrl: "/downloads/sjcm-v2i1-005.pdf",
+    abstract:
+      "The increasing adoption of AI-based chatbots in the banking sector has reshaped customer service by enabling automated, efficient, and accessible digital interactions. Despite these benefits, user trust remains a crucial factor influencing the acceptance and continued use of banking chatbots. This study investigates how awareness of banking chatbot infrastructure and perceived infrastructure transparency affect user trust, perceived system reliability and security, and usage intention. Using a structured questionnaire, the study examines users' understanding of chatbot operations, the extent to which banks communicate chatbot roles, limitations, and data processing practices, and how such transparency influences confidence and trust. The research further explores the relationship between system reliability, security perceptions, and trust in chatbot-supported banking services. By analyzing user perceptions across multiple dimensions, the study highlights the role of transparent digital infrastructure in reducing uncertainty and enhancing trust in AI-driven banking systems. The findings aim to provide empirical insights into how infrastructure transparency can strengthen customer confidence, encourage usage, and improve overall satisfaction with banking chatbots. This research contributes to the literature on trustworthy AI and digital banking by emphasizing the importance of awareness and transparency as key drivers of trust and adoption in financial chatbot services.",
+    keywords: [
+      "Banking Chatbots",
+      "Infrastructure Transparency",
+      "Trust in Digital Banking",
+      "System Reliability",
+      "AI-driven Banking Systems",
+      "User Adoption",
+    ],
+    doi: "10.65219/sjcm.20260201005",
   },
   "sjhss-v1i1-007": {
     id: "sjhss-v1i1-007",

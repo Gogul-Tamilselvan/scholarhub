@@ -194,8 +194,17 @@ export default function CommerceJournal() {
       title: "BRIDGING THE AWARENESS – ACTION GAP IN FINANCIAL LITERACY AMONG CHENNAI COLLEGE STUDENTS",
       authors: "Kalaiarasan C*, Kamalesh G, Kovid Raghav R, Ishit Agarwal, Shanmugapriyan J & Joi Levis A",
       affiliation: "Assistant Professor, Department of B.Com Computer Applications, Loyola College (Autonomous); Students, Department of B.Com Computer Applications, Loyola College (Autonomous), Chennai, India",
-      pages: "22 - 32",
+      pages: "22 - 28",
       doi: "10.65219/sjcm.20260201004"
+    },
+    {
+      id: 5,
+      articleId: "sjcm-v2i1-005",
+      title: "IMPACT OF INFRASTRUCTURE TRANSPARENCY ON TRUST IN BANKING CHATBOTS",
+      authors: "S. Shilpa, N. Purusothaman*",
+      affiliation: "Research Scholar of Commerce, Patrician College of Arts and Science; Assistant Professor and Research Supervisor, Patrician College of Arts and Science, Chennai, India",
+      pages: "29 - 37",
+      doi: "10.65219/sjcm.20260201005"
     }
   ];
 

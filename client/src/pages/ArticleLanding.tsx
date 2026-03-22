@@ -595,6 +595,9 @@ export default function ArticleLanding() {
             Back
           </Button>
 
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Main Content */}
+            <div className="lg:col-span-2">
           <Card className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm">
             <div className="h-1 w-full bg-[#213361]" />
             <CardHeader className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700 px-6 py-6">
@@ -607,13 +610,19 @@ export default function ArticleLanding() {
                 <CardTitle className="text-xl md:text-2xl font-serif leading-relaxed text-gray-900 dark:text-gray-50 font-bold">
                   {article.title}
                 </CardTitle>
-                <div className="space-y-1.5 pt-1">
+                <div className="space-y-2 pt-1">
                   <p className="text-base font-semibold text-gray-800 dark:text-gray-200">
                     {article.authors}
                   </p>
-                  <p className="text-sm italic text-gray-500 dark:text-gray-400">
-                    {article.affiliation}
-                  </p>
+                  <div className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
+                    {article.affiliation.split('\n').map((aff, idx) => (
+                      aff.trim() && (
+                        <div key={idx} className="leading-relaxed">
+                          {aff.trim()}
+                        </div>
+                      )
+                    ))}
+                  </div>
                   <div className="pt-3 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
                     <p className="text-sm text-gray-700 dark:text-gray-300">
                       <span className="font-semibold text-[#213361] dark:text-blue-400">DOI: </span>
@@ -779,6 +788,127 @@ export default function ArticleLanding() {
               </div>
             </CardContent>
           </Card>
+            </div>
+
+            {/* Sidebar */}
+            <div className="lg:col-span-1">
+              <div className="space-y-4 sticky top-8">
+                {/* Journal Info Card */}
+                <Card className="border border-gray-200 dark:border-gray-700 overflow-hidden">
+                  <div className="h-1 w-full bg-[#213361]" />
+                  <CardHeader className="bg-gray-50 dark:bg-gray-800/50 px-4 py-3">
+                    <CardTitle className="text-sm font-bold text-gray-900 dark:text-gray-100 uppercase tracking-wider">
+                      Journal Information
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="px-4 py-3 space-y-3 text-xs">
+                    <div>
+                      <p className="font-semibold text-gray-700 dark:text-gray-300 mb-1">Journal</p>
+                      <p className="text-gray-600 dark:text-gray-400">{article.journal}</p>
+                    </div>
+                    <div>
+                      <p className="font-semibold text-gray-700 dark:text-gray-300 mb-1">Volume/Issue</p>
+                      <p className="text-gray-600 dark:text-gray-400">
+                        Vol. {article.volume}, No. {article.issue}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="font-semibold text-gray-700 dark:text-gray-300 mb-1">Publication Year</p>
+                      <p className="text-gray-600 dark:text-gray-400">{article.year}</p>
+                    </div>
+                    <div>
+                      <p className="font-semibold text-gray-700 dark:text-gray-300 mb-1">Pages</p>
+                      <p className="text-gray-600 dark:text-gray-400">{article.pages}</p>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Article Actions */}
+                <Card className="border border-gray-200 dark:border-gray-700 overflow-hidden">
+                  <div className="h-1 w-full bg-[#213361]" />
+                  <CardHeader className="bg-gray-50 dark:bg-gray-800/50 px-4 py-3">
+                    <CardTitle className="text-sm font-bold text-gray-900 dark:text-gray-100 uppercase tracking-wider">
+                      Actions
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="px-4 py-3 space-y-2">
+                    <Button
+                      className="w-full bg-[#213361] hover:bg-[#2a4078] text-white font-semibold text-sm"
+                      onClick={() => window.open(article.pdfUrl, "_blank")}
+                    >
+                      <Download className="h-4 w-4 mr-2" />
+                      Download PDF
+                    </Button>
+                    {article.doi && (
+                      <Button
+                        variant="outline"
+                        className="w-full text-xs"
+                        onClick={() => window.open(`https://doi.org/${article.doi}`, "_blank")}
+                      >
+                        View DOI
+                      </Button>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Related Articles */}
+                <Card className="border border-gray-200 dark:border-gray-700 overflow-hidden">
+                  <div className="h-1 w-full bg-[#213361]" />
+                  <CardHeader className="bg-gray-50 dark:bg-gray-800/50 px-4 py-3">
+                    <CardTitle className="text-sm font-bold text-gray-900 dark:text-gray-100 uppercase tracking-wider">
+                      More from This Journal
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="px-4 py-3">
+                    <Button
+                      variant="ghost"
+                      className="w-full justify-start text-xs text-[#213361] dark:text-blue-400 hover:text-[#2a4078] dark:hover:text-blue-300"
+                      onClick={() => {
+                        const journalPath = isCommerce ? '/commerce-management' : '/humanities';
+                        window.location.hash = `${journalPath}#current-issue`;
+                      }}
+                    >
+                      ← View Current Issue
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      className="w-full justify-start text-xs text-[#213361] dark:text-blue-400 hover:text-[#2a4078] dark:hover:text-blue-300"
+                      onClick={() => {
+                        const journalPath = isCommerce ? '/commerce-management' : '/humanities';
+                        window.location.hash = `${journalPath}#archives`;
+                      }}
+                    >
+                      ← View Archives
+                    </Button>
+                  </CardContent>
+                </Card>
+
+                {/* Subject Categories */}
+                {article.keywords && article.keywords.length > 0 && (
+                  <Card className="border border-gray-200 dark:border-gray-700 overflow-hidden">
+                    <div className="h-1 w-full bg-[#213361]" />
+                    <CardHeader className="bg-gray-50 dark:bg-gray-800/50 px-4 py-3">
+                      <CardTitle className="text-sm font-bold text-gray-900 dark:text-gray-100 uppercase tracking-wider">
+                        Research Areas
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="px-4 py-3">
+                      <div className="flex flex-wrap gap-2">
+                        {article.keywords.slice(0, 5).map((keyword, idx) => (
+                          <span
+                            key={idx}
+                            className="px-2 py-1 text-xs bg-[#213361]/10 dark:bg-[#213361]/20 text-[#213361] dark:text-blue-400 rounded-full border border-[#213361]/20"
+                          >
+                            {keyword}
+                          </span>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </>

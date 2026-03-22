@@ -26,9 +26,9 @@ const articles: Record<string, Article> = {
     id: "sjcm-v1i1-001",
     title:
       "THE IMPACT OF GOVERNMENT POLICIES ON THE GROWTH OF M-COMMERCE IN DEVELOPING ECONOMIES: AN INDIAN PERSPECTIVE",
-    authors: "Bhuriya Jignesh Subhashbhai, Chanduji Popatji Thakor",
+    authors: "Bhuriya Jignesh Subhashbhai¹, Chanduji Popatji Thakor²",
     affiliation:
-      "Assistant Professor of Commerce and Management, Shri Govind Guru University, Vinzol-Godhra, Gujarat, India",
+      "1. Assistant Professor of Commerce and Management, Shri Govind Guru University, Vinzol-Godhra, Gujarat, India\n2. Assistant Professor of Commerce and Management, Shri Govind Guru University, Vinzol-Godhra, Gujarat, India",
     pages: "1-10",
     volume: "1",
     issue: "1",
@@ -55,9 +55,9 @@ const articles: Record<string, Article> = {
   "sjcm-v1i1-002": {
     id: "sjcm-v1i1-002",
     title: "CONSUMER PERCEPTION TOWARDS DIGITAL PAYMENT MODE IN BANKING SECTOR",
-    authors: "A.Vini Infanta",
+    authors: "A. Vini Infanta¹",
     affiliation:
-      "Assistant Professor of Professional Accounting and Finance, School of Commerce, Accounting and Finance, Kristu Jayanti Deemed to be University, Bengaluru, India",
+      "1. Assistant Professor of Professional Accounting and Finance, School of Commerce, Accounting and Finance, Kristu Jayanti Deemed to be University, Bengaluru, India",
     pages: "11-18",
     volume: "1",
     issue: "1",
@@ -78,9 +78,9 @@ const articles: Record<string, Article> = {
     id: "sjcm-v1i1-003",
     title:
       "IMPACT OF SOCIAL MEDIA MARKETING ON BRAND LOYALTY WITH MEDIATING ROLE OF PURCHASE INTENTION AMONG GEN Z - AN EMPIRICAL STUDY",
-    authors: "M. Suganya",
+    authors: "M. Suganya¹",
     affiliation:
-      "Assistant Professor, BBA Department, DDGD Vaishnav College, Arumbakkam, Chennai, India",
+      "1. Assistant Professor, BBA Department, DDGD Vaishnav College, Arumbakkam, Chennai, India",
     pages: "19-25",
     volume: "1",
     issue: "1",
@@ -105,9 +105,9 @@ const articles: Record<string, Article> = {
     id: "sjcm-v1i1-004",
     title:
       "STUDY ON FINANCIAL LITERACY AND AWARENESS AMONG WORKING WOMEN: A SURVEY BASED APPROACH IN PANCHMAHAL DISTRICT",
-    authors: "Chanduji Popatji Thakor",
+    authors: "Chanduji Popatji Thakor¹",
     affiliation:
-      "Assistant Professor of Commerce and Management, Shri Govind Guru University, Vinzol-Godhra, Gujarat, India",
+      "1. Assistant Professor of Commerce and Management, Shri Govind Guru University, Vinzol-Godhra, Gujarat, India",
     pages: "26-30",
     volume: "1",
     issue: "1",
@@ -122,9 +122,9 @@ const articles: Record<string, Article> = {
   "sjcm-v1i1-005": {
     id: "sjcm-v1i1-005",
     title: "EFFECTIVENESS OF SOCIAL MEDIA ADVERTISING ON BRAND LOYALTY",
-    authors: "R.Ramki, R.M.Uma",
+    authors: "R. Ramki¹, R. M. Uma²",
     affiliation:
-      "Assistant Professor, Department of Commerce, Hindustan Institute of Technology & Science, Padur, Chennai, India",
+      "1. Assistant Professor, Department of Commerce, Hindustan Institute of Technology & Science, Padur, Chennai, India\n2. Assistant Professor, Department of Commerce, Hindustan Institute of Technology & Science, Padur, Chennai, India",
     pages: "31-35",
     volume: "1",
     issue: "1",
@@ -150,9 +150,9 @@ const articles: Record<string, Article> = {
     id: "sjcm-v2i1-001",
     title:
       "SOCIO ECONOMIC STATUS OF REGISTERED CONSTRUCTION WORKERS IN TIRUNELVELI DISTRICT",
-    authors: "Samuel Jayaraman",
+    authors: "Samuel Jayaraman¹",
     affiliation:
-      "Assistant Professor, Department of B.Com (Accounting & Finance), Loyola College (Autonomous), Chennai, India",
+      "1. Assistant Professor, Department of B.Com (Accounting & Finance), Loyola College (Autonomous), Chennai, India",
     pages: "1-5",
     volume: "2",
     issue: "1",
@@ -174,9 +174,9 @@ const articles: Record<string, Article> = {
     id: "sjcm-v2i1-002",
     title:
       "EXPLORING THE RELATIONSHIP BETWEEN CREATIVITY AND CURIOSITY AMONG HIGHER SECONDARY STUDENTS IN TIRUVALLUR DISTRICT",
-    authors: "N Purusothaman, Nirmala",
+    authors: "N. Purusothaman¹, Nirmala²",
     affiliation:
-      "Assistant Professor & Research Supervisor, Department of Commerce, Patrician College of Arts and Science, Chennai, India",
+      "1. Assistant Professor & Research Supervisor, Department of Commerce, Patrician College of Arts and Science, Chennai, India\n2. Student, Department of Commerce, Patrician College of Arts and Science, Chennai, India",
     pages: "06–13",
     volume: "2",
     issue: "1",
@@ -198,9 +198,9 @@ const articles: Record<string, Article> = {
     id: "sjhss-v1i1-001",
     title:
       "LIBRARIES AS CATALYSTS OF CHANGE: A STUDY ON THE DEVELOPMENT OF RURAL LIBRARIES AND STUDENT EMPOWERMENT IN IDAPPADI, SALEM DISTRICT",
-    authors: "Ganesan V",
+    authors: "Ganesan V¹",
     affiliation:
-      "Centre of Online and Distance Education (CDOE), Bharathidasan University, Tiruchirappalli, India",
+      "1. Centre of Online and Distance Education (CDOE), Bharathidasan University, Tiruchirappalli, India",
     pages: "01 - 05",
     volume: "1",
     issue: "1",
@@ -221,9 +221,9 @@ const articles: Record<string, Article> = {
     id: "sjhss-v1i1-002",
     title:
       "REWRITING MASCULINITY THROUGH FATHERS IN IAN MCEWAN’S THE CHILD IN TIME AND KHALED HOSSEINI’S THE KITE RUNNER",
-    authors: "P. Rajini, Ariharan S",
+    authors: "P. Rajini¹, Ariharan S²",
     affiliation:
-      "Assistant Professor of English, Government Arts and Science College, Idappadi, India; Ph.D. Research Scholar, School of Liberal Arts and Humanities, Woxsen University, Hyderabad",
+      "1. Assistant Professor of English, Government Arts and Science College, Idappadi, India\n2. Ph.D. Research Scholar, School of Liberal Arts and Humanities, Woxsen University, Hyderabad",
     pages: "06 – 11",
     volume: "1",
     issue: "1",
@@ -246,9 +246,9 @@ const articles: Record<string, Article> = {
     id: "sjhss-v1i1-003",
     title:
       "MOTHERHOOD AS THE LAST SHELTER AND THE PRACTICE OF CARE BEYOND BORDERS IN BAPSI SIDHWA CRACKING INDIA AND JHUMPA LAHIRI THE NAMESAKE",
-    authors: "Ariharan S, P. Rajini",
+    authors: "Ariharan S¹, P. Rajini²",
     affiliation:
-      "Ph.D. Research Scholar, School of Liberal Arts and Humanities, Woxsen University, Hyderabad, India; Assistant Professor of English, Government Arts and Science College, Idappadi, India",
+      "1. Ph.D. Research Scholar, School of Liberal Arts and Humanities, Woxsen University, Hyderabad, India\n2. Assistant Professor of English, Government Arts and Science College, Idappadi, India",
     pages: "12 – 18",
     volume: "1",
     issue: "1",
@@ -272,9 +272,9 @@ const articles: Record<string, Article> = {
     id: "sjhss-v1i1-004",
     title:
       "IMPACT OF LAUGHTER THERAPY ON CAREGIVER BURDEN AND RESILIENCE AMONG ADHDCAREGIVERS",
-    authors: "R. Salman, S.Srikumaran, K. Nagalakshmi",
+    authors: "R. Salman¹, S. Srikumaran², K. Nagalakshmi³",
     affiliation:
-      "Ph.D. Research Scholar, Department of Psychology, Annamalai University; Associate Professor, Department of Psychology, Annamalai University, Annamalai Nagar, Cuddalore",
+      "1. Ph.D. Research Scholar, Department of Psychology, Annamalai University\n2. Ph.D. Research Scholar, Department of Psychology, Annamalai University\n3. Associate Professor, Department of Psychology, Annamalai University, Annamalai Nagar, Cuddalore",
     pages: "19 – 25",
     volume: "1",
     issue: "1",
@@ -294,9 +294,9 @@ const articles: Record<string, Article> = {
   "sjhss-v1i1-005": {
     id: "sjhss-v1i1-005",
     title: "AI AND THE FUTURE OF SCHOLARLY PUBLISHING IN ENGLISH STUDIES",
-    authors: "Devi K, Ariharan S, P. Rajini",
+    authors: "Devi K¹, Ariharan S², P. Rajini³",
     affiliation:
-      "B.Ed. Student, Avinashilingam Institute for Home Science & Higher Education for Women, Coimbatore, India; Ph.D. Research Scholar, School of Liberal Arts and Humanities, Woxsen University, Hyderabad, India; Assistant Professor of English, Government Arts and Science College, Idappadi, India",
+      "1. B.Ed. Student, Avinashilingam Institute for Home Science & Higher Education for Women, Coimbatore, India\n2. Ph.D. Research Scholar, School of Liberal Arts and Humanities, Woxsen University, Hyderabad, India\n3. Assistant Professor of English, Government Arts and Science College, Idappadi, India",
     pages: "26 – 34",
     volume: "1",
     issue: "1",
@@ -319,9 +319,9 @@ const articles: Record<string, Article> = {
     id: "sjhss-v1i1-006",
     title:
       "HARAWAY AND BRAIDOTTI CYBORG SUBJECTIVITIES AND POSTGENDER FUTURES: A COMPARATIVE STUDY",
-    authors: "Karthika G, Ariharan S",
+    authors: "Karthika G¹, Ariharan S²",
     affiliation:
-      "Assistant Professor of English, Kailash Women’s College, Nangavalli, India; Ph.D. Research Scholar, School of Liberal Arts and Humanities, Woxsen University, Hyderabad, India",
+      "1. Assistant Professor of English, Kailash Women's College, Nangavalli, India\n2. Ph.D. Research Scholar, School of Liberal Arts and Humanities, Woxsen University, Hyderabad, India",
     pages: "35 – 41",
     volume: "1",
     issue: "1",
@@ -343,9 +343,9 @@ const articles: Record<string, Article> = {
   "sjcm-v2i1-003": {
     id: "sjcm-v2i1-003",
     title: "MARKETING OF JASMINE IN SATHYAMANGALAM BLOCK OF ERODE DISTRICT",
-    authors: "P. Shanmugam, T. Praveena",
+    authors: "P. Shanmugam¹, T. Praveena²",
     affiliation:
-      "Associate Professor, Department of Economics, Bharathiar University; Ph. D. Research Scholar, Department of Economics, Bharathiar University, Tamil Nadu, India",
+      "1. Associate Professor, Department of Economics, Bharathiar University\n2. Ph.D. Research Scholar, Department of Economics, Bharathiar University, Tamil Nadu, India",
     pages: "14 - 21",
     volume: "2",
     issue: "1",

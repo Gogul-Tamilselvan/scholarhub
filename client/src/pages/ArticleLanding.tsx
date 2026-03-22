@@ -362,9 +362,9 @@ const articles: Record<string, Article> = {
     title:
       "BRIDGING THE AWARENESS – ACTION GAP IN FINANCIAL LITERACY AMONG CHENNAI COLLEGE STUDENTS",
     authors:
-      "Kalaiarasan C, Kamalesh G, Kovid Raghav R, Ishit Agarwal, Shanmugapriyan J & Joi Levis A",
+      "Kalaiarasan C¹, Kamalesh G², Kovid Raghav R², Ishit Agarwal², Shanmugapriyan J² & Joi Levis A²",
     affiliation:
-      "Assistant Professor, Department of B.Com Computer Applications, Loyola College (Autonomous); Students, Department of B.Com Computer Applications, Loyola College (Autonomous), Chennai, India",
+      "1. Assistant Professor, Department of B.Com Computer Applications, Loyola College (Autonomous), Chennai, India\n2. Student, Department of B.Com Computer Applications, Loyola College (Autonomous), Chennai, India",
     pages: "22 - 28",
     volume: "2",
     issue: "1",
@@ -385,9 +385,9 @@ const articles: Record<string, Article> = {
   "sjcm-v2i1-005": {
     id: "sjcm-v2i1-005",
     title: "IMPACT OF INFRASTRUCTURE TRANSPARENCY ON TRUST IN BANKING CHATBOTS",
-    authors: "S. Shilpa, N. Purusothaman",
+    authors: "S. Shilpa¹, N. Purusothaman²",
     affiliation:
-      "Research Scholar of Commerce, Patrician College of Arts and Science; Assistant Professor and Research Supervisor, Patrician College of Arts and Science, Chennai, India",
+      "1. Research Scholar of Commerce, Patrician College of Arts and Science, Chennai, India\n2. Assistant Professor and Research Supervisor, Patrician College of Arts and Science, Chennai, India",
     pages: "29 - 37",
     volume: "2",
     issue: "1",
@@ -527,21 +527,38 @@ export default function ArticleLanding() {
   };
 
   const isHumanities = article.id.startsWith("sjhss");
+  const isCommerce = article.id.startsWith("sjcm");
 
-  // APA citation — for Humanities & Social Sciences
-  const generateAPACitation = () => {
+  // APA 7th Edition citation
+  const generateAPA7Citation = () => {
     const authors = cleanAuthors(article.authors);
     const title = toSentenceCase(article.title);
     const doi = article.doi ? ` https://doi.org/${article.doi}` : "";
     return `${authors}. (${article.year}). ${title}. ${article.journal}, ${article.volume}(${article.issue}), ${article.pages}.${doi}`;
   };
 
-  // MLA citation — for Commerce & Management
+  // Harvard citation
+  const generateHarvardCitation = () => {
+    const authors = cleanAuthors(article.authors);
+    const title = toTitleCase(article.title);
+    const doi = article.doi ? ` Available at: https://doi.org/${article.doi}` : "";
+    return `${authors} ${article.year}, '${title}', ${article.journal}, ${article.volume}(${article.issue}), pp. ${article.pages}.${doi}`;
+  };
+
+  // MLA 9th Edition citation
   const generateMLACitation = () => {
     const authors = cleanAuthors(article.authors);
     const title = toTitleCase(article.title);
     const doi = article.doi ? ` doi:${article.doi}.` : "";
     return `${authors}. "${title}." ${article.journal}, vol. ${article.volume}, no. ${article.issue}, ${article.year}, pp. ${article.pages}.${doi}`;
+  };
+
+  // Chicago citation
+  const generateChicagoCitation = () => {
+    const authors = cleanAuthors(article.authors);
+    const title = toTitleCase(article.title);
+    const doi = article.doi ? `. https://doi.org/${article.doi}` : "";
+    return `${authors}. "${title}." ${article.journal} ${article.volume}, no. ${article.issue} (${article.year}): ${article.pages}${doi}`;
   };
 
   // Split pages to get first and last page
@@ -693,18 +710,71 @@ export default function ArticleLanding() {
                 <h3 className="text-base font-bold mb-3 text-gray-900 dark:text-gray-100 uppercase tracking-wide">
                   How to Cite
                 </h3>
-                <div className="bg-gray-50 dark:bg-gray-800 rounded-md border border-gray-200 dark:border-gray-700 overflow-hidden">
-                  <div className="flex items-center gap-2 px-4 py-2 bg-[#213361] text-white">
-                    <span className="text-xs font-bold uppercase tracking-wider">
-                      {isHumanities ? "APA" : "MLA"} Citation
-                    </span>
-                    <span className="text-[10px] text-blue-200 ml-1">
-                      ({isHumanities ? "7th ed." : "9th ed."})
-                    </span>
-                  </div>
-                  <p className="text-sm text-gray-800 dark:text-gray-200 leading-relaxed px-4 py-3 font-mono">
-                    {isHumanities ? generateAPACitation() : generateMLACitation()}
-                  </p>
+                <div className="space-y-3">
+                  {isCommerce ? (
+                    // Commerce Journal - APA 7 only
+                    <div className="bg-gray-50 dark:bg-gray-800 rounded-md border border-gray-200 dark:border-gray-700 overflow-hidden">
+                      <div className="flex items-center gap-2 px-4 py-2 bg-[#213361] text-white">
+                        <span className="text-xs font-bold uppercase tracking-wider">
+                          APA Citation (7th Edition)
+                        </span>
+                      </div>
+                      <p className="text-sm text-gray-800 dark:text-gray-200 leading-relaxed px-4 py-3 font-mono">
+                        {generateAPA7Citation()}
+                      </p>
+                    </div>
+                  ) : (
+                    // Humanities Journal - All 4 styles
+                    <>
+                      {/* APA 7 */}
+                      <div className="bg-gray-50 dark:bg-gray-800 rounded-md border border-gray-200 dark:border-gray-700 overflow-hidden">
+                        <div className="flex items-center gap-2 px-4 py-2 bg-[#213361] text-white">
+                          <span className="text-xs font-bold uppercase tracking-wider">
+                            APA (7th Edition)
+                          </span>
+                        </div>
+                        <p className="text-sm text-gray-800 dark:text-gray-200 leading-relaxed px-4 py-3 font-mono">
+                          {generateAPA7Citation()}
+                        </p>
+                      </div>
+
+                      {/* Harvard */}
+                      <div className="bg-gray-50 dark:bg-gray-800 rounded-md border border-gray-200 dark:border-gray-700 overflow-hidden">
+                        <div className="flex items-center gap-2 px-4 py-2 bg-[#213361] text-white">
+                          <span className="text-xs font-bold uppercase tracking-wider">
+                            Harvard
+                          </span>
+                        </div>
+                        <p className="text-sm text-gray-800 dark:text-gray-200 leading-relaxed px-4 py-3 font-mono">
+                          {generateHarvardCitation()}
+                        </p>
+                      </div>
+
+                      {/* MLA */}
+                      <div className="bg-gray-50 dark:bg-gray-800 rounded-md border border-gray-200 dark:border-gray-700 overflow-hidden">
+                        <div className="flex items-center gap-2 px-4 py-2 bg-[#213361] text-white">
+                          <span className="text-xs font-bold uppercase tracking-wider">
+                            MLA (9th Edition)
+                          </span>
+                        </div>
+                        <p className="text-sm text-gray-800 dark:text-gray-200 leading-relaxed px-4 py-3 font-mono">
+                          {generateMLACitation()}
+                        </p>
+                      </div>
+
+                      {/* Chicago */}
+                      <div className="bg-gray-50 dark:bg-gray-800 rounded-md border border-gray-200 dark:border-gray-700 overflow-hidden">
+                        <div className="flex items-center gap-2 px-4 py-2 bg-[#213361] text-white">
+                          <span className="text-xs font-bold uppercase tracking-wider">
+                            Chicago
+                          </span>
+                        </div>
+                        <p className="text-sm text-gray-800 dark:text-gray-200 leading-relaxed px-4 py-3 font-mono">
+                          {generateChicagoCitation()}
+                        </p>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
             </CardContent>

@@ -558,7 +558,13 @@ export default function TabbedJournalPage({
                                 {article.affiliation && (
                                   <div className="flex items-start gap-2 text-gray-500 dark:text-gray-500 italic text-xs">
                                     <BookOpen className="h-3.5 w-3.5 mr-2 text-blue-400 shrink-0 mt-0.5" />
-                                    <span>{article.affiliation}</span>
+                                    <div className="space-y-1">
+                                      {article.affiliation.split('\n').map((aff, idx) => (
+                                        aff.trim() && (
+                                          <div key={idx}>{aff.trim()}</div>
+                                        )
+                                      ))}
+                                    </div>
                                   </div>
                                 )}
                               </div>
@@ -789,7 +795,13 @@ export default function TabbedJournalPage({
                                       {article.affiliation && (
                                         <div className="flex items-start gap-2 text-gray-500 dark:text-gray-500 italic text-xs">
                                           <BookOpen className="h-3.5 w-3.5 mr-2 text-blue-400 shrink-0 mt-0.5" />
-                                          <span>{article.affiliation}</span>
+                                          <div className="space-y-1">
+                                            {article.affiliation.split('\n').map((aff, idx) => (
+                                              aff.trim() && (
+                                                <div key={idx}>{aff.trim()}</div>
+                                              )
+                                            ))}
+                                          </div>
                                         </div>
                                       )}
                                     </div>
@@ -1186,7 +1198,7 @@ export default function TabbedJournalPage({
                   <div className="space-y-4 p-6 border border-gray-100 dark:border-gray-800 rounded-lg">
                     {referenceStyle === "APA_MLA" ? (
                       <>
-                        <h3 className="text-xl font-bold text-blue-900 dark:text-blue-300">Reference Style (APA & MLA)</h3>
+                        <h3 className="text-xl font-bold text-blue-900 dark:text-blue-300">Reference Style (APA, Harvard, MLA & Chicago)</h3>
                         <div className="space-y-8">
                           {/* APA Section */}
                           <div className="space-y-4">
@@ -1245,6 +1257,52 @@ export default function TabbedJournalPage({
                               <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded font-mono text-xs md:text-sm">
                                 <p className="text-blue-600 dark:text-blue-400 mb-1 font-bold">// Thesis</p>
                                 Author, First Name. "Title of the Thesis." Degree, University Name, Year.
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Harvard Section */}
+                          <div className="space-y-4">
+                            <h4 className="text-lg font-bold text-blue-800 dark:text-blue-400 border-b pb-2">Harvard Style</h4>
+                            <div className="space-y-2">
+                              <p className="font-bold text-gray-900 dark:text-white">In-Text Citations:</p>
+                              <ul className="list-disc list-inside space-y-1 text-sm text-gray-700 dark:text-gray-300">
+                                <li>One author: (Smith, 2008, p. 23)</li>
+                                <li>Two authors: (Smith & Jones, 2008, p. 23)</li>
+                                <li>Three or more authors: (Smith et al., 2008, p. 23)</li>
+                              </ul>
+                            </div>
+                            <div className="space-y-4">
+                              <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded font-mono text-xs md:text-sm">
+                                <p className="text-blue-600 dark:text-blue-400 mb-1 font-bold">// Journal Article</p>
+                                Smith, J., Jones, M. and Brown, A., 2019. Article title. Journal Title, 12(3), pp. 45-67.
+                              </div>
+                              <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded font-mono text-xs md:text-sm">
+                                <p className="text-blue-600 dark:text-blue-400 mb-1 font-bold">// Book</p>
+                                Smith, J., 2020. Book Title. 2nd edn. Publisher Name.
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Chicago Section */}
+                          <div className="space-y-4">
+                            <h4 className="text-lg font-bold text-blue-800 dark:text-blue-400 border-b pb-2">Chicago Style (Author-Date)</h4>
+                            <div className="space-y-2">
+                              <p className="font-bold text-gray-900 dark:text-white">In-Text Citations:</p>
+                              <ul className="list-disc list-inside space-y-1 text-sm text-gray-700 dark:text-gray-300">
+                                <li>One author: (Smith 2008)</li>
+                                <li>Two authors: (Smith and Jones 2008)</li>
+                                <li>Three or more authors: (Smith et al. 2008)</li>
+                              </ul>
+                            </div>
+                            <div className="space-y-4">
+                              <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded font-mono text-xs md:text-sm">
+                                <p className="text-blue-600 dark:text-blue-400 mb-1 font-bold">// Journal Article</p>
+                                Smith, John, Mary Jones, and Alice Brown. "Article Title." Journal Title 12, no. 3 (2019): 45-67.
+                              </div>
+                              <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded font-mono text-xs md:text-sm">
+                                <p className="text-blue-600 dark:text-blue-400 mb-1 font-bold">// Book</p>
+                                Smith, John. Book Title. 2nd ed. Publisher Name, 2020.
                               </div>
                             </div>
                           </div>

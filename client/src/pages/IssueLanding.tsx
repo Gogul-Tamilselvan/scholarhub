@@ -240,9 +240,15 @@ export default function IssueLanding() {
                                 <span className="text-sm font-semibold text-blue-600 dark:text-blue-400 min-w-[70px]">
                                   Affiliation:
                                 </span>
-                                <span className="text-sm text-gray-700 dark:text-gray-300 italic leading-relaxed">
-                                  {article.affiliation}
-                                </span>
+                                <div className="text-sm text-gray-700 dark:text-gray-300 space-y-1">
+                                  {article.affiliation.split('\n').map((aff, idx) => (
+                                    aff.trim() && (
+                                      <div key={idx} className="leading-relaxed">
+                                        {aff.trim()}
+                                      </div>
+                                    )
+                                  ))}
+                                </div>
                               </div>
                             )}
                           </div>

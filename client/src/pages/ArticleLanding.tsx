@@ -900,7 +900,7 @@ export default function ArticleLanding() {
                   <CardContent className="px-4 py-3">
                     <Button
                       className="w-full bg-[#213361] hover:bg-[#2a4078] text-white font-semibold text-sm"
-                      onClick={() => window.location.hash = '/submit-manuscript'}
+                      onClick={() => window.location.href = 'https://scholarindiapub.com/submit'}
                     >
                       Submit Manuscript
                     </Button>

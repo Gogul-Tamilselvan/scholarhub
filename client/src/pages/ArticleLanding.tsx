@@ -824,15 +824,6 @@ export default function ArticleLanding() {
                       <p className="font-semibold text-gray-700 dark:text-gray-300 mb-1">Publisher</p>
                       <p className="text-gray-600 dark:text-gray-400">Scholar India Publishers</p>
                     </div>
-                    <div className="pt-3">
-                      <Button
-                        className="w-full bg-[#213361] hover:bg-[#2a4078] text-white font-semibold text-sm"
-                        onClick={() => window.open(article.pdfUrl, "_blank")}
-                      >
-                        <Download className="h-4 w-4 mr-2" />
-                        Download PDF
-                      </Button>
-                    </div>
                   </CardContent>
                 </Card>
 
@@ -884,14 +875,14 @@ export default function ArticleLanding() {
                     <Button
                       variant="ghost"
                       className="w-full justify-start text-xs text-[#213361] dark:text-blue-400 hover:text-[#2a4078] dark:hover:text-blue-300"
-                      onClick={() => window.location.hash = '/commerce-management'}
+                      onClick={() => window.location.href = 'https://scholarindiapub.com/commerce-management'}
                     >
                       → Scholar Journal of Commerce & Management
                     </Button>
                     <Button
                       variant="ghost"
                       className="w-full justify-start text-xs text-[#213361] dark:text-blue-400 hover:text-[#2a4078] dark:hover:text-blue-300"
-                      onClick={() => window.location.hash = '/humanities'}
+                      onClick={() => window.location.href = 'https://scholarindiapub.com/humanities'}
                     >
                       → Scholar Journal of Humanities & Social Sciences
                     </Button>

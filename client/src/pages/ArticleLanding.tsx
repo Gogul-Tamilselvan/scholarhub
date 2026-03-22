@@ -602,9 +602,14 @@ export default function ArticleLanding() {
             <div className="h-1 w-full bg-[#213361]" />
             <CardHeader className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700 px-6 py-6">
               <div className="space-y-3">
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#213361]/10 border border-[#213361]/20">
-                  <span className="text-xs font-semibold text-[#213361] dark:text-blue-300 uppercase tracking-wide">
-                    {article.journal}
+                <div className="flex items-center gap-3 flex-wrap">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#213361]/10 border border-[#213361]/20">
+                    <span className="text-xs font-semibold text-[#213361] dark:text-blue-300 uppercase tracking-wide">
+                      {article.journal}
+                    </span>
+                  </div>
+                  <span className="text-xs text-gray-600 dark:text-gray-400 font-medium">
+                    Publisher: Scholar India Publishers
                   </span>
                 </div>
                 <CardTitle className="text-xl md:text-2xl font-serif leading-relaxed text-gray-900 dark:text-gray-50 font-bold">

@@ -15,6 +15,7 @@ interface ArticleSEOProps {
   keywords?: string[];
   doi?: string;
   articleUrl: string;
+  ogImage?: string;
 }
 
 export default function ArticleSEO({
@@ -31,6 +32,7 @@ export default function ArticleSEO({
   keywords,
   doi,
   articleUrl,
+  ogImage = "/og-image.jpg",
 }: ArticleSEOProps) {
   // Parse authors into array
   const authorsList = authors
@@ -42,6 +44,9 @@ export default function ArticleSEO({
   const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://scholarindiapub.com';
   const fullPdfUrl = pdfUrl.startsWith('http') ? pdfUrl : `${baseUrl}${pdfUrl}`;
   const fullArticleUrl = `${baseUrl}${articleUrl}`;
+  
+  // Full URL for OG image
+  const fullOgImage = ogImage.startsWith('http') ? ogImage : `${baseUrl}${ogImage}`;
 
   // Publication date (year/01/01 format for Google Scholar)
   const publicationDate = `${year}/01/01`;
@@ -84,18 +89,24 @@ export default function ArticleSEO({
         <meta name="citation_keywords" content={keywords.join('; ')} />
       )}
 
-      {/* Open Graph for Social Media */}
+      {/* Open Graph for Social Media - CRITICAL FOR WHATSAPP/FACEBOOK PREVIEW */}
       <meta property="og:title" content={title} />
-      <meta property="og:description" content={abstract || `Research article published in ${journal}`} />
+      <meta property="og:description" content={abstract || `Peer-reviewed research article in ${journal} | International Academic Publication`} />
       <meta property="og:type" content="article" />
       <meta property="og:url" content={fullArticleUrl} />
+      <meta property="og:image" content={fullOgImage} />
+      <meta property="og:image:width" content="1200" />
+      <meta property="og:image:height" content="630" />
+      <meta property="og:image:type" content="image/jpeg" />
+      <meta property="og:site_name" content="Scholar India Publishers" />
       <meta property="article:published_time" content={publicationDate} />
       <meta property="article:author" content={authorsList.join(', ')} />
       
       {/* Twitter Card */}
       <meta name="twitter:card" content="summary_large_image" />
       <meta name="twitter:title" content={title} />
-      <meta name="twitter:description" content={abstract || `Research article published in ${journal}`} />
+      <meta name="twitter:description" content={abstract || `Peer-reviewed research article in ${journal} | International Academic Publication`} />
+      <meta name="twitter:image" content={fullOgImage} />
 
       {/* Additional Academic Search Engine Tags */}
       <meta name="DC.title" content={title} />

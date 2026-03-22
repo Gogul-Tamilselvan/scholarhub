@@ -181,10 +181,11 @@ export default function HumanitiesJournal() {
   return (
     <>
       <SEO
-        title="Scholar Journal of Humanities and Social Sciences - International Literature, Philosophy, Sociology & Social Sciences Journal"
-        description="International peer-reviewed journal publishing research in humanities (literature, philosophy, history, linguistics, cultural studies) and social sciences (sociology, psychology, political science, anthropology, economics, education). Submit research online. UGC CARE aspirant journal from Chennai, India."
+        title="Scholar Journal of Humanities and Social Sciences - International Peer-Reviewed Journal"
+        description="International Peer-Reviewed Journal | Publishing research in Humanities, Literature, Philosophy, Sociology & Social Sciences. UGC CARE aspirant. Submit your research online."
         keywords="scholar journal humanities, scholar journal social sciences, humanities journal India, social sciences journal India, literature journal, philosophy journal, sociology journal, psychology journal, political science journal, anthropology journal, history journal, cultural studies journal, linguistics journal, international humanities journal, international social sciences journal, interdisciplinary research, peer-reviewed humanities, academic social sciences journal"
         type="website"
+        ogImage="/og-journal-humanities.jpg"
       />
       <StructuredData 
         type="Periodical" 

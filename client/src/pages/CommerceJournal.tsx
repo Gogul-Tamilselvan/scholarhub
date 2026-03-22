@@ -219,10 +219,11 @@ export default function CommerceJournal() {
   return (
     <>
       <SEO
-        title="Scholar Journal of Commerce and Management - International Business Research Journal | India"
-        description="Premier international journal for commerce and management research. Publish papers on accounting, finance, marketing, business law, economics, entrepreneurship, HRM, supply chain, digital transformation. UGC CARE listed aspirant. Submit to SJCM online. Based in Chennai, India."
+        title="Scholar Journal of Commerce and Management - International Peer-Reviewed Journal"
+        description="International Peer-Reviewed Journal | Publishing high-quality research in Commerce, Management, Accounting, Finance, Marketing & Business. UGC CARE aspirant. Submit your manuscript online."
         keywords="scholar journal commerce management, commerce journal India, management research journal, accounting journal, finance journal, business research journal, international commerce journal, marketing research, business law journal, entrepreneurship journal, organizational behavior, HRM journal, supply chain management, business journal India, commerce management research, peer-reviewed business journal, UGC CARE journal, SJCM journal, corporate strategy research, international business journal, digital business transformation"
         type="website"
+        ogImage="/og-journal-commerce.jpg"
       />
       <StructuredData 
         type="Periodical" 

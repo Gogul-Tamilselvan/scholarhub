@@ -872,29 +872,49 @@ export default function ArticleLanding() {
                   </CardContent>
                 </Card>
 
-                {/* Subject Categories */}
-                {article.keywords && article.keywords.length > 0 && (
-                  <Card className="border border-gray-200 dark:border-gray-700 overflow-hidden">
-                    <div className="h-1 w-full bg-[#213361]" />
-                    <CardHeader className="bg-gray-50 dark:bg-gray-800/50 px-4 py-3">
-                      <CardTitle className="text-sm font-bold text-gray-900 dark:text-gray-100 uppercase tracking-wider">
-                        Research Areas
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="px-4 py-3">
-                      <div className="flex flex-wrap gap-2">
-                        {article.keywords.slice(0, 5).map((keyword, idx) => (
-                          <span
-                            key={idx}
-                            className="px-2 py-1 text-xs bg-[#213361]/10 dark:bg-[#213361]/20 text-[#213361] dark:text-blue-400 rounded-full border border-[#213361]/20"
-                          >
-                            {keyword}
-                          </span>
-                        ))}
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
+                {/* Journals */}
+                <Card className="border border-gray-200 dark:border-gray-700 overflow-hidden">
+                  <div className="h-1 w-full bg-[#213361]" />
+                  <CardHeader className="bg-gray-50 dark:bg-gray-800/50 px-4 py-3">
+                    <CardTitle className="text-sm font-bold text-gray-900 dark:text-gray-100 uppercase tracking-wider">
+                      Our Journals
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="px-4 py-3 space-y-2">
+                    <Button
+                      variant="ghost"
+                      className="w-full justify-start text-xs text-[#213361] dark:text-blue-400 hover:text-[#2a4078] dark:hover:text-blue-300"
+                      onClick={() => window.location.hash = '/commerce-management'}
+                    >
+                      → Scholar Journal of Commerce & Management
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      className="w-full justify-start text-xs text-[#213361] dark:text-blue-400 hover:text-[#2a4078] dark:hover:text-blue-300"
+                      onClick={() => window.location.hash = '/humanities'}
+                    >
+                      → Scholar Journal of Humanities & Social Sciences
+                    </Button>
+                  </CardContent>
+                </Card>
+
+                {/* Submit Manuscript */}
+                <Card className="border border-gray-200 dark:border-gray-700 overflow-hidden">
+                  <div className="h-1 w-full bg-[#213361]" />
+                  <CardHeader className="bg-gray-50 dark:bg-gray-800/50 px-4 py-3">
+                    <CardTitle className="text-sm font-bold text-gray-900 dark:text-gray-100 uppercase tracking-wider">
+                      Contribute
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="px-4 py-3">
+                    <Button
+                      className="w-full bg-[#213361] hover:bg-[#2a4078] text-white font-semibold text-sm"
+                      onClick={() => window.location.hash = '/submit-manuscript'}
+                    >
+                      Submit Manuscript
+                    </Button>
+                  </CardContent>
+                </Card>
               </div>
             </div>
           </div>

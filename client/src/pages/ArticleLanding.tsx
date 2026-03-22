@@ -793,36 +793,6 @@ export default function ArticleLanding() {
             {/* Sidebar */}
             <div className="lg:col-span-1">
               <div className="space-y-4 sticky top-8">
-                {/* Journal Info Card */}
-                <Card className="border border-gray-200 dark:border-gray-700 overflow-hidden">
-                  <div className="h-1 w-full bg-[#213361]" />
-                  <CardHeader className="bg-gray-50 dark:bg-gray-800/50 px-4 py-3">
-                    <CardTitle className="text-sm font-bold text-gray-900 dark:text-gray-100 uppercase tracking-wider">
-                      Journal Information
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="px-4 py-3 space-y-3 text-xs">
-                    <div>
-                      <p className="font-semibold text-gray-700 dark:text-gray-300 mb-1">Journal</p>
-                      <p className="text-gray-600 dark:text-gray-400">{article.journal}</p>
-                    </div>
-                    <div>
-                      <p className="font-semibold text-gray-700 dark:text-gray-300 mb-1">Volume/Issue</p>
-                      <p className="text-gray-600 dark:text-gray-400">
-                        Vol. {article.volume}, No. {article.issue}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="font-semibold text-gray-700 dark:text-gray-300 mb-1">Publication Year</p>
-                      <p className="text-gray-600 dark:text-gray-400">{article.year}</p>
-                    </div>
-                    <div>
-                      <p className="font-semibold text-gray-700 dark:text-gray-300 mb-1">Pages</p>
-                      <p className="text-gray-600 dark:text-gray-400">{article.pages}</p>
-                    </div>
-                  </CardContent>
-                </Card>
-
                 {/* Article Actions */}
                 <Card className="border border-gray-200 dark:border-gray-700 overflow-hidden">
                   <div className="h-1 w-full bg-[#213361]" />
@@ -831,7 +801,7 @@ export default function ArticleLanding() {
                       Actions
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="px-4 py-3 space-y-2">
+                  <CardContent className="px-4 py-3 space-y-3">
                     <Button
                       className="w-full bg-[#213361] hover:bg-[#2a4078] text-white font-semibold text-sm"
                       onClick={() => window.open(article.pdfUrl, "_blank")}
@@ -839,6 +809,16 @@ export default function ArticleLanding() {
                       <Download className="h-4 w-4 mr-2" />
                       Download PDF
                     </Button>
+                    <div className="grid grid-cols-2 gap-2 pt-2 border-t border-gray-200 dark:border-gray-700">
+                      <div className="text-center">
+                        <p className="text-xs font-semibold text-gray-700 dark:text-gray-300">Visits</p>
+                        <p className="text-sm font-bold text-[#213361] dark:text-blue-400">2.4K</p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-xs font-semibold text-gray-700 dark:text-gray-300">Downloads</p>
+                        <p className="text-sm font-bold text-[#213361] dark:text-blue-400">890</p>
+                      </div>
+                    </div>
                     {article.doi && (
                       <Button
                         variant="outline"
@@ -864,8 +844,10 @@ export default function ArticleLanding() {
                       variant="ghost"
                       className="w-full justify-start text-xs text-[#213361] dark:text-blue-400 hover:text-[#2a4078] dark:hover:text-blue-300"
                       onClick={() => {
-                        const journalPath = isCommerce ? '/commerce-management' : '/humanities';
-                        window.location.hash = `${journalPath}#current-issue`;
+                        const url = isCommerce 
+                          ? 'https://scholarindiapub.com/commerce-management#current-issue'
+                          : 'https://scholarindiapub.com/humanities#current-issue';
+                        window.location.href = url;
                       }}
                     >
                       ← View Current Issue
@@ -874,8 +856,10 @@ export default function ArticleLanding() {
                       variant="ghost"
                       className="w-full justify-start text-xs text-[#213361] dark:text-blue-400 hover:text-[#2a4078] dark:hover:text-blue-300"
                       onClick={() => {
-                        const journalPath = isCommerce ? '/commerce-management' : '/humanities';
-                        window.location.hash = `${journalPath}#archives`;
+                        const url = isCommerce 
+                          ? 'https://scholarindiapub.com/commerce-management#archives'
+                          : 'https://scholarindiapub.com/humanities#archives';
+                        window.location.href = url;
                       }}
                     >
                       ← View Archives

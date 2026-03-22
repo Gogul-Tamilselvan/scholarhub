@@ -116,8 +116,8 @@ export default function CommerceJournal() {
       id: 1,
       articleId: "sjcm-v1i1-001",
       title: "THE IMPACT OF GOVERNMENT POLICIES ON THE GROWTH OF M-COMMERCE IN DEVELOPING ECONOMIES: AN INDIAN PERSPECTIVE",
-      authors: "Bhuriya Jignesh Subhashbhai, Chanduji Popatji Thakor*",
-      affiliation: "Assistant Professor of Commerce and Management, Shri Govind Guru University, Vinzol-Godhra, Gujarat, India",
+      authors: "Bhuriya Jignesh Subhashbhai¹, Chanduji Popatji Thakor²",
+      affiliation: "1. Assistant Professor of Commerce and Management, Shri Govind Guru University, Vinzol-Godhra, Gujarat, India\n2. Assistant Professor of Commerce and Management, Shri Govind Guru University, Vinzol-Godhra, Gujarat, India",
       pages: "1-10",
       doi: "10.65219/sjcm.20250101001"
     },
@@ -125,8 +125,8 @@ export default function CommerceJournal() {
       id: 2,
       articleId: "sjcm-v1i1-002",
       title: "CONSUMER PERCEPTION TOWARDS DIGITAL PAYMENT MODE IN BANKING SECTOR",
-      authors: "A.Vini Infanta",
-      affiliation: "Assistant Professor of Professional Accounting and Finance, School of Commerce, Accounting and Finance, Kristu Jayanti Deemed to be University, Bengaluru, India",
+      authors: "A. Vini Infanta¹",
+      affiliation: "1. Assistant Professor of Professional Accounting and Finance, School of Commerce, Accounting and Finance, Kristu Jayanti Deemed to be University, Bengaluru, India",
       pages: "11-18",
       doi: "10.65219/sjcm.20250101002"
     },
@@ -134,8 +134,8 @@ export default function CommerceJournal() {
       id: 3,
       articleId: "sjcm-v1i1-003",
       title: "IMPACT OF SOCIAL MEDIA MARKETING ON BRAND LOYALTY WITH MEDIATING ROLE OF PURCHASE INTENTION AMONG GEN Z - AN EMPIRICAL STUDY",
-      authors: "M. Suganya",
-      affiliation: "Assistant Professor, BBA Department, DDGD Vaishnav College, Arumbakkam, Chennai, India",
+      authors: "M. Suganya¹",
+      affiliation: "1. Assistant Professor, BBA Department, DDGD Vaishnav College, Arumbakkam, Chennai, India",
       pages: "19-25",
       doi: "10.65219/sjcm.20250101003"
     },
@@ -143,8 +143,8 @@ export default function CommerceJournal() {
       id: 4,
       articleId: "sjcm-v1i1-004",
       title: "STUDY ON FINANCIAL LITERACY AND AWARENESS AMONG WORKING WOMEN: A SURVEY BASED APPROACH IN PANCHMAHAL DISTRICT",
-      authors: "Chanduji Popatji Thakor",
-      affiliation: "Assistant Professor of Commerce and Management, Shri Govind Guru University, Vinzol-Godhra, Gujarat, India",
+      authors: "Chanduji Popatji Thakor¹",
+      affiliation: "1. Assistant Professor of Commerce and Management, Shri Govind Guru University, Vinzol-Godhra, Gujarat, India",
       pages: "26-30",
       doi: "10.65219/sjcm.20250101004"
     },
@@ -152,8 +152,8 @@ export default function CommerceJournal() {
       id: 5,
       articleId: "sjcm-v1i1-005",
       title: "EFFECTIVENESS OF SOCIAL MEDIA ADVERTISING ON BRAND LOYALTY",
-      authors: "R.Ramki*, R.M.Uma",
-      affiliation: "Assistant Professor, Department of Commerce, Hindustan Institute of Technology & Science, Padur, Chennai, India",
+      authors: "R. Ramki¹, R. M. Uma²",
+      affiliation: "1. Assistant Professor, Department of Commerce, Hindustan Institute of Technology & Science, Padur, Chennai, India\n2. Assistant Professor, Department of Commerce, Hindustan Institute of Technology & Science, Padur, Chennai, India",
       pages: "31-35",
       doi: "10.65219/sjcm.20250101005"
     }

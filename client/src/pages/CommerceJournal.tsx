@@ -165,8 +165,8 @@ export default function CommerceJournal() {
       id: 1,
       articleId: "sjcm-v2i1-001",
       title: "SOCIO ECONOMIC STATUS OF REGISTERED CONSTRUCTION WORKERS IN TIRUNELVELI DISTRICT",
-      authors: "Samuel Jayaraman",
-      affiliation: "Assistant Professor, Department of B.Com (Accounting & Finance), Loyola College (Autonomous), Chennai, India",
+      authors: "Samuel Jayaraman¹",
+      affiliation: "1. Assistant Professor, Department of B.Com (Accounting & Finance), Loyola College (Autonomous), Chennai, India",
       pages: "1-5",
       doi: "10.65219/sjcm.20260201001"
     },
@@ -174,8 +174,8 @@ export default function CommerceJournal() {
       id: 2,
       articleId: "sjcm-v2i1-002",
       title: "EXPLORING THE RELATIONSHIP BETWEEN CREATIVITY AND CURIOSITY AMONG HIGHER SECONDARY STUDENTS IN TIRUVALLUR DISTRICT",
-      authors: "N Purusothaman*, Nirmala",
-      affiliation: "Assistant Professor & Research Supervisor, Department of Commerce, Patrician College of Arts and Science, Chennai, India",
+      authors: "N. Purusothaman¹, Nirmala²",
+      affiliation: "1. Assistant Professor & Research Supervisor, Department of Commerce, Patrician College of Arts and Science, Chennai, India\n2. Student, Department of Commerce, Patrician College of Arts and Science, Chennai, India",
       pages: "06–13",
       doi: "10.65219/sjcm.20260201002"
     },
@@ -183,8 +183,8 @@ export default function CommerceJournal() {
       id: 3,
       articleId: "sjcm-v2i1-003",
       title: "MARKETING OF JASMINE IN SATHYAMANGALAM BLOCK OF ERODE DISTRICT",
-      authors: "P. Shanmugam, T. Praveena*",
-      affiliation: "Associate Professor, Department of Economics, Bharathiar University; Ph. D. Research Scholar, Department of Economics, Bharathiar University, Tamil Nadu, India",
+      authors: "P. Shanmugam¹, T. Praveena²",
+      affiliation: "1. Associate Professor, Department of Economics, Bharathiar University\n2. Ph.D. Research Scholar, Department of Economics, Bharathiar University, Tamil Nadu, India",
       pages: "14 - 21",
       doi: "10.65219/sjcm.20260201003"
     },
@@ -192,8 +192,8 @@ export default function CommerceJournal() {
       id: 4,
       articleId: "sjcm-v2i1-004",
       title: "BRIDGING THE AWARENESS – ACTION GAP IN FINANCIAL LITERACY AMONG CHENNAI COLLEGE STUDENTS",
-      authors: "Kalaiarasan C*, Kamalesh G, Kovid Raghav R, Ishit Agarwal, Shanmugapriyan J & Joi Levis A",
-      affiliation: "Assistant Professor, Department of B.Com Computer Applications, Loyola College (Autonomous); Students, Department of B.Com Computer Applications, Loyola College (Autonomous), Chennai, India",
+      authors: "Kalaiarasan C¹, Kamalesh G², Kovid Raghav R², Ishit Agarwal², Shanmugapriyan J², Joi Levis A²",
+      affiliation: "1. Assistant Professor, Department of B.Com Computer Applications, Loyola College (Autonomous), Chennai, India\n2. Student, Department of B.Com Computer Applications, Loyola College (Autonomous), Chennai, India",
       pages: "22 - 28",
       doi: "10.65219/sjcm.20260201004"
     },
@@ -201,8 +201,8 @@ export default function CommerceJournal() {
       id: 5,
       articleId: "sjcm-v2i1-005",
       title: "IMPACT OF INFRASTRUCTURE TRANSPARENCY ON TRUST IN BANKING CHATBOTS",
-      authors: "S. Shilpa, N. Purusothaman*",
-      affiliation: "Research Scholar of Commerce, Patrician College of Arts and Science; Assistant Professor and Research Supervisor, Patrician College of Arts and Science, Chennai, India",
+      authors: "S. Shilpa¹, N. Purusothaman²",
+      affiliation: "1. Research Scholar of Commerce, Patrician College of Arts and Science, Chennai, India\n2. Assistant Professor and Research Supervisor, Patrician College of Arts and Science, Chennai, India",
       pages: "29 - 37",
       doi: "10.65219/sjcm.20260201005"
     }

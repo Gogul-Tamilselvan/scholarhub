@@ -410,9 +410,9 @@ const articles: Record<string, Article> = {
     id: "sjhss-v1i1-007",
     title:
       "IMPACT OF DIGITAL STRESS ON EMOTIONAL DEPENDENCY AND MENTAL HEALTH AMONG INTIMATE COUPLES",
-    authors: "S. Srikumaran, K. Nagalakshmi",
+    authors: "S. Srikumaran¹, K. Nagalakshmi²",
     affiliation:
-      "Ph.D. Research Scholar, Department of Psychology, Annamalai University; Associate Professor, Department of Psychology, Annamalai University, Annamalai Nagar, Cuddalore",
+      "1. Ph.D. Research Scholar, Department of Psychology, Annamalai University\n2. Associate Professor, Department of Psychology, Annamalai University, Annamalai Nagar, Cuddalore",
     pages: "42 – 47",
     volume: "1",
     issue: "1",
@@ -433,9 +433,9 @@ const articles: Record<string, Article> = {
     id: "sjhss-v1i1-008",
     title:
       "IMPACT OF DOOMSCROLLING ON EMOTIONAL REGULATION IN WORKING EMPLOYEES: THE MEDIATING ROLE OF PSYCHOLOGICAL DISTRESS",
-    authors: "S. Vasanth, S. Srikumaran, K. Nagalakshmi",
+    authors: "S. Vasanth¹, S. Srikumaran², K. Nagalakshmi³",
     affiliation:
-      "M.Sc. Applied Psychology, Department of Psychology, Annamalai University; Ph.D. Research Scholar, Department of Psychology, Annamalai University; Associate Professor, Department of Psychology, Annamalai University, Annamalai Nagar, Cuddalore",
+      "1. M.Sc. Applied Psychology, Department of Psychology, Annamalai University\n2. Ph.D. Research Scholar, Department of Psychology, Annamalai University\n3. Associate Professor, Department of Psychology, Annamalai University, Annamalai Nagar, Cuddalore",
     pages: "48 – 58",
     volume: "1",
     issue: "1",
@@ -456,9 +456,9 @@ const articles: Record<string, Article> = {
     id: "sjhss-v1i1-009",
     title:
       "INFLUENCE OF PARTNER’S PHUBBING ON RELATIONSHIP SATISFACTION AND MENTAL HEALTH AMONG MARRIED COUPLES",
-    authors: "S. Srikumaran, K. Nagalakshmi",
+    authors: "S. Srikumaran¹, K. Nagalakshmi²",
     affiliation:
-      "Ph.D. Research Scholar, Department of Psychology, Annamalai University; Associate Professor, Department of Psychology, Annamalai University, Annamalai Nagar, Cuddalore",
+      "1. Ph.D. Research Scholar, Department of Psychology, Annamalai University\n2. Associate Professor, Department of Psychology, Annamalai University, Annamalai Nagar, Cuddalore",
     pages: "59 – 65",
     volume: "1",
     issue: "1",

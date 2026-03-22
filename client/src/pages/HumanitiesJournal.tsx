@@ -96,8 +96,8 @@ export default function HumanitiesJournal() {
       id: 1,
       articleId: "sjhss-v1i1-001",
       title: "LIBRARIES AS CATALYSTS OF CHANGE: A STUDY ON THE DEVELOPMENT OF RURAL LIBRARIES AND STUDENT EMPOWERMENT IN IDAPPADI, SALEM DISTRICT",
-      authors: "Ganesan V",
-      affiliation: "Centre of Online and Distance Education (CDOE), Bharathidasan University, Tiruchirappalli, India",
+      authors: "Ganesan V¹",
+      affiliation: "1. Centre of Online and Distance Education (CDOE), Bharathidasan University, Tiruchirappalli, India",
       pages: "01 - 05",
       doi: "10.65219/sjhss.20260101001"
     },
@@ -105,8 +105,8 @@ export default function HumanitiesJournal() {
       id: 2,
       articleId: "sjhss-v1i1-002",
       title: "REWRITING MASCULINITY THROUGH FATHERS IN IAN MCEWAN’S THE CHILD IN TIME AND KHALED HOSSEINI’S THE KITE RUNNER",
-      authors: "Dr. P. Rajini*, Ariharan S",
-      affiliation: "Assistant Professor of English, Government Arts and Science College, Idappadi, India; Ph.D. Research Scholar, School of Liberal Arts and Humanities, Woxsen University, Hyderabad",
+      authors: "P. Rajini¹, Ariharan S²",
+      affiliation: "1. Assistant Professor of English, Government Arts and Science College, Idappadi, India\n2. Ph.D. Research Scholar, School of Liberal Arts and Humanities, Woxsen University, Hyderabad",
       pages: "06 – 11",
       doi: "10.65219/sjhss.20260101002"
     },
@@ -114,8 +114,8 @@ export default function HumanitiesJournal() {
       id: 3,
       articleId: "sjhss-v1i1-003",
       title: "MOTHERHOOD AS THE LAST SHELTER AND THE PRACTICE OF CARE BEYOND BORDERS IN BAPSI SIDHWA CRACKING INDIA AND JHUMPA LAHIRI THE NAMESAKE",
-      authors: "Ariharan S*, P. Rajini",
-      affiliation: "Ph.D. Research Scholar, School of Liberal Arts and Humanities, Woxsen University, Hyderabad, India; Assistant Professor of English, Government Arts and Science College, Idappadi, India",
+      authors: "Ariharan S¹, P. Rajini²",
+      affiliation: "1. Ph.D. Research Scholar, School of Liberal Arts and Humanities, Woxsen University, Hyderabad, India\n2. Assistant Professor of English, Government Arts and Science College, Idappadi, India",
       pages: "12 – 18",
       doi: "10.65219/sjhss.20260101003"
     },
@@ -123,8 +123,8 @@ export default function HumanitiesJournal() {
       id: 4,
       articleId: "sjhss-v1i1-004",
       title: "IMPACT OF LAUGHTER THERAPY ON CAREGIVER BURDEN AND RESILIENCE AMONG ADHDCAREGIVERS",
-      authors: "R. Salman*1, S.Srikumaran1, K. Nagalakshmi2",
-      affiliation: "Ph.D. Research Scholar, Department of Psychology, Annamalai University; Associate Professor, Department of Psychology, Annamalai University, Annamalai Nagar, Cuddalore",
+      authors: "R. Salman¹, S. Srikumaran¹, K. Nagalakshmi²",
+      affiliation: "1. Ph.D. Research Scholar, Department of Psychology, Annamalai University\n2. Associate Professor, Department of Psychology, Annamalai University, Annamalai Nagar, Cuddalore",
       pages: "19 – 25",
       doi: "10.65219/sjhss.20260101004"
     },
@@ -132,8 +132,8 @@ export default function HumanitiesJournal() {
       id: 5,
       articleId: "sjhss-v1i1-005",
       title: "AI AND THE FUTURE OF SCHOLARLY PUBLISHING IN ENGLISH STUDIES",
-      authors: "Devi K*1, Ariharan S2, Dr. P. Rajini3",
-      affiliation: "B.Ed. Student, Avinashilingam Institute for Home Science & Higher Education for Women, Coimbatore, India; Ph.D. Research Scholar, School of Liberal Arts and Humanities, Woxsen University, Hyderabad, India; Assistant Professor of English, Government Arts and Science College, Idappadi, India",
+      authors: "Devi K¹, Ariharan S², P. Rajini³",
+      affiliation: "1. B.Ed. Student, Avinashilingam Institute for Home Science & Higher Education for Women, Coimbatore, India\n2. Ph.D. Research Scholar, School of Liberal Arts and Humanities, Woxsen University, Hyderabad, India\n3. Assistant Professor of English, Government Arts and Science College, Idappadi, India",
       pages: "26 – 34",
       doi: "10.65219/sjhss.20260101005"
     },
@@ -141,8 +141,8 @@ export default function HumanitiesJournal() {
       id: 6,
       articleId: "sjhss-v1i1-006",
       title: "HARAWAY AND BRAIDOTTI CYBORG SUBJECTIVITIES AND POSTGENDER FUTURES: A COMPARATIVE STUDY",
-      authors: "Karthika G*1, Ariharan S2",
-      affiliation: "Assistant Professor of English, Kailash Women’s College, Nangavalli, India; Ph.D. Research Scholar, School of Liberal Arts and Humanities, Woxsen University, Hyderabad, India",
+      authors: "Karthika G¹, Ariharan S²",
+      affiliation: "1. Assistant Professor of English, Kailash Women's College, Nangavalli, India\n2. Ph.D. Research Scholar, School of Liberal Arts and Humanities, Woxsen University, Hyderabad, India",
       pages: "35 – 41",
       doi: "10.65219/sjhss.20260101006"
     },
@@ -150,8 +150,8 @@ export default function HumanitiesJournal() {
       id: 7,
       articleId: "sjhss-v1i1-007",
       title: "IMPACT OF DIGITAL STRESS ON EMOTIONAL DEPENDENCY AND MENTAL HEALTH AMONG INTIMATE COUPLES",
-      authors: "S. Srikumaran*1, K. Nagalakshmi2",
-      affiliation: "Ph.D. Research Scholar, Department of Psychology, Annamalai University; Associate Professor, Department of Psychology, Annamalai University, Annamalai Nagar, Cuddalore",
+      authors: "S. Srikumaran¹, K. Nagalakshmi²",
+      affiliation: "1. Ph.D. Research Scholar, Department of Psychology, Annamalai University\n2. Associate Professor, Department of Psychology, Annamalai University, Annamalai Nagar, Cuddalore",
       pages: "42 – 47",
       doi: "10.65219/sjhss.20260101007"
     },
@@ -159,8 +159,8 @@ export default function HumanitiesJournal() {
       id: 8,
       articleId: "sjhss-v1i1-008",
       title: "IMPACT OF DOOMSCROLLING ON EMOTIONAL REGULATION IN WORKING EMPLOYEES: THE MEDIATING ROLE OF PSYCHOLOGICAL DISTRESS",
-      authors: "S. Vasanth*1, S. Srikumaran2, K. Nagalakshmi3",
-      affiliation: "M.Sc. Applied Psychology, Department of Psychology, Annamalai University; Ph.D. Research Scholar, Department of Psychology, Annamalai University; Associate Professor, Department of Psychology, Annamalai University, Annamalai Nagar, Cuddalore",
+      authors: "S. Vasanth¹, S. Srikumaran², K. Nagalakshmi³",
+      affiliation: "1. M.Sc. Applied Psychology, Department of Psychology, Annamalai University\n2. Ph.D. Research Scholar, Department of Psychology, Annamalai University\n3. Associate Professor, Department of Psychology, Annamalai University, Annamalai Nagar, Cuddalore",
       pages: "48 – 58",
       doi: "10.65219/sjhss.20260101008"
     },
@@ -168,8 +168,8 @@ export default function HumanitiesJournal() {
       id: 9,
       articleId: "sjhss-v1i1-009",
       title: "INFLUENCE OF PARTNER’S PHUBBING ON RELATIONSHIP SATISFACTION AND MENTAL HEALTH AMONG MARRIED COUPLES",
-      authors: "S. Srikumaran*1, K. Nagalakshmi2",
-      affiliation: "Ph.D. Research Scholar, Department of Psychology, Annamalai University; Associate Professor, Department of Psychology, Annamalai University, Annamalai Nagar, Cuddalore",
+      authors: "S. Srikumaran¹, K. Nagalakshmi²",
+      affiliation: "1. Ph.D. Research Scholar, Department of Psychology, Annamalai University\n2. Associate Professor, Department of Psychology, Annamalai University, Annamalai Nagar, Cuddalore",
       pages: "59 – 65",
       doi: "10.65219/sjhss.20260101009"
     }

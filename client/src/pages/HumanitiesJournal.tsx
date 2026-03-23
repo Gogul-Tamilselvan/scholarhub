@@ -69,6 +69,14 @@ export default function HumanitiesJournal() {
       location: "Jaipur - 302019",
       email: "harshita.sharma@vgu.ac.in",
       profileUrl: "https://www.vgu.ac.in/bio/humanities/Dr_Harshita.php"
+    },
+    {
+      name: "Dr. Bibin K",
+      designation: "Assistant Professor",
+      institution: "Vignan's Foundation for Science Technology and Research University (Deemed to be University)",
+      location: "Vadlamudi, Guntur - 522213",
+      email: "bk_english@vignan.ac.in",
+      profileUrl: "https://vignan.ac.in/newvignan/people.php"
     }
   ];
 

@@ -245,7 +245,7 @@ export default function TabbedJournalPage({
                   <div className="space-y-3">
                     <div className="border-l-4 border-blue-200 pl-4">
                       <p className="text-sm text-blue-600 dark:text-blue-400 font-semibold">Starting Year</p>
-                      <p className="text-base text-gray-900 dark:text-gray-100">2025</p>
+                      <p className="text-base text-gray-900 dark:text-gray-100">2026</p>
                     </div>
                     <div className="border-l-4 border-blue-200 pl-4">
                       <p className="text-sm text-blue-600 dark:text-blue-400 font-semibold">Subject</p>

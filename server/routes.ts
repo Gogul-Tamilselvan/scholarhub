@@ -3609,7 +3609,8 @@ Sitemap: https://scholarindiapub.com/sitemap.xml`;
   // Unified Final Paper + Copyright + Payment Submission
   app.post('/api/final-paper-unified', unifiedFormUpload.fields([
     { name: 'finalPaper', maxCount: 1 },
-    { name: 'copyrightForm', maxCount: 1 }
+    { name: 'copyrightForm', maxCount: 1 },
+    { name: 'paymentScreenshot', maxCount: 1 }
   ]), async (req: Request, res: Response) => {
     try {
       const {

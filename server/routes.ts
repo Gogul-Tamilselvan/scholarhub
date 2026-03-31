@@ -3539,23 +3539,40 @@ Sitemap: https://scholarindiapub.com/sitemap.xml`;
       // Column O is index 14. User says status is in "o".
       const statusValue = (manuscript[14] || '').toString().trim();
       const status = statusValue.toLowerCase();
-      const isAccepted = status === 'accepted' || status === 'completed' || status === 'complete';
+      const isAccepted = status === 'accepted' || status === 'completed' || status === 'complete' || status === 'complement';
 
       if (!isAccepted) {
         return res.status(403).json({ 
-          message: 'Manuscript details can only be fetched for "Accepted" or "Completed" status.',
+          message: 'Manuscript details can only be fetched for "Accepted" or "Complement" status.',
           currentStatus: statusValue || 'Pending'
         });
       }
 
-      // Column J is index 9 (Title)
-      // Column G is index 6 (Email)
-      // Column H is index 7 (Mobile/Contact)
+      // Map all available manuscript columns for editing
+      // A=0: Manuscript ID, B=1: Corresponding Author, C=2: Co-authors, D=3: Journal
+      // E=4: Email, F=5: Phone, G=6: Address, H=7: Affiliation
+      // I=8: Revision Notes, J=9: Title, K=10: Keywords, L=11: Supporting Authors
+      // O=14: Status
+      
+      // Get author name - try multiple possible columns
+      const correspondingAuthor = manuscript[1] || manuscript[0] || '';
+      const authorAddress = manuscript[6] || '';
+      const affiliation = manuscript[7] || '';
+      const revisionNotes = manuscript[8] || '';
+      const supportingAuthors = manuscript[11] || '';
+      
       res.json({
         manuscriptId: manuscript[0],
+        correspondingAuthor: correspondingAuthor,
         title: manuscript[9],
-        email: manuscript[6],
-        phone: manuscript[7],
+        email: manuscript[4] || manuscript[6] || '', // Try columns E or G
+        phone: manuscript[5] || manuscript[7] || '', // Try columns F or H
+        address: authorAddress,
+        affiliation: affiliation,
+        revisionNotes: revisionNotes,
+        supportingAuthors: supportingAuthors,
+        coAuthors: manuscript[2] || '',
+        journal: manuscript[3] || '',
         status: status
       });
     } catch (error: any) {

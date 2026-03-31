@@ -91,8 +91,12 @@ export default function FinalPaperForm() {
       form.setValue("correspondingAuthorName", data.correspondingAuthor || "");
       form.setValue("correspondingEmail", data.email || "");
       form.setValue("correspondingPhone", data.phone || "");
+      form.setValue("correspondingAuthorAddress", data.address || "");
+      form.setValue("correspondingAuthorAffiliation", data.affiliation || "");
+      form.setValue("revisionNotes", data.revisionNotes || "");
+      form.setValue("supportingAuthors", data.supportingAuthors || "");
       
-      const journalType = data.journal?.toLowerCase();
+      const journalType = data.journal?.toLowerCase() || form.getValues("publicationType")?.toLowerCase();
       if (journalType?.includes("commerce")) form.setValue("publicationType", "sjcm");
       else if (journalType?.includes("humanities")) form.setValue("publicationType", "sjhss");
 
@@ -103,13 +107,18 @@ export default function FinalPaperForm() {
       // Show message if complement status
       if (status.includes("complement")) {
         toast({
-          title: "Details Fetched",
-          description: "Manuscript status: Complement. Payment step will be optional.",
+          title: "Details Fetched ✓",
+          description: "Manuscript status: Complement. All details loaded. You can edit any information below before proceeding.",
+        });
+      } else if (status.includes("accepted")) {
+        toast({
+          title: "Details Fetched ✓",
+          description: "Manuscript status: Accepted. All details loaded. You can edit any information below before proceeding.",
         });
       } else {
         toast({
-          title: "Details Fetched",
-          description: "Manuscript details have been automatically filled.",
+          title: "Details Fetched ✓",
+          description: "Manuscript details have been automatically filled. You can edit any information below before proceeding.",
         });
       }
     } catch (error: any) {
@@ -683,21 +692,6 @@ export default function FinalPaperForm() {
               <Button
                 type="button"
                 onClick={() => {
-                  if (!form.getValues("publicationType")) {
-                    toast({ title: "Required", description: "Please select a journal/publication type.", variant: "destructive" }); return;
-                  }
-                  if (!form.getValues("manuscriptId")) {
-                    toast({ title: "Required", description: "Please enter your Manuscript ID.", variant: "destructive" }); return;
-                  }
-                  // Check if manuscript status is accepted or complement
-                  if (manuscriptStatus && !["accepted", "complement"].includes(manuscriptStatus.toLowerCase())) {
-                    toast({ 
-                      title: "Invalid Status", 
-                      description: "Your manuscript status must be 'Accepted' or 'Complement' to proceed.", 
-                      variant: "destructive" 
-                    }); 
-                    return;
-                  }
                   if (!form.getValues("articleTitle")) {
                     toast({ title: "Required", description: "Please enter the article title.", variant: "destructive" }); return;
                   }
@@ -716,14 +710,14 @@ export default function FinalPaperForm() {
                   if (!form.getValues("correspondingAuthorAddress")) {
                     toast({ title: "Required", description: "Please enter the address with pin/zip code.", variant: "destructive" }); return;
                   }
-                  // Alert before proceeding to copyright form
-                  alert("⚠️ IMPORTANT: Make sure you have uploaded your final manuscript as per the journal template. Otherwise, your manuscript will be summarily rejected without any further intimation.");
                   if (!paperFile) {
                     toast({ title: "Required", description: "Please upload your final paper.", variant: "destructive" }); return;
                   }
                   if (authors.some(a => !a.name || !a.designation || !a.affiliation || !a.email)) {
                     toast({ title: "Required", description: "Please fill in all author details.", variant: "destructive" }); return;
                   }
+                  // Alert before proceeding to copyright form
+                  alert("⚠️ IMPORTANT: Make sure you have uploaded your final manuscript as per the journal template. Otherwise, your manuscript will be summarily rejected without any further intimation.");
                   setCurrentStep(2);
                 }}
                 className="w-full h-12 bg-[#213361] hover:bg-[#2a4078]"

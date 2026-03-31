@@ -59,6 +59,7 @@ export default function FinalPaperForm() {
   const [paymentOtherReason, setPaymentOtherReason] = useState("");
   const [paymentScreenshot, setPaymentScreenshot] = useState<File | null>(null);
   const [manuscriptDetails, setManuscriptDetails] = useState<any>({});
+  const [showAlert, setShowAlert] = useState<{ type: "manuscript" | "copyright" | null, visible: boolean }>({ type: null, visible: false });
 
   const addAuthor = () => setAuthors([...authors, { name: "", designation: "", affiliation: "", email: "" }]);
   const removeAuthor = (index: number) => setAuthors(authors.filter((_, i) => i !== index));
@@ -855,9 +856,8 @@ export default function FinalPaperForm() {
                   if (authors.some(a => !a.name || !a.designation || !a.affiliation || !a.email)) {
                     toast({ title: "Required", description: "Please fill in all author details.", variant: "destructive" }); return;
                   }
-                  // Alert before proceeding to copyright form
-                  alert("⚠️ IMPORTANT: Make sure you have uploaded your final manuscript as per the journal template. Otherwise, your manuscript will be summarily rejected without any further intimation.");
-                  setCurrentStep(2);
+                  // Show alert before proceeding to copyright form
+                  setShowAlert({ type: "manuscript", visible: true });
                 }}
                 className="w-full h-12 bg-[#213361] hover:bg-[#2a4078]"
                 data-testid="button-next-step-1"
@@ -1095,9 +1095,8 @@ export default function FinalPaperForm() {
                     if (!copyrightFile) {
                       toast({ title: "Required", description: "Please upload the signed copyright form.", variant: "destructive" }); return;
                     }
-                    // Alert before proceeding to payment
-                    alert("ℹ️ REMINDER: All declarations, conflict of interest details, and copyright form have been recorded. You will now proceed to the payment information section.");
-                    setCurrentStep(3);
+                    // Show alert before proceeding to payment
+                    setShowAlert({ type: "copyright", visible: true });
                   }}
                   className="flex-1 bg-[#213361] hover:bg-[#2a4078]"
                   data-testid="button-next-step-2"
@@ -1372,6 +1371,97 @@ export default function FinalPaperForm() {
               </div>
             </div>
           )}
+
+        {/* Centered Alert Modal - Manuscript Warning */}
+        {showAlert.type === "manuscript" && showAlert.visible && (
+          <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4">
+            <Card className="max-w-2xl w-full shadow-2xl">
+              <CardHeader className="bg-amber-600 text-white rounded-t-lg overflow-hidden">
+                <CardTitle className="flex items-center gap-3">
+                  <AlertCircle className="w-6 h-6" />
+                  Important Reminder
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-8 pb-6">
+                <p className="text-lg text-gray-900 dark:text-gray-100 font-semibold mb-4">
+                  ⚠️ Make sure you have uploaded your final manuscript as per the journal template.
+                </p>
+                <p className="text-gray-700 dark:text-gray-300 text-base leading-relaxed mb-6">
+                  Otherwise, your manuscript will be summarily rejected without any further intimation.
+                </p>
+                <p className="text-sm text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 p-4 rounded-lg border border-amber-200 dark:border-amber-800">
+                  Please ensure your document follows the journal's formatting guidelines and includes all necessary revisions.
+                </p>
+              </CardContent>
+              <div className="flex gap-3 px-6 pb-6">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowAlert({ type: null, visible: false })}
+                  className="flex-1"
+                >
+                  Go Back & Review
+                </Button>
+                <Button
+                  className="flex-1 bg-amber-600 hover:bg-amber-700"
+                  onClick={() => {
+                    setShowAlert({ type: null, visible: false });
+                    setCurrentStep(2);
+                  }}
+                >
+                  I Confirm - Continue
+                </Button>
+              </div>
+            </Card>
+          </div>
+        )}
+
+        {/* Centered Alert Modal - Copyright Notice */}
+        {showAlert.type === "copyright" && showAlert.visible && (
+          <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4">
+            <Card className="max-w-2xl w-full shadow-2xl">
+              <CardHeader className="bg-blue-600 text-white rounded-t-lg overflow-hidden">
+                <CardTitle className="flex items-center gap-3">
+                  <CheckCircle className="w-6 h-6" />
+                  Submission Confirmation
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-8 pb-6">
+                <p className="text-lg text-gray-900 dark:text-gray-100 font-semibold mb-4">
+                  ✓ All declarations and copyright form have been recorded.
+                </p>
+                <p className="text-gray-700 dark:text-gray-300 text-base leading-relaxed mb-6">
+                  You will now proceed to the payment information section. Please provide your payment details in the next step.
+                </p>
+                <div className="bg-blue-50 dark:bg-blue-950/30 p-4 rounded-lg border border-blue-200 dark:border-blue-800 space-y-2">
+                  <p className="text-sm font-semibold text-blue-900 dark:text-blue-100">Next Steps:</p>
+                  <ul className="text-sm text-blue-800 dark:text-blue-300 space-y-1 list-disc list-inside">
+                    <li>Provide payment method details</li>
+                    <li>Upload payment proof/screenshot</li>
+                    <li>Review and submit all documents</li>
+                  </ul>
+                </div>
+              </CardContent>
+              <div className="flex gap-3 px-6 pb-6">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowAlert({ type: null, visible: false })}
+                  className="flex-1"
+                >
+                  Review Again
+                </Button>
+                <Button
+                  className="flex-1 bg-blue-600 hover:bg-blue-700"
+                  onClick={() => {
+                    setShowAlert({ type: null, visible: false });
+                    setCurrentStep(3);
+                  }}
+                >
+                  Continue to Payment
+                </Button>
+              </div>
+            </Card>
+          </div>
+        )}
         </form>
 
         <div className="text-center text-sm text-muted-foreground pb-8">

@@ -47,12 +47,64 @@ export async function getGoogleSheetsClient() {
   return google.sheets({ version: 'v4', auth: oauth2Client });
 }
 
-// Append a row to any sheet (auto-creates sheet if missing)
+// Append a row to any sheet (auto-creates sheet with headers if missing)
 export async function appendToSheet(sheetName: string, rowData: any[]) {
   try {
     const sheets = await getGoogleSheetsClient();
     const spreadsheetId = '1J2v7detA06MC3xmNCjVt0QGOi98Myo446kBPlMKfDKg';
 
+    // Define headers for specific sheet types
+    const sheetHeaders: { [key: string]: string[] } = {
+      'Final Paper': [
+        'SubmittedAt', 'ManuscriptID', 'PublicationType', 'ArticleTitle',
+        'AllAuthors', 'CorrespondingAuthor', 'CorrespondingEmail', 'CorrespondingPhone',
+        'CorrespondingAddress', 'CorrespondingAffiliation', 'SupportingAuthors',
+        'RevisionNotes', 'PaperFileURL',
+        'ConflictOfInterest', 'ConflictDetails', 'FundingSupport', 'FundingDetails',
+        'AgreementAccepted', 'CopyrightFileURL',
+        'PaymentMethod', 'TransactionID', 'PaymentNotes', 'Status'
+      ]
+    };
+
+    // Check if sheet exists
+    const spreadsheet = await sheets.spreadsheets.get({ spreadsheetId });
+    let sheet = spreadsheet.data.sheets?.find((s: any) => s.properties?.title === sheetName);
+
+    // If sheet doesn't exist, create it with headers
+    if (!sheet) {
+      console.log(`📍 Sheet "${sheetName}" not found, creating it with headers...`);
+      const headers = sheetHeaders[sheetName] || [];
+      
+      const addSheetResponse = await sheets.spreadsheets.batchUpdate({
+        spreadsheetId,
+        requestBody: {
+          requests: [{
+            addSheet: {
+              properties: {
+                title: sheetName,
+                gridProperties: { rowCount: 1000, columnCount: Math.max(26, headers.length) }
+              }
+            }
+          }]
+        }
+      });
+      console.log(`✅ Created sheet: ${sheetName}`);
+
+      // Add headers if defined
+      if (headers.length > 0) {
+        await sheets.spreadsheets.values.update({
+          spreadsheetId,
+          range: `${sheetName}!A1`,
+          valueInputOption: 'RAW',
+          requestBody: {
+            values: [headers]
+          }
+        });
+        console.log(`✅ Added headers to ${sheetName}`);
+      }
+    }
+
+    // Append the data row
     try {
       await sheets.spreadsheets.values.append({
         spreadsheetId,
@@ -65,28 +117,12 @@ export async function appendToSheet(sheetName: string, rowData: any[]) {
       });
     } catch (appendError: any) {
       if (appendError.message?.includes('Unable to parse range') || 
-          appendError.code === 400 || 
-          appendError.message?.includes('not found')) {
-        console.log(`📍 Sheet "${sheetName}" not found, creating it...`);
-        await sheets.spreadsheets.batchUpdate({
-          spreadsheetId,
-          requestBody: {
-            requests: [{
-              addSheet: {
-                properties: {
-                  title: sheetName,
-                  gridProperties: { rowCount: 1000, columnCount: 26 }
-                }
-              }
-            }]
-          }
-        });
-        console.log(`✅ Created sheet: ${sheetName}`);
+          appendError.code === 400) {
+        // Fallback: append to specific cell range
         await sheets.spreadsheets.values.append({
           spreadsheetId,
-          range: `${sheetName}!A:Z`,
+          range: `${sheetName}!A2`,
           valueInputOption: 'USER_ENTERED',
-          insertDataOption: 'INSERT_ROWS',
           requestBody: {
             values: [rowData]
           }

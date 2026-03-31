@@ -259,60 +259,6 @@ export default function FounderProfile() {
         </div>
       </div>
       <div className="max-w-7xl mx-auto px-4 py-16">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-        >
-          <Card className="overflow-hidden border-none shadow-2xl bg-white dark:bg-gray-900">
-            <CardHeader className="bg-[#213361] p-8 text-white">
-              <div className="flex flex-col md:flex-row items-center gap-8">
-                {/* Photo */}
-                <div className="flex justify-center md:justify-start">
-                  <div className="relative">
-                    <div className="absolute inset-0 bg-gradient-to-br from-yellow-400/20 to-blue-400/20 rounded-xl blur-xl"></div>
-                    <img
-                      src={kalaiPicPath}
-                      alt="Dr. Kalaiarasan C"
-                      className="relative w-48 h-56 object-cover rounded-lg shadow-2xl border-4 border-white/20"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <CardTitle className="text-3xl md:text-4xl font-bold mb-2 text-white">
-                    Dr. Kalaiarasan C
-                  </CardTitle>
-                  <p className="text-xl text-yellow-400 font-semibold">Founder & Academic Publisher</p>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="p-8">
-              <div className="grid md:grid-cols-3 gap-8">
-                <div className="md:col-span-1 space-y-6">
-                  <div className="space-y-4">
-                    <h3 className="text-xl font-bold text-[#213361] border-b-2 border-yellow-400 pb-2">Contact Info</h3>
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-3">
-                        <Phone className="w-5 h-5 text-[#213361]" />
-                        <span>+91 9688650939</span>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <Mail className="w-5 h-5 text-[#213361]" />
-                        <span>prof.klirsn@gmail.com</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div className="md:col-span-2">
-                  <p className="text-lg leading-relaxed text-gray-700 dark:text-gray-300">
-                    Dr. Kalaiarasan C is the visionary founder of Scholar India Publishers...
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-
         {/* Quick Stats */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}

@@ -56,13 +56,13 @@ export async function appendToSheet(sheetName: string, rowData: any[]) {
     // Define headers for specific sheet types
     const sheetHeaders: { [key: string]: string[] } = {
       'Final Paper': [
-        'SubmittedAt', 'ManuscriptID', 'PublicationType', 'ArticleTitle',
-        'AllAuthors', 'CorrespondingAuthor', 'CorrespondingEmail', 'CorrespondingPhone',
-        'CorrespondingAddress', 'CorrespondingAffiliation', 'SupportingAuthors',
-        'RevisionNotes', 'PaperFileURL',
-        'ConflictOfInterest', 'ConflictDetails', 'FundingSupport', 'FundingDetails',
-        'AgreementAccepted', 'CopyrightFileURL',
-        'PaymentMethod', 'TransactionID', 'PaymentNotes', 'Status'
+        'SubmittedAt', 'ManuscriptID', 'Journal Name', 'Article Title',
+        'All Authors', 'Corresponding Author', 'Corresponding Email', 'Corresponding Phone',
+        'Corresponding Address', 'Corresponding Affiliation', 'Supporting Authors',
+        'Revision Notes', 'Paper File URL',
+        'Conflict of Interest', 'Conflict Details', 'Funding Support', 'Funding Details',
+        'Copyright Agreement Accepted', 'Copyright File URL',
+        'Payment Method', 'Transaction ID', 'Payment Notes', 'Status'
       ]
     };
 

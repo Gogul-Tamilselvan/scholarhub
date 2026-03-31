@@ -58,6 +58,7 @@ export default function FinalPaperForm() {
   const [paymentNonReason, setPaymentNonReason] = useState<"complementary" | "waiver" | "other" | "">("");
   const [paymentOtherReason, setPaymentOtherReason] = useState("");
   const [paymentScreenshot, setPaymentScreenshot] = useState<File | null>(null);
+  const [manuscriptDetails, setManuscriptDetails] = useState<any>({});
 
   const addAuthor = () => setAuthors([...authors, { name: "", designation: "", affiliation: "", email: "" }]);
   const removeAuthor = (index: number) => setAuthors(authors.filter((_, i) => i !== index));
@@ -91,18 +92,20 @@ export default function FinalPaperForm() {
       form.setValue("correspondingAuthorName", data.correspondingAuthor || "");
       form.setValue("correspondingEmail", data.email || "");
       form.setValue("correspondingPhone", data.phone || "");
-      form.setValue("correspondingAuthorAddress", data.address || "");
+      form.setValue("correspondingAuthorAddress", data.department || "");
       form.setValue("correspondingAuthorAffiliation", data.affiliation || "");
-      form.setValue("revisionNotes", data.revisionNotes || "");
-      form.setValue("supportingAuthors", data.supportingAuthors || "");
+      form.setValue("revisionNotes", data.researchField || "");
+      form.setValue("supportingAuthors", data.authorNames || "");
       
-      const journalType = data.journal?.toLowerCase() || form.getValues("publicationType")?.toLowerCase();
-      if (journalType?.includes("commerce")) form.setValue("publicationType", "sjcm");
-      else if (journalType?.includes("humanities")) form.setValue("publicationType", "sjhss");
+      // Auto-detect journal type from journal name
+      const journalName = data.journal?.toLowerCase() || '';
+      if (journalName.includes("commerce")) form.setValue("publicationType", "sjcm");
+      else if (journalName.includes("humanities") || journalName.includes("social")) form.setValue("publicationType", "sjhss");
 
-      // Store manuscript status
+      // Store manuscript status and all details
       const status = (data.status || "").toLowerCase();
       setManuscriptStatus(status);
+      setManuscriptDetails(data);
 
       // Show message if complement status
       if (status.includes("complement")) {
@@ -551,36 +554,70 @@ export default function FinalPaperForm() {
                     Manuscript Details Found
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="pt-6">
+                <CardContent className="pt-6 space-y-4">
                   <div className="grid md:grid-cols-2 gap-6">
                     <div>
                       <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">Manuscript ID</p>
                       <p className="text-lg font-bold text-gray-900 dark:text-gray-100 mt-1">{form.getValues("manuscriptId")}</p>
                     </div>
                     <div>
-                      <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">Journal</p>
-                      <p className="text-lg font-bold text-gray-900 dark:text-gray-100 mt-1">{form.getValues("publicationType") === 'sjcm' ? 'Commerce & Management' : 'Humanities & Social Sciences'}</p>
-                    </div>
-                    <div className="md:col-span-2">
-                      <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">Article Title</p>
-                      <p className="text-base font-semibold text-gray-900 dark:text-gray-100 mt-1">{form.getValues("articleTitle")}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">Corresponding Author</p>
-                      <p className="text-sm text-gray-900 dark:text-gray-100 mt-1">{form.getValues("correspondingAuthorName")}</p>
-                    </div>
-                    <div>
                       <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">Status</p>
                       <p className="text-sm font-semibold text-green-700 dark:text-green-400 mt-1 uppercase">{manuscriptStatus}</p>
                     </div>
-                    <div className="md:col-span-2">
+                  </div>
+
+                  <div className="border-t pt-4">
+                    <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase mb-2">Manuscript Title</p>
+                    <p className="text-base font-semibold text-gray-900 dark:text-gray-100">{form.getValues("articleTitle")}</p>
+                  </div>
+
+                  <div className="grid md:grid-cols-2 gap-6 border-t pt-4">
+                    <div>
+                      <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">Journal</p>
+                      <p className="text-sm text-gray-900 dark:text-gray-100 mt-1">{form.getValues("publicationType") === 'sjcm' ? 'Scholar Journal of Commerce & Management' : 'Scholar Journal of Humanities & Social Sciences'}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">Research Field</p>
+                      <p className="text-sm text-gray-900 dark:text-gray-100 mt-1">{manuscriptDetails.researchField || 'N/A'}</p>
+                    </div>
+                  </div>
+
+                  <div className="grid md:grid-cols-2 gap-6 border-t pt-4">
+                    <div>
+                      <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">Author Name</p>
+                      <p className="text-sm text-gray-900 dark:text-gray-100 mt-1">{form.getValues("correspondingAuthorName")}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">Designation</p>
+                      <p className="text-sm text-gray-900 dark:text-gray-100 mt-1">{manuscriptDetails.designation || 'N/A'}</p>
+                    </div>
+                  </div>
+
+                  <div className="grid md:grid-cols-2 gap-6 border-t pt-4">
+                    <div>
+                      <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">Department</p>
+                      <p className="text-sm text-gray-900 dark:text-gray-100 mt-1">{form.getValues("correspondingAuthorAddress") || 'N/A'}</p>
+                    </div>
+                    <div>
                       <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">Affiliation</p>
                       <p className="text-sm text-gray-900 dark:text-gray-100 mt-1">{form.getValues("correspondingAuthorAffiliation")}</p>
                     </div>
-                    <div className="md:col-span-2">
-                      <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">Contact</p>
-                      <p className="text-sm text-gray-900 dark:text-gray-100 mt-1">{form.getValues("correspondingEmail")} | {form.getValues("correspondingPhone")}</p>
+                  </div>
+
+                  <div className="grid md:grid-cols-2 gap-6 border-t pt-4">
+                    <div>
+                      <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">Email</p>
+                      <p className="text-sm text-gray-900 dark:text-gray-100 mt-1 break-all">{form.getValues("correspondingEmail")}</p>
                     </div>
+                    <div>
+                      <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">Mobile</p>
+                      <p className="text-sm text-gray-900 dark:text-gray-100 mt-1">{form.getValues("correspondingPhone")}</p>
+                    </div>
+                  </div>
+
+                  <div className="border-t pt-4">
+                    <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">Co-Authors</p>
+                    <p className="text-sm text-gray-900 dark:text-gray-100 mt-1">{form.getValues("supportingAuthors") || 'N/A'}</p>
                   </div>
                 </CardContent>
               </Card>

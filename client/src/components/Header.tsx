@@ -144,13 +144,11 @@ export default function Header() {
                     <Link href="/admin/login" data-testid="link-admin-login">
                       <div className="px-4 py-2 rounded hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors duration-200 cursor-pointer">
                         <div className="font-medium text-gray-900 dark:text-gray-100">Admin</div>
-                        <div className="text-xs text-gray-500 dark:text-gray-400">Administrator access</div>
                       </div>
                     </Link>
                     <Link href="/reviewer-login" data-testid="link-reviewer-login">
                       <div className="px-4 py-2 rounded hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors duration-200 cursor-pointer">
                         <div className="font-medium text-gray-900 dark:text-gray-100">Reviewer / Editor</div>
-                        <div className="text-xs text-gray-500 dark:text-gray-400">Reviewer and editor access</div>
                       </div>
                     </Link>
                   </div>
@@ -168,13 +166,11 @@ export default function Header() {
                     <Link href="/call-for-books" data-testid="link-submit-book">
                       <div className="px-4 py-2 rounded hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors duration-200 cursor-pointer">
                         <div className="font-medium text-gray-900 dark:text-gray-100">Book</div>
-                        <div className="text-xs text-gray-500 dark:text-gray-400">Submit your book for publication</div>
                       </div>
                     </Link>
                     <Link href="/submit" data-testid="link-submit-manuscript">
                       <div className="px-4 py-2 rounded hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors duration-200 cursor-pointer">
                         <div className="font-medium text-gray-900 dark:text-gray-100">Manuscript</div>
-                        <div className="text-xs text-gray-500 dark:text-gray-400">Submit your manuscript for review</div>
                       </div>
                     </Link>
                   </div>
@@ -308,13 +304,11 @@ export default function Header() {
                     <Link href="/admin/login" onClick={() => { setMobileMenuOpen(false); setLoginOpen(false); }} data-testid="link-admin-login-mobile">
                       <div className="px-3 py-2 rounded hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors">
                         <div className="font-medium text-gray-900 dark:text-gray-100 text-sm">Admin</div>
-                        <div className="text-xs text-gray-500 dark:text-gray-400">Administrator access</div>
                       </div>
                     </Link>
                     <Link href="/reviewer-login" onClick={() => { setMobileMenuOpen(false); setLoginOpen(false); }} data-testid="link-reviewer-login-mobile">
                       <div className="px-3 py-2 rounded hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors">
                         <div className="font-medium text-gray-900 dark:text-gray-100 text-sm">Reviewer / Editor</div>
-                        <div className="text-xs text-gray-500 dark:text-gray-400">Reviewer and editor access</div>
                       </div>
                     </Link>
                   </div>
@@ -336,13 +330,11 @@ export default function Header() {
                     <Link href="/call-for-books" onClick={() => { setMobileMenuOpen(false); setSubmitOpen(false); }} data-testid="link-submit-book-mobile">
                       <div className="px-3 py-2 rounded hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors">
                         <div className="font-medium text-gray-900 dark:text-gray-100 text-sm">Book</div>
-                        <div className="text-xs text-gray-500 dark:text-gray-400">Submit your book</div>
                       </div>
                     </Link>
                     <Link href="/submit" onClick={() => { setMobileMenuOpen(false); setSubmitOpen(false); }} data-testid="link-submit-manuscript-mobile">
                       <div className="px-3 py-2 rounded hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors">
                         <div className="font-medium text-gray-900 dark:text-gray-100 text-sm">Manuscript</div>
-                        <div className="text-xs text-gray-500 dark:text-gray-400">Submit your manuscript</div>
                       </div>
                     </Link>
                   </div>

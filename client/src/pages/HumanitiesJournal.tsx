@@ -98,8 +98,8 @@ export default function HumanitiesJournal() {
     profileUrl: "https://loyolacollege.irins.org/profile/284065"
   };
 
-  // Current issue articles (Volume 1, Issue 1)
-  const articles = [
+  // Archived articles - Volume 1, Issue 1 (January - March 2026)
+  const archivedArticles = [
     {
       id: 1,
       articleId: "sjhss-v1i1-001",
@@ -183,8 +183,8 @@ export default function HumanitiesJournal() {
     }
   ];
 
-  // For initial Humanities volume, there are no prior archived articles yet as we are starting with Vol 1 Issue 1
-  const archivedArticles: typeof articles = [];
+  // Current issue articles - Volume 1, Issue 2 (April - June 2026) - Under Production
+  const articles: typeof archivedArticles = [];
 
   return (
     <>
@@ -290,7 +290,7 @@ export default function HumanitiesJournal() {
         articles={articles}
         archivedArticles={archivedArticles}
         currentVolume="1"
-        currentIssue="1"
+        currentIssue="2"
         referenceStyle="APA_MLA"
       />
     </>

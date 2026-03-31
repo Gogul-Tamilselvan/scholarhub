@@ -643,8 +643,8 @@ export default function TabbedJournalPage({
                     ]
                   : [
                       { key: "v1", label: "Volume 1 (Current)", period: "Jan - Dec 2026", status: "In Progress", issues: [
-                        { num: 1, label: "Issue 1", period: "Jan - Mar 2026", hasArticles: true, getArticles: () => articles },
-                        { num: 2, label: "Issue 2", period: "Apr - Jun 2026", hasArticles: false, getArticles: () => [] as Article[] },
+                        { num: 1, label: "Issue 1", period: "Jan - Mar 2026", hasArticles: true, getArticles: () => archivedArticles },
+                        { num: 2, label: "Issue 2", period: "Apr - Jun 2026", hasArticles: false, getArticles: () => articles },
                         { num: 3, label: "Issue 3", period: "Jul - Sep 2026", hasArticles: false, getArticles: () => [] as Article[] },
                         { num: 4, label: "Issue 4", period: "Oct - Dec 2026", hasArticles: false, getArticles: () => [] as Article[] },
                       ]},

@@ -684,41 +684,6 @@ export default function ArticleLanding() {
             </CardHeader>
 
             <CardContent className="mt-6 space-y-6">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-blue-50 dark:bg-blue-950 rounded-md border border-blue-200 dark:border-blue-900">
-                <div>
-                  <p className="text-xs text-blue-600 dark:text-blue-400 font-medium mb-1">
-                    Volume
-                  </p>
-                  <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                    {article.volume}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-blue-600 dark:text-blue-400 font-medium mb-1">
-                    Issue
-                  </p>
-                  <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                    {article.issue}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-blue-600 dark:text-blue-400 font-medium mb-1">
-                    Pages
-                  </p>
-                  <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                    {article.pages}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-blue-600 dark:text-blue-400 font-medium mb-1">
-                    Year
-                  </p>
-                  <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                    {article.year}
-                  </p>
-                </div>
-              </div>
-
               {article.abstract && (
                 <div>
                   <h3 className="text-base font-bold mb-2 text-gray-900 dark:text-gray-100 uppercase tracking-wide border-b border-gray-200 dark:border-gray-700 pb-1">

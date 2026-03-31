@@ -188,6 +188,24 @@ export default function HumanitiesJournal() {
 
   return (
     <>
+      {/* Production Status Banner */}
+      <div className="bg-yellow-50 dark:bg-yellow-950/30 border-b border-yellow-200 dark:border-yellow-800">
+        <div className="max-w-7xl mx-auto px-4 py-3 sm:px-6 lg:px-8">
+          <div className="flex items-start gap-3">
+            <div className="shrink-0 pt-0.5">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-yellow-100 dark:bg-yellow-900/40 text-yellow-800 dark:text-yellow-200 text-xs font-semibold uppercase">
+                ⚙️ Under Production
+              </span>
+            </div>
+            <div className="flex-1">
+              <p className="text-sm text-yellow-800 dark:text-yellow-300">
+                <span className="font-semibold">Volume 2, Issue 1 (January - March 2026)</span> is currently under production. New articles will be published shortly.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <SEO
         title="Scholar Journal of Humanities and Social Sciences (SJHSS) | Peer-Reviewed Journal India"
         description="SJHSS is an international peer-reviewed journal publishing research in Humanities, Literature, Philosophy, Sociology, Psychology & Social Sciences. Submit your manuscript online. DOI for all papers."
@@ -289,7 +307,7 @@ export default function HumanitiesJournal() {
         boardMembers={boardMembers}
         articles={articles}
         archivedArticles={archivedArticles}
-        currentVolume="1"
+        currentVolume="2"
         currentIssue="1"
         referenceStyle="APA_MLA"
       />

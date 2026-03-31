@@ -816,6 +816,15 @@ export default function FinalPaperForm() {
                       </p>
                     </label>
                   </div>
+                  {paperFile && (
+                    <div className="mt-4 p-4 bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 rounded-lg flex items-center gap-3">
+                      <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0" />
+                      <div className="text-sm">
+                        <p className="font-semibold text-green-700 dark:text-green-400">File uploaded successfully</p>
+                        <p className="text-green-600 dark:text-green-500 text-xs mt-0.5 break-all">{paperFile.name}</p>
+                      </div>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
 
@@ -1013,6 +1022,15 @@ export default function FinalPaperForm() {
                       </p>
                     </label>
                   </div>
+                  {copyrightFile && (
+                    <div className="mt-4 p-4 bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 rounded-lg flex items-center gap-3">
+                      <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0" />
+                      <div className="text-sm">
+                        <p className="font-semibold text-green-700 dark:text-green-400">File uploaded successfully</p>
+                        <p className="text-green-600 dark:text-green-500 text-xs mt-0.5 break-all">{copyrightFile.name}</p>
+                      </div>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
 
@@ -1223,6 +1241,15 @@ export default function FinalPaperForm() {
                           </p>
                         </label>
                       </div>
+                      {paymentScreenshot && (
+                        <div className="mt-3 p-4 bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 rounded-lg flex items-center gap-3">
+                          <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0" />
+                          <div className="text-sm">
+                            <p className="font-semibold text-green-700 dark:text-green-400">File uploaded successfully</p>
+                            <p className="text-green-600 dark:text-green-500 text-xs mt-0.5 break-all">{paymentScreenshot.name}</p>
+                          </div>
+                        </div>
+                      )}
                     </div>
 
                     <div className="space-y-2">

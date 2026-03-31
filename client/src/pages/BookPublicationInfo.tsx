@@ -30,9 +30,10 @@ export default function BookPublicationInfo() {
   return (
     <div className="min-h-screen bg-background">
       <SEO
-        title="Academic Book Publication with DOI & ISBN - Scholar India Publishers | Chennai"
-        description="Publish academic books with DOI and ISBN registration. Professional book publishing for research monographs, edited volumes, conference proceedings. Commerce, management, humanities, social sciences. Chennai, India based publisher with global reach."
-        keywords="academic book publication India, book publishing with DOI, ISBN book registration, research book publisher, scholarly book publishing, academic publisher Chennai, book publication services India, research monograph publishing, edited volume publication, PhD thesis publication, conference proceedings book, commerce book publisher, management book publisher, humanities book publisher, social science book publisher, peer-reviewed book publishing, DOI registration India"
+        title="Publish Your Academic Book with DOI & ISBN | Scholar India Publishers"
+        description="Publish academic and research books with DOI and ISBN through Scholar India Publishers. Research monographs, edited volumes, conference proceedings in Commerce, Management, Humanities & Social Sciences. Chennai-based publisher with global reach."
+        keywords="academic book publication India, book publishing with DOI India, ISBN book registration India, research book publisher Chennai, scholarly book publishing, PhD thesis publication India, edited volume publication, conference proceedings book India, commerce book publisher, humanities book publisher, book publication services academic"
+        canonical="https://scholarindiapub.com/book-publication-info"
       />
       <StructuredData 
         type="Service" 

@@ -7,9 +7,10 @@ export default function SubmitManuscriptPage() {
   return (
     <div className="min-h-screen bg-background">
       <SEO
-        title="Submit Manuscript - Scholar India Publishers"
-        description="Submit your research manuscript to Scholar India Publishers. Fast double-blind peer review process with 10-15 day turnaround. Choose from commerce, humanities, or social sciences journals."
-        keywords="submit manuscript, research paper submission, academic paper submission, peer review submission, journal submission"
+        title="Submit Your Research Manuscript | Scholar India Publishers"
+        description="Submit your research paper to Scholar India Publishers. Double-blind peer review with 10-15 day decision. Open to all topics in commerce, management, humanities, and social sciences. Free to submit. DOI assigned on publication."
+        keywords="submit manuscript online, submit research paper India, journal paper submission, academic manuscript submission, peer review journal India, free manuscript submission, commerce journal submission, humanities journal submission, social sciences submission, research paper India 2025"
+        canonical="https://scholarindiapub.com/submit"
       />
       <Header />
       <section className="py-16 bg-background">

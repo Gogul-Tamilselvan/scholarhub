@@ -42,9 +42,10 @@ export default function OtherServices() {
   return (
     <div className="min-h-screen bg-background">
       <SEO
-        title="Research Support Services - Editing, Plagiarism Check & Translation | Scholar India"
-        description="Professional academic support services: manuscript editing, proofreading, plagiarism detection, academic translation, research collaboration, citation formatting, copyright registration. Expert support for researchers in India and globally."
-        keywords="manuscript editing services India, academic proofreading, plagiarism check India, Turnitin similarity check, academic translation services, research paper editing, English language editing, thesis editing India, dissertation editing, journal article editing, research collaboration platform, citation formatting, reference management, copyright registration India, academic writing support, research consultation India, journal selection help, manuscript formatting services"
+        title="Academic Editing, Plagiarism Check & Translation Services | Scholar India Publishers"
+        description="Professional academic support: manuscript editing, proofreading, plagiarism detection, academic translation, citation formatting, and copyright registration. Expert support for researchers in India and globally."
+        keywords="manuscript editing India, academic proofreading India, plagiarism check India, Turnitin check India, academic translation services, research paper editing, thesis editing India, English language editing research, citation formatting India, copyright registration India, academic writing support India"
+        canonical="https://scholarindiapub.com/other-services"
       />
       <StructuredData 
         type="Service" 

@@ -162,9 +162,10 @@ export default function FounderProfile() {
   return (
     <div className="min-h-screen bg-background">
       <SEO
-        title="Dr. Kalaiarasan C - Founder, Scholar India Publishers"
-        description="Professional profile of Dr. Kalaiarasan C, founder of Scholar India Publishers. Ph.D Commerce, UGC-NET qualified, published researcher with 6.5+ years teaching experience."
-        keywords="Kalaiarasan C, scholar india publishers founder, commerce researcher, academic publisher, Ph.D commerce"
+        title="Dr. Kalaiarasan C - Founder & Publisher | Scholar India Publishers"
+        description="Dr. Kalaiarasan C is the founder of Scholar India Publishers. Ph.D in Commerce, UGC-NET qualified, published researcher with 6.5+ years of teaching experience. Based in Chennai, Tamil Nadu, India."
+        keywords="Dr Kalaiarasan C, Kalaiarasan C founder, scholar india publishers founder, commerce researcher Tamil Nadu, academic publisher Chennai, PhD commerce researcher India, UGC NET qualified researcher"
+        canonical="https://scholarindiapub.com/founder"
       />
       <Header />
       {/* Hero Section */}

@@ -75,9 +75,10 @@ export default function ContactUs() {
   return (
     <div className="min-h-screen bg-background">
       <SEO
-        title="Contact Scholar India Publishers - Chennai, Tamil Nadu | editor@scholarindiapub.com"
-        description="Contact Scholar India Publishers for journal submission inquiries, book publication, conference proceedings, and academic services. Email: editor@scholarindiapub.com. Located in Chennai, Tamil Nadu, India. Office hours: Mon-Fri 10 AM - 4 PM IST."
-        keywords="contact scholar india publishers, journal publisher contact Chennai, academic publisher Chennai contact, manuscript submission inquiry, journal publication contact India, book publishing inquiry, scholar india publishers email, scholar india publishers Chennai address, academic publisher Tamil Nadu, research journal contact, editor contact scholar india, publication inquiry India"
+        title="Contact Scholar India Publishers - Chennai | editor@scholarindiapub.com"
+        description="Contact Scholar India Publishers for journal submission queries, book publication, conference proceedings, and academic services. Email: editor@scholarindiapub.com. Chennai, Tamil Nadu, India. Mon-Fri 10 AM - 4 PM IST."
+        keywords="contact scholar india publishers, scholar india publishers email, academic publisher Chennai contact, journal submission inquiry, manuscript query India, book publishing contact Chennai, conference proceedings inquiry, scholar india publishers address Tamil Nadu, research journal India contact"
+        canonical="https://scholarindiapub.com/contact"
       />
       <Header />
       {/* Hero Section */}

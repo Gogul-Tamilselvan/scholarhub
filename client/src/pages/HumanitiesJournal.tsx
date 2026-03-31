@@ -189,11 +189,12 @@ export default function HumanitiesJournal() {
   return (
     <>
       <SEO
-        title="Scholar Journal of Humanities and Social Sciences - International Peer-Reviewed Journal"
-        description="International Peer-Reviewed Journal | Publishing research in Humanities, Literature, Philosophy, Sociology & Social Sciences. UGC CARE aspirant. Submit your research online."
-        keywords="scholar journal humanities, scholar journal social sciences, humanities journal India, social sciences journal India, literature journal, philosophy journal, sociology journal, psychology journal, political science journal, anthropology journal, history journal, cultural studies journal, linguistics journal, international humanities journal, international social sciences journal, interdisciplinary research, peer-reviewed humanities, academic social sciences journal"
+        title="Scholar Journal of Humanities and Social Sciences (SJHSS) | Peer-Reviewed Journal India"
+        description="SJHSS is an international peer-reviewed journal publishing research in Humanities, Literature, Philosophy, Sociology, Psychology & Social Sciences. Submit your manuscript online. DOI for all papers."
+        keywords="scholar journal humanities social sciences, SJHSS journal, humanities journal India, social sciences journal India, literature research journal, philosophy journal, sociology journal India, psychology journal, political science journal, anthropology journal, history journal India, cultural studies journal, linguistics journal, peer-reviewed humanities journal, social science research India 2025, submit paper humanities India"
         type="website"
-        ogImage="/og-journal-humanities.jpg"
+        canonical="https://scholarindiapub.com/humanities"
+        ogImage="/og-image.jpg"
       />
       <StructuredData 
         type="Periodical" 

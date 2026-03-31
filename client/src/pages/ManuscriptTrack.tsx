@@ -93,8 +93,10 @@ export default function ManuscriptTrack() {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
       <SEO
-        title="Manuscript Track Portal - Scholar India Publishers"
-        description="Track your manuscript submission status at Scholar India Publishers."
+        title="Track Your Manuscript Status - Scholar India Publishers"
+        description="Track the status of your submitted manuscript at Scholar India Publishers. Enter your Manuscript ID to check real-time progress from submission to publication for SJCM and SJHSS journals."
+        keywords="track manuscript, manuscript status, submission tracking, manuscript ID, check paper status, journal submission status, Scholar India Publishers"
+        canonical="https://scholarindiapub.com/manuscript-track"
       />
       <Header />
       

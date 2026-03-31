@@ -14,7 +14,7 @@ Preferred communication style: Simple, everyday language.
 - **UI**: Tailwind CSS with shadcn/ui for custom academic design (deep blue backgrounds, gold yellow content cards).
 - **Animations**: Framer Motion
 - **State Management**: TanStack Query (server state), React hooks (local state).
-- **SEO**: Dynamic meta tags, Open Graph, Twitter Cards, JSON-LD structured data, canonical URLs, optimized titles and descriptions, keyword optimization, and geo-targeting.
+- **SEO**: Dynamic meta tags, Open Graph, Twitter Cards, JSON-LD structured data, canonical URLs, optimized titles and descriptions, keyword optimization, and geo-targeting. Comprehensive sitemap.xml with 34 URLs (all pages + all 19 articles). Comprehensive robots.txt with academic crawler support. Static Organization JSON-LD in index.html for Google Knowledge Panel. All public pages have canonical URLs, optimized meta descriptions, and keyword-rich titles.
 
 ### Backend
 - **Runtime**: Node.js with Express.js

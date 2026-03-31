@@ -91,107 +91,132 @@ export async function registerRoutes(app: Express) {
     }
   });
 
-  // Dynamic sitemap generation for better SEO
+  // Comprehensive sitemap.xml for all public pages and articles
   app.get('/sitemap.xml', (req: Request, res: Response) => {
-    const protocol = req.protocol;
-    const host = req.get('host');
-    const baseUrl = `${protocol}://${host}`;
+    const protocol = 'https';
+    const host = 'scholarindiapub.com';
+    const base = `${protocol}://${host}`;
+    const today = new Date().toISOString().split('T')[0];
 
-    // Generate current sitemap with dynamic lastmod date
+    const urlEntry = (loc: string, priority: string, changefreq: string = 'monthly', lastmod: string = today) =>
+      `  <url>\n    <loc>${base}${loc}</loc>\n    <lastmod>${lastmod}</lastmod>\n    <changefreq>${changefreq}</changefreq>\n    <priority>${priority}</priority>\n  </url>`;
+
+    // All Commerce articles
+    const commerceArticles = [
+      'sjcm-v1i1-001','sjcm-v1i1-002','sjcm-v1i1-003','sjcm-v1i1-004','sjcm-v1i1-005',
+      'sjcm-v2i1-001','sjcm-v2i1-002','sjcm-v2i1-003','sjcm-v2i1-004','sjcm-v2i1-005',
+    ];
+    // All Humanities articles
+    const humanitiesArticles = [
+      'sjhss-v1i1-001','sjhss-v1i1-002','sjhss-v1i1-003','sjhss-v1i1-004',
+      'sjhss-v1i1-005','sjhss-v1i1-006','sjhss-v1i1-007','sjhss-v1i1-008','sjhss-v1i1-009',
+    ];
+
     const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url>
-    <loc>${baseUrl}/</loc>
-    <lastmod>${new Date().toISOString().split('T')[0]}</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>1.0</priority>
-  </url>
-  <url>
-    <loc>${baseUrl}/journals/commerce</loc>
-    <lastmod>${new Date().toISOString().split('T')[0]}</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.9</priority>
-  </url>
-  <url>
-    <loc>${baseUrl}/journals/humanities</loc>
-    <lastmod>${new Date().toISOString().split('T')[0]}</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.9</priority>
-  </url>
-  <url>
-    <loc>${baseUrl}/journals/social-sciences</loc>
-    <lastmod>${new Date().toISOString().split('T')[0]}</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.9</priority>
-  </url>
-  <url>
-    <loc>${baseUrl}/services/book-publication</loc>
-    <lastmod>${new Date().toISOString().split('T')[0]}</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>${baseUrl}/services/conference-seminars</loc>
-    <lastmod>${new Date().toISOString().split('T')[0]}</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>${baseUrl}/submit-manuscript</loc>
-    <lastmod>${new Date().toISOString().split('T')[0]}</lastmod>
-    <changefreq>yearly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>${baseUrl}/join-reviewer</loc>
-    <lastmod>${new Date().toISOString().split('T')[0]}</lastmod>
-    <changefreq>yearly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>${baseUrl}/contact</loc>
-    <lastmod>${new Date().toISOString().split('T')[0]}</lastmod>
-    <changefreq>yearly</changefreq>
-    <priority>0.7</priority>
-  </url>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9
+        http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd">
+
+  <!-- Core Pages -->
+${urlEntry('/', '1.0', 'weekly')}
+${urlEntry('/commerce-management', '0.9', 'weekly')}
+${urlEntry('/humanities', '0.9', 'weekly')}
+${urlEntry('/about', '0.8', 'monthly')}
+${urlEntry('/founder', '0.7', 'monthly')}
+${urlEntry('/contact', '0.8', 'monthly')}
+
+  <!-- Manuscript Submission -->
+${urlEntry('/submit', '0.9', 'monthly')}
+${urlEntry('/manuscript-track', '0.7', 'weekly')}
+
+  <!-- Services -->
+${urlEntry('/book-publication-info', '0.8', 'monthly')}
+${urlEntry('/call-for-books', '0.7', 'monthly')}
+${urlEntry('/published-books', '0.7', 'monthly')}
+${urlEntry('/conference-seminars', '0.8', 'monthly')}
+${urlEntry('/other-services', '0.7', 'monthly')}
+
+  <!-- Reviewer & Editor -->
+${urlEntry('/join-reviewer', '0.7', 'monthly')}
+${urlEntry('/reviewer-search', '0.6', 'monthly')}
+
+  <!-- Commerce Journal Articles -->
+${commerceArticles.map(id => urlEntry(`/article/${id}`, '0.8', 'monthly', '2025-12-01')).join('\n')}
+
+  <!-- Humanities Journal Articles -->
+${humanitiesArticles.map(id => urlEntry(`/article/${id}`, '0.8', 'monthly', '2025-12-01')).join('\n')}
+
 </urlset>`;
 
     res.set('Content-Type', 'application/xml');
     res.send(sitemap);
   });
 
-  // Updated robots.txt with dynamic base URL
+  // Comprehensive robots.txt
   app.get('/robots.txt', (req: Request, res: Response) => {
-    const protocol = req.protocol;
-    const host = req.get('host');
-    const baseUrl = `${protocol}://${host}`;
+    const robots = `# Robots.txt - Scholar India Publishers (scholarindiapub.com)
+# International peer-reviewed academic journals
 
-    const robots = `# Robots.txt for Scholar India Publishers
 User-agent: *
 Allow: /
-Disallow: /admin
-Disallow: /api
-Disallow: /reviewer-portal
-Disallow: /editor-portal
+Allow: /commerce-management
+Allow: /humanities
+Allow: /about
+Allow: /founder
+Allow: /contact
+Allow: /submit
+Allow: /manuscript-track
+Allow: /book-publication-info
+Allow: /call-for-books
+Allow: /published-books
+Allow: /conference-seminars
+Allow: /other-services
+Allow: /join-reviewer
+Allow: /reviewer-search
+Allow: /article/
 
-# Specific crawl preferences
+Disallow: /admin/
+Disallow: /api/
+Disallow: /reviewer-dashboard
+Disallow: /reviewer-login
+Disallow: /editor-dashboard
+Disallow: /copyright-form
+Disallow: /final-paper
+Disallow: /payment
+Disallow: /erp/
+Disallow: /*.php$
+Disallow: /*.asp$
+
+# Google - no crawl delay, prioritize academic content
 User-agent: Googlebot
 Allow: /
 Crawl-delay: 0
 
+# Bing
 User-agent: Bingbot
 Allow: /
 Crawl-delay: 1
 
+# Yahoo Slurp
 User-agent: Slurp
 Allow: /
 Crawl-delay: 1
 
+# DuckDuckGo
 User-agent: DuckDuckBot
 Allow: /
 
-# Sitemap
-Sitemap: ${baseUrl}/sitemap.xml`;
+# Semantic Scholar (academic crawler)
+User-agent: SemanticScholarBot
+Allow: /
+
+# Internet Archive
+User-agent: ia_archiver
+Allow: /
+
+# Sitemap location
+Sitemap: https://scholarindiapub.com/sitemap.xml`;
 
     res.set('Content-Type', 'text/plain');
     res.send(robots);
@@ -1528,55 +1553,6 @@ Sitemap: ${baseUrl}/sitemap.xml`;
       console.error('Certificate generation error:', error);
       res.status(500).json({ error: error.message });
     }
-  });
-
-  // SEO: robots.txt
-  app.get('/robots.txt', (req: Request, res: Response) => {
-    const domain = req.get('host') || 'scholarindiapub.com';
-    const protocol = req.protocol || 'https';
-    
-    const robotsTxt = `# Scholar India Publishers - Robots.txt
-# We welcome search engine crawlers to index our academic journals
-
-User-agent: *
-Allow: /
-Allow: /commerce-management
-Allow: /humanities
-Allow: /about
-Allow: /services
-Allow: /contact
-Allow: /article
-
-Disallow: /admin
-Disallow: /private
-Disallow: /*.php
-Disallow: /*.asp
-Disallow: /*.aspx
-
-Sitemap: ${protocol}://${domain}/sitemap.xml
-`;
-    res.type('text/plain').send(robotsTxt);
-  });
-
-  // SEO: sitemap.xml
-  app.get('/sitemap.xml', (req: Request, res: Response) => {
-    const domain = req.get('host') || 'scholarindiapub.com';
-    const protocol = req.protocol || 'https';
-
-    const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url><loc>${protocol}://${domain}/</loc><priority>1.0</priority></url>
-  <url><loc>${protocol}://${domain}/commerce-management</loc><priority>0.9</priority></url>
-  <url><loc>${protocol}://${domain}/humanities</loc><priority>0.9</priority></url>
-  <url><loc>${protocol}://${domain}/about</loc><priority>0.8</priority></url>
-  <url><loc>${protocol}://${domain}/book-publication-info</loc><priority>0.7</priority></url>
-  <url><loc>${protocol}://${domain}/conference-seminars</loc><priority>0.7</priority></url>
-  <url><loc>${protocol}://${domain}/other-services</loc><priority>0.7</priority></url>
-  <url><loc>${protocol}://${domain}/join-reviewer</loc><priority>0.7</priority></url>
-  <url><loc>${protocol}://${domain}/contact</loc><priority>0.8</priority></url>
-</urlset>`;
-
-    res.type('application/xml').send(sitemap);
   });
 
   // Admin Authentication Routes

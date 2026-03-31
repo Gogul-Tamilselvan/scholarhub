@@ -10,9 +10,10 @@ export default function ReviewerApplication() {
   return (
     <div className="min-h-screen bg-background">
       <SEO
-        title="Become a Peer Reviewer - Join Scholar India Publishers Review Panel | Apply Online"
-        description="Join our international peer review panel. Review manuscripts in commerce, management, humanities, or social sciences. ORCID required. Certificate for every review completed. Apply online to become a reviewer for Scholar India Publishers journals."
-        keywords="become peer reviewer India, journal reviewer application, academic reviewer, manuscript reviewer, peer review panel, research reviewer, ORCID reviewer, journal review opportunity, scholarly reviewer application, academic peer reviewer, commerce reviewer, management reviewer, humanities reviewer, social sciences reviewer, international journal reviewer, reviewer certificate, peer review India"
+        title="Join as Peer Reviewer | Scholar India Publishers - Apply Online"
+        description="Apply to become a peer reviewer for Scholar India Publishers. Review manuscripts in commerce, management, humanities, or social sciences. Earn reviewer certificates. ORCID preferred. Join our international review panel today."
+        keywords="become peer reviewer India, journal reviewer apply online, academic peer reviewer India, manuscript reviewer application, peer review panel India, ORCID reviewer, reviewer certificate journal, commerce management reviewer, humanities social sciences reviewer, peer review opportunity India 2025"
+        canonical="https://scholarindiapub.com/join-reviewer"
       />
       <Header />
       

@@ -15,9 +15,10 @@ export default function Home() {
     <div className="min-h-screen bg-background">
       <SEO
         title="Scholar India Publishers | International Peer-Reviewed Academic Journals"
-        description="International Peer-Reviewed Academic Journals | Scholar India Publishers - Publishing research in Commerce, Management, Humanities & Social Sciences. Fast DOI assignment, Double-blind peer review. Submit your manuscript online."
-        keywords="scholar india publishers, academic journal publisher, peer-reviewed journal, commerce journal, management journal, humanities journal, social sciences journal, academic publishing India, research publication, journal submission, DOI, Chennai publisher, international journals"
+        description="Scholar India Publishers - International peer-reviewed academic journals in Commerce, Management, Humanities & Social Sciences. Fast DOI, double-blind review, ISSN certified. Submit your manuscript online from India or abroad."
+        keywords="scholar india publishers, academic journal publisher India, peer-reviewed journal India, commerce journal India, management journal, humanities journal India, social sciences journal, academic publishing Chennai, research publication India, journal submission 2025, DOI assignment, ISSN journal India, international academic journal, open access journal India"
         ogImage={ogImage}
+        canonical="https://scholarindiapub.com/"
       />
       <StructuredData type="Organization" data={createOrganizationData()} />
       <Header />

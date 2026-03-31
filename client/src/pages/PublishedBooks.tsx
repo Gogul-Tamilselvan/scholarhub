@@ -10,9 +10,10 @@ export default function PublishedBooks() {
   return (
     <div className="min-h-screen bg-background">
       <SEO
-        title="Published Books - Scholar India Publishers"
-        description="Browse our collection of published academic books in commerce, management, humanities, and social sciences. All books come with DOI and ISBN registration."
-        keywords="published academic books, research books India, scholarly publications, academic books catalogue, published research monographs, DOI books, ISBN books, commerce books, management books, humanities books, social science books"
+        title="Published Academic Books | Scholar India Publishers - DOI & ISBN"
+        description="Explore published academic books by Scholar India Publishers. Research monographs, edited volumes, and academic texts in Commerce, Management, Humanities & Social Sciences. All books have DOI and ISBN."
+        keywords="published academic books India, research books scholar india, academic book catalogue India, DOI books India, ISBN academic books, research monographs published, commerce books India, humanities books India, management books published"
+        canonical="https://scholarindiapub.com/published-books"
       />
       <StructuredData 
         type="Organization" 

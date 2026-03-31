@@ -29,9 +29,10 @@ export default function CallForBooks() {
   return (
     <div className="min-h-screen bg-background">
       <SEO
-        title="Call for Book Proposals & Chapter Contributions - Scholar India Publishers"
-        description="Submit your book proposal or contribute chapters to edited volumes. We welcome research monographs, edited books, and academic contributions in commerce, management, humanities, and social sciences."
-        keywords="book proposal submission, call for book chapters, academic book submission, research book proposal, edited volume contribution, book chapter submission, academic publishing call, scholarly book proposal, research monograph submission, PhD thesis book, conference proceedings publication"
+        title="Call for Book Proposals & Chapter Contributions | Scholar India Publishers"
+        description="Submit your book proposal or contribute chapters to edited volumes at Scholar India Publishers. Research monographs, edited books, and academic contributions in Commerce, Management, Humanities & Social Sciences welcome."
+        keywords="call for book proposals India, book chapter submission, academic book proposal India, research monograph submission, edited volume chapters India, scholarly book proposal, book publishing invitation India, academic publishing call 2025"
+        canonical="https://scholarindiapub.com/call-for-books"
       />
       <StructuredData 
         type="Service" 

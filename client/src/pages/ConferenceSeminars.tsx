@@ -33,9 +33,10 @@ export default function ConferenceSeminars() {
   return (
     <div className="min-h-screen bg-background">
       <SEO
-        title="Conference Proceedings & Special Issue Publication - Scholar India Publishers"
-        description="Publish conference proceedings and special issues with fast-track peer review. DOI for all papers, academic database indexing. Support for international conferences, national seminars, workshops, symposiums. Research methodology workshops and academic writing training available. Chennai, India."
-        keywords="conference proceedings publication India, special issue journal, seminar proceedings, academic conference publication, workshop proceedings, symposium publication, fast-track peer review, conference paper publishing, research conference proceedings, international conference publication, DOI conference papers, indexed conference proceedings, academic workshop publication, research methodology workshop, academic writing workshop, statistical analysis training, publication ethics workshop India, conference collaboration India"
+        title="Publish Conference Proceedings & Special Issues | Scholar India Publishers"
+        description="Publish your conference proceedings and special issues with fast-track peer review and DOI for all papers. Support for international conferences, national seminars, workshops, and symposiums. Based in Chennai, India."
+        keywords="conference proceedings publication India, special issue journal India, seminar proceedings publishing, academic conference publication, conference paper DOI India, fast-track peer review conference, indexed conference proceedings, international conference publication India, national seminar proceedings, workshop publication India"
+        canonical="https://scholarindiapub.com/conference-seminars"
       />
       <StructuredData 
         type="Service" 

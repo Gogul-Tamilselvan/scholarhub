@@ -73,8 +73,9 @@ export default function About() {
     <div className="min-h-screen bg-background">
       <SEO
         title="About Scholar India Publishers - MSME Registered Academic Publisher | Chennai"
-        description="Learn about Scholar India Publishers, an MSME registered academic publisher (2022) founded by Dr. Kalaiarasan C. Publishing international peer-reviewed journals in commerce, humanities, and social sciences from Chennai, India."
-        keywords="about scholar india publishers, MSME publisher India, academic publisher Chennai, Dr. Kalaiarasan C, international journal publisher, peer-reviewed journals India, research publisher Tamil Nadu"
+        description="Scholar India Publishers is an MSME-registered international academic publisher (est. 2022) founded by Dr. Kalaiarasan C. Publishing peer-reviewed research journals in Commerce, Management, Humanities & Social Sciences from Chennai, India."
+        keywords="about scholar india publishers, MSME publisher India, academic publisher Chennai, Dr. Kalaiarasan C, international journal publisher India, peer-reviewed journals India, research publisher Tamil Nadu, academic publishing company India, who is scholar india publishers"
+        canonical="https://scholarindiapub.com/about"
       />
       <Header />
       {/* Hero Section */}

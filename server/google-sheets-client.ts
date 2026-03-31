@@ -104,11 +104,11 @@ export async function appendToSheet(sheetName: string, rowData: any[]) {
       }
     }
 
-    // Append the data row
+    // Append the data row starting from column A
     try {
       await sheets.spreadsheets.values.append({
         spreadsheetId,
-        range: `${sheetName}!A:Z`,
+        range: `${sheetName}!A:A`,
         valueInputOption: 'USER_ENTERED',
         insertDataOption: 'INSERT_ROWS',
         requestBody: {
@@ -118,15 +118,24 @@ export async function appendToSheet(sheetName: string, rowData: any[]) {
     } catch (appendError: any) {
       if (appendError.message?.includes('Unable to parse range') || 
           appendError.code === 400) {
-        // Fallback: append to specific cell range
-        await sheets.spreadsheets.values.append({
-          spreadsheetId,
-          range: `${sheetName}!A2`,
-          valueInputOption: 'USER_ENTERED',
-          requestBody: {
-            values: [rowData]
-          }
-        });
+        // Fallback: get the last row and append data there
+        try {
+          const allData = await sheets.spreadsheets.values.get({
+            spreadsheetId,
+            range: `${sheetName}!A:A`
+          });
+          const nextRow = (allData.data.values?.length || 0) + 1;
+          await sheets.spreadsheets.values.update({
+            spreadsheetId,
+            range: `${sheetName}!A${nextRow}`,
+            valueInputOption: 'USER_ENTERED',
+            requestBody: {
+              values: [rowData]
+            }
+          });
+        } catch (fallbackError) {
+          throw fallbackError || appendError;
+        }
       } else {
         throw appendError;
       }

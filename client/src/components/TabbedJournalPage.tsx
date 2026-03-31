@@ -513,9 +513,7 @@ export default function TabbedJournalPage({
                       <Calendar className="h-6 w-6 text-yellow-400" />
                     </div>
                     <div>
-                      <CardTitle className="text-xl md:text-2xl font-serif text-white">
-                        Current Issue (January - March 2026)
-                      </CardTitle>
+                      <CardTitle className="text-xl md:text-2xl font-serif text-white">Current Issue (April - June 2026)</CardTitle>
                       <p className="text-sm md:text-base font-medium text-blue-100">
                         (Volume {currentVolume}, Issue {currentIssue})
                       </p>

@@ -126,7 +126,7 @@ export default function Disclaimer() {
               editor@scholarindiapub.com
             </a>
             <span className="text-gray-400 dark:text-gray-600">•</span>
-            <span>Designed and Developed by Mr. Kalaiarasan C</span>
+            <span>Designed and Developed by Dr. Kalaiarasan C</span>
           </p>
         </div>
       </div>

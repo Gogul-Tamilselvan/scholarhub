@@ -73,8 +73,8 @@ export default function About() {
     <div className="min-h-screen bg-background">
       <SEO
         title="About Scholar India Publishers - MSME Registered Academic Publisher | Chennai"
-        description="Learn about Scholar India Publishers, an MSME registered academic publisher (2022) founded by Mr. Kalaiarasan C. Publishing international peer-reviewed journals in commerce, humanities, and social sciences from Chennai, India."
-        keywords="about scholar india publishers, MSME publisher India, academic publisher Chennai, Mr. Kalaiarasan C, international journal publisher, peer-reviewed journals India, research publisher Tamil Nadu"
+        description="Learn about Scholar India Publishers, an MSME registered academic publisher (2022) founded by Dr. Kalaiarasan C. Publishing international peer-reviewed journals in commerce, humanities, and social sciences from Chennai, India."
+        keywords="about scholar india publishers, MSME publisher India, academic publisher Chennai, Dr. Kalaiarasan C, international journal publisher, peer-reviewed journals India, research publisher Tamil Nadu"
       />
       <Header />
       {/* Hero Section */}

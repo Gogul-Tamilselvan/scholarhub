@@ -90,7 +90,7 @@ export default function HumanitiesJournal() {
   };
 
   const managingEditor = {
-    name: "Mr. C. Kalaiarasan",
+    name: "Dr. C. Kalaiarasan",
     designation: "Assistant Professor of B.Com Computer Applications",
     institution: "Loyola College (Autonomous), University of Madras",
     location: "Chennai - 600 034",

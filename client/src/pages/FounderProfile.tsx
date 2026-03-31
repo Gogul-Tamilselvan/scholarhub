@@ -162,8 +162,8 @@ export default function FounderProfile() {
   return (
     <div className="min-h-screen bg-background">
       <SEO
-        title="Mr. Kalaiarasan C - Founder, Scholar India Publishers"
-        description="Professional profile of Mr. Kalaiarasan C, founder of Scholar India Publishers. Ph.D Commerce, UGC-NET qualified, published researcher with 6.5+ years teaching experience."
+        title="Dr. Kalaiarasan C - Founder, Scholar India Publishers"
+        description="Professional profile of Dr. Kalaiarasan C, founder of Scholar India Publishers. Ph.D Commerce, UGC-NET qualified, published researcher with 6.5+ years teaching experience."
         keywords="Kalaiarasan C, scholar india publishers founder, commerce researcher, academic publisher, Ph.D commerce"
       />
       <Header />
@@ -191,7 +191,7 @@ export default function FounderProfile() {
                 <div className="absolute inset-0 bg-gradient-to-br from-yellow-400/20 to-blue-400/20 rounded-xl blur-xl"></div>
                 <img
                   src={kalaiPicPath}
-                  alt="Mr. Kalaiarasan C"
+                  alt="Dr. Kalaiarasan C"
                   className="relative w-64 h-72 object-cover rounded-lg shadow-2xl border-4 border-white/20"
                   data-testid="img-founder-profile"
                 />
@@ -206,7 +206,7 @@ export default function FounderProfile() {
               className="md:col-span-2 text-white"
             >
               <h1 className="text-4xl md:text-5xl font-bold mb-2">
-                Mr. Kalaiarasan C
+                Dr. Kalaiarasan C
               </h1>
               <p className="text-xl md:text-2xl text-yellow-400 font-semibold mb-6">
                 Founder & Academic Publisher
@@ -273,14 +273,14 @@ export default function FounderProfile() {
                     <div className="absolute inset-0 bg-gradient-to-br from-yellow-400/20 to-blue-400/20 rounded-xl blur-xl"></div>
                     <img
                       src={kalaiPicPath}
-                      alt="Mr. Kalaiarasan C"
+                      alt="Dr. Kalaiarasan C"
                       className="relative w-48 h-56 object-cover rounded-lg shadow-2xl border-4 border-white/20"
                     />
                   </div>
                 </div>
                 <div>
                   <CardTitle className="text-3xl md:text-4xl font-bold mb-2 text-white">
-                    Mr. Kalaiarasan C
+                    Dr. Kalaiarasan C
                   </CardTitle>
                   <p className="text-xl text-yellow-400 font-semibold">Founder & Academic Publisher</p>
                 </div>
@@ -305,7 +305,7 @@ export default function FounderProfile() {
                 </div>
                 <div className="md:col-span-2">
                   <p className="text-lg leading-relaxed text-gray-700 dark:text-gray-300">
-                    Mr. Kalaiarasan C is the visionary founder of Scholar India Publishers...
+                    Dr. Kalaiarasan C is the visionary founder of Scholar India Publishers...
                   </p>
                 </div>
               </div>

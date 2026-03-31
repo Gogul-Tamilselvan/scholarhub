@@ -136,7 +136,7 @@ export default function Footer() {
                 editor@scholarindiapub.com
               </a>
               <span className="mx-1">•</span>
-              Designed and Developed by Mr. Kalaiarasan C
+              Designed and Developed by Dr. Kalaiarasan C
             </p>
           </div>
         </div>

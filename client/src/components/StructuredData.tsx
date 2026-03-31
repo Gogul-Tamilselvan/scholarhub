@@ -45,7 +45,7 @@ export function createOrganizationData() {
     "foundingDate": "2022",
     "founder": {
       "@type": "Person",
-      "name": "Mr. Kalaiarasan C"
+      "name": "Dr. Kalaiarasan C"
     },
     "address": {
       "@type": "PostalAddress",

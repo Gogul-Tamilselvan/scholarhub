@@ -111,9 +111,8 @@ export default function CommerceJournal() {
   ];
 
   // Archived articles (Vol 1, Issue 1) - moved from current issue to archives
-  // Archived articles - Volume 1 Issue 1 + Volume 2 Issue 1
+  // Archived articles - Volume 1, Issue 1 (October - December 2025)
   const archivedArticles = [
-    // Volume 1, Issue 1 (October - December 2025)
     {
       id: 1,
       articleId: "sjcm-v1i1-001",
@@ -158,10 +157,13 @@ export default function CommerceJournal() {
       affiliation: "1. Assistant Professor, Department of Commerce, Hindustan Institute of Technology & Science, Padur, Chennai, India\n2. Assistant Professor, Department of Commerce, Hindustan Institute of Technology & Science, Padur, Chennai, India",
       pages: "31-35",
       doi: "10.65219/sjcm.20250101005"
-    },
-    // Volume 2, Issue 1 (January - March 2026)
+    }
+  ];
+
+  // Current issue articles - Volume 2, Issue 1 (January - March 2026)
+  const articles: typeof archivedArticles = [
     {
-      id: 6,
+      id: 1,
       articleId: "sjcm-v2i1-001",
       title: "SOCIO ECONOMIC STATUS OF REGISTERED CONSTRUCTION WORKERS IN TIRUNELVELI DISTRICT",
       authors: "Samuel Jayaraman¹",
@@ -170,7 +172,7 @@ export default function CommerceJournal() {
       doi: "10.65219/sjcm.20260201001"
     },
     {
-      id: 7,
+      id: 2,
       articleId: "sjcm-v2i1-002",
       title: "EXPLORING THE RELATIONSHIP BETWEEN CREATIVITY AND CURIOSITY AMONG HIGHER SECONDARY STUDENTS IN TIRUVALLUR DISTRICT",
       authors: "N. Purusothaman¹, Nirmala²",
@@ -179,7 +181,7 @@ export default function CommerceJournal() {
       doi: "10.65219/sjcm.20260201002"
     },
     {
-      id: 8,
+      id: 3,
       articleId: "sjcm-v2i1-003",
       title: "MARKETING OF JASMINE IN SATHYAMANGALAM BLOCK OF ERODE DISTRICT",
       authors: "P. Shanmugam¹, T. Praveena²",
@@ -188,7 +190,7 @@ export default function CommerceJournal() {
       doi: "10.65219/sjcm.20260201003"
     },
     {
-      id: 9,
+      id: 4,
       articleId: "sjcm-v2i1-004",
       title: "BRIDGING THE AWARENESS – ACTION GAP IN FINANCIAL LITERACY AMONG CHENNAI COLLEGE STUDENTS",
       authors: "Kalaiarasan C¹, Kamalesh G², Kovid Raghav R², Ishit Agarwal², Shanmugapriyan J², Joi Levis A²",
@@ -197,7 +199,7 @@ export default function CommerceJournal() {
       doi: "10.65219/sjcm.20260201004"
     },
     {
-      id: 10,
+      id: 5,
       articleId: "sjcm-v2i1-005",
       title: "IMPACT OF INFRASTRUCTURE TRANSPARENCY ON TRUST IN BANKING CHATBOTS",
       authors: "S. Shilpa¹, N. Purusothaman²",
@@ -206,7 +208,7 @@ export default function CommerceJournal() {
       doi: "10.65219/sjcm.20260201005"
     },
     {
-      id: 11,
+      id: 6,
       articleId: "sjcm-v2i1-006",
       title: "SOCIAL MEDIA INFLUENCE AND FINANCIAL LITERACY AS MEDIATORS BETWEEN FINTECH ADOPTION AND BEHAVIOURAL INTENTION AMONG COLLEGE YOUTH",
       authors: "R Indumathi¹, C. Revathy²",
@@ -215,9 +217,6 @@ export default function CommerceJournal() {
       doi: "10.65219/sjcm.20260201006"
     }
   ];
-
-  // Current issue articles - Volume 2, Issue 2 (April - June 2026) - Under Production
-  const articles: typeof archivedArticles = [];
 
   const managingEditor = {
     name: "Dr. C. Kalaiarasan",
@@ -306,7 +305,7 @@ export default function CommerceJournal() {
         articles={articles}
         archivedArticles={archivedArticles}
         currentVolume="2"
-        currentIssue="2"
+        currentIssue="1"
         referenceStyle="APA"
       />
     </>

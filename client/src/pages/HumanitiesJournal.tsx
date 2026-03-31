@@ -184,7 +184,9 @@ export default function HumanitiesJournal() {
   ];
 
   // Current issue articles - Volume 1, Issue 2 (April - June 2026) - Under Production
-  const articles: typeof archivedArticles = [];
+  const articles: typeof archivedArticles = [
+    // Empty - Under Production
+  ];
 
   return (
     <>

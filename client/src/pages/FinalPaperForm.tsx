@@ -689,6 +689,15 @@ export default function FinalPaperForm() {
                   if (!form.getValues("manuscriptId")) {
                     toast({ title: "Required", description: "Please enter your Manuscript ID.", variant: "destructive" }); return;
                   }
+                  // Check if manuscript status is accepted or complement
+                  if (manuscriptStatus && !["accepted", "complement"].includes(manuscriptStatus.toLowerCase())) {
+                    toast({ 
+                      title: "Invalid Status", 
+                      description: "Your manuscript status must be 'Accepted' or 'Complement' to proceed.", 
+                      variant: "destructive" 
+                    }); 
+                    return;
+                  }
                   if (!form.getValues("articleTitle")) {
                     toast({ title: "Required", description: "Please enter the article title.", variant: "destructive" }); return;
                   }
@@ -707,6 +716,8 @@ export default function FinalPaperForm() {
                   if (!form.getValues("correspondingAuthorAddress")) {
                     toast({ title: "Required", description: "Please enter the address with pin/zip code.", variant: "destructive" }); return;
                   }
+                  // Alert before proceeding to copyright form
+                  alert("⚠️ IMPORTANT: Make sure you have uploaded your final manuscript as per the journal template. Otherwise, your manuscript will be summarily rejected without any further intimation.");
                   if (!paperFile) {
                     toast({ title: "Required", description: "Please upload your final paper.", variant: "destructive" }); return;
                   }
@@ -942,6 +953,8 @@ export default function FinalPaperForm() {
                     if (!copyrightFile) {
                       toast({ title: "Required", description: "Please upload the signed copyright form.", variant: "destructive" }); return;
                     }
+                    // Alert before proceeding to payment
+                    alert("ℹ️ REMINDER: All declarations, conflict of interest details, and copyright form have been recorded. You will now proceed to the payment information section.");
                     setCurrentStep(3);
                   }}
                   className="flex-1 bg-[#213361] hover:bg-[#2a4078]"
@@ -956,6 +969,23 @@ export default function FinalPaperForm() {
           {/* STEP 3: PAYMENT DETAILS */}
           {currentStep === 3 && (
             <div className="space-y-6">
+              {/* Complement Status Notice */}
+              {manuscriptStatus.toLowerCase().includes("complement") && (
+                <Card className="border-green-200 dark:border-green-800 bg-green-50/50 dark:bg-green-950/20">
+                  <CardContent className="pt-6">
+                    <div className="flex items-start gap-3">
+                      <CheckCircle className="w-5 h-5 text-green-600 mt-0.5" />
+                      <div>
+                        <p className="font-semibold text-green-800 dark:text-green-300">Complementary Publication</p>
+                        <p className="text-sm text-green-700 dark:text-green-400 mt-1">
+                          Your manuscript has been approved for complementary publication. No Article Processing Charge (APC) fee will be collected.
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
               <Card className="border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-950/20">
                 <CardContent className="pt-6">
                   <div className="flex items-start gap-3">

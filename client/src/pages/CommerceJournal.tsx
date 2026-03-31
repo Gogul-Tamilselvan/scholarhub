@@ -110,8 +110,57 @@ export default function CommerceJournal() {
     }
   ];
 
-  // Archived articles - Volume 2, Issue 1 (Jan - Mar 2026)
+  // Archived articles (Vol 1, Issue 1) - moved from current issue to archives
   const archivedArticles = [
+    {
+      id: 1,
+      articleId: "sjcm-v1i1-001",
+      title: "THE IMPACT OF GOVERNMENT POLICIES ON THE GROWTH OF M-COMMERCE IN DEVELOPING ECONOMIES: AN INDIAN PERSPECTIVE",
+      authors: "Bhuriya Jignesh Subhashbhai¹, Chanduji Popatji Thakor²",
+      affiliation: "1. Assistant Professor of Commerce and Management, Shri Govind Guru University, Vinzol-Godhra, Gujarat, India\n2. Assistant Professor of Commerce and Management, Shri Govind Guru University, Vinzol-Godhra, Gujarat, India",
+      pages: "1-10",
+      doi: "10.65219/sjcm.20250101001"
+    },
+    {
+      id: 2,
+      articleId: "sjcm-v1i1-002",
+      title: "CONSUMER PERCEPTION TOWARDS DIGITAL PAYMENT MODE IN BANKING SECTOR",
+      authors: "A. Vini Infanta¹",
+      affiliation: "1. Assistant Professor of Professional Accounting and Finance, School of Commerce, Accounting and Finance, Kristu Jayanti Deemed to be University, Bengaluru, India",
+      pages: "11-18",
+      doi: "10.65219/sjcm.20250101002"
+    },
+    {
+      id: 3,
+      articleId: "sjcm-v1i1-003",
+      title: "IMPACT OF SOCIAL MEDIA MARKETING ON BRAND LOYALTY WITH MEDIATING ROLE OF PURCHASE INTENTION AMONG GEN Z - AN EMPIRICAL STUDY",
+      authors: "M. Suganya¹",
+      affiliation: "1. Assistant Professor, BBA Department, DDGD Vaishnav College, Arumbakkam, Chennai, India",
+      pages: "19-25",
+      doi: "10.65219/sjcm.20250101003"
+    },
+    {
+      id: 4,
+      articleId: "sjcm-v1i1-004",
+      title: "STUDY ON FINANCIAL LITERACY AND AWARENESS AMONG WORKING WOMEN: A SURVEY BASED APPROACH IN PANCHMAHAL DISTRICT",
+      authors: "Chanduji Popatji Thakor¹",
+      affiliation: "1. Assistant Professor of Commerce and Management, Shri Govind Guru University, Vinzol-Godhra, Gujarat, India",
+      pages: "26-30",
+      doi: "10.65219/sjcm.20250101004"
+    },
+    {
+      id: 5,
+      articleId: "sjcm-v1i1-005",
+      title: "EFFECTIVENESS OF SOCIAL MEDIA ADVERTISING ON BRAND LOYALTY",
+      authors: "R. Ramki¹, R. M. Uma²",
+      affiliation: "1. Assistant Professor, Department of Commerce, Hindustan Institute of Technology & Science, Padur, Chennai, India\n2. Assistant Professor, Department of Commerce, Hindustan Institute of Technology & Science, Padur, Chennai, India",
+      pages: "31-35",
+      doi: "10.65219/sjcm.20250101005"
+    }
+  ];
+
+  // Current issue articles
+  const articles: typeof archivedArticles = [
     {
       id: 1,
       articleId: "sjcm-v2i1-001",
@@ -168,9 +217,6 @@ export default function CommerceJournal() {
     }
   ];
 
-  // Current issue articles - Issue 2 (Apr - Jun 2026) - Under Production
-  const articles: typeof archivedArticles = [];
-
   const managingEditor = {
     name: "Dr. C. Kalaiarasan",
     designation: "Assistant Professor of B.Com Computer Applications",
@@ -181,24 +227,6 @@ export default function CommerceJournal() {
 
   return (
     <>
-      {/* Production Status Banner */}
-      <div className="bg-yellow-50 dark:bg-yellow-950/30 border-b border-yellow-200 dark:border-yellow-800">
-        <div className="max-w-7xl mx-auto px-4 py-3 sm:px-6 lg:px-8">
-          <div className="flex items-start gap-3">
-            <div className="shrink-0 pt-0.5">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-yellow-100 dark:bg-yellow-900/40 text-yellow-800 dark:text-yellow-200 text-xs font-semibold uppercase">
-                ⚙️ Under Production
-              </span>
-            </div>
-            <div className="flex-1">
-              <p className="text-sm text-yellow-800 dark:text-yellow-300">
-                <span className="font-semibold">Issue 2 (April - June 2026)</span> is currently under production. New articles will be published shortly.
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-
       <SEO
         title="Scholar Journal of Commerce and Management (SJCM) | Peer-Reviewed Business Journal India"
         description="SJCM is an international peer-reviewed journal publishing research in Commerce, Management, Accounting, Finance, Marketing, HRM & Business. Submit your manuscript online. DOI for all papers. Fast review."
@@ -276,8 +304,7 @@ export default function CommerceJournal() {
         articles={articles}
         archivedArticles={archivedArticles}
         currentVolume="2"
-        currentIssue="2"
-        nextIssueText="Issue 2 (April - June 2026) - Under Production"
+        currentIssue="1"
         referenceStyle="APA"
       />
     </>

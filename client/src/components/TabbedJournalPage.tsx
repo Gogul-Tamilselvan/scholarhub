@@ -33,7 +33,7 @@ import Footer from "./Footer";
 const cleanAuthors = (raw: string) =>
   raw
     .replace(/[*†‡§¶]/g, "")
-    .replace(/\d+/g, "")
+    .replace(/[\d⁰¹²³⁴⁵⁶⁷⁸⁹⁺⁻⁼⁽⁾]/g, "")
     .replace(/\s+,/g, ",")
     .replace(/\s{2,}/g, " ")
     .trim();

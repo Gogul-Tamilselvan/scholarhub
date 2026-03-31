@@ -638,7 +638,7 @@ export default function ArticleLanding() {
                 </CardTitle>
                 <div className="space-y-2 pt-1">
                   <p className="text-base font-semibold text-gray-800 dark:text-gray-200">
-                    {article.authors}
+                    {cleanAuthors(article.authors)}
                   </p>
                   <div className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
                     {article.affiliation.split('\n').map((aff, idx) => (

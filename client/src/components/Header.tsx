@@ -16,18 +16,18 @@ export default function Header() {
     <header className="sticky top-0 z-50 w-full bg-white dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Main Header Row */}
-        <div className="flex items-center justify-between py-3.5">
-          {/* Logo Section - Compact */}
+        <div className="flex items-center justify-between py-2.5">
+          {/* Logo Section - Larger */}
           <Link href="/" data-testid="link-home" onClick={() => setMobileMenuOpen(false)}>
-            <div className="flex items-center space-x-2.5 shrink-0 hover:opacity-80 transition-opacity">
+            <div className="flex items-center space-x-3 shrink-0 hover:opacity-80 transition-opacity">
               <img 
                 src={logoImage} 
                 alt="Scholar India Publishers Logo" 
-                className="h-11 w-auto object-contain"
+                className="h-16 w-auto object-contain"
               />
               <div className="hidden sm:block">
-                <div className="text-sm font-semibold text-slate-900 dark:text-slate-50 leading-tight">Scholar India</div>
-                <div className="text-xs font-medium text-slate-600 dark:text-slate-400">Publishers</div>
+                <div className="text-base font-bold text-slate-900 dark:text-slate-50 leading-tight">Scholar India</div>
+                <div className="text-sm font-semibold text-slate-700 dark:text-slate-300">Publishers</div>
               </div>
             </div>
           </Link>

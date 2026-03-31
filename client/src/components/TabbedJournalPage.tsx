@@ -617,7 +617,7 @@ export default function TabbedJournalPage({
                     <Calendar className="h-20 w-20 text-blue-400 mx-auto mb-6" />
                     <h3 className="text-2xl font-semibold mb-3 text-blue-900 dark:text-blue-300">Coming Soon</h3>
                     <p className="text-base text-blue-600 dark:text-blue-400 max-w-md mx-auto">
-                      Volume {currentVolume}, Issue {currentIssue} (January - March 2026) is currently under preparation.
+                      Volume {currentVolume}, Issue {currentIssue} (April - June 2026) is currently under preparation.
                     </p>
                   </div>
                 )}

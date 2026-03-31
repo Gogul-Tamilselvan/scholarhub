@@ -392,8 +392,8 @@ export default function FinalPaperForm() {
         )}
 
         <form onSubmit={form.handleSubmit(onSubmit)}>
-          {/* STEP 1: FINAL PAPER */}
-          {currentStep === 1 && (
+          {/* STEP 0: TEMPLATE DOWNLOAD & FETCH MANUSCRIPT - Shows before data is fetched */}
+          {!manuscriptStatus && currentStep === 1 && (
             <div className="space-y-6">
               <Card className="border-amber-200 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-950/20">
                 <CardContent className="pt-6">
@@ -452,28 +452,10 @@ export default function FinalPaperForm() {
 
               <Card>
                 <CardHeader>
-                  <CardTitle>Submission Details</CardTitle>
+                  <CardTitle>Fetch Your Manuscript Details</CardTitle>
+                  <CardDescription>Enter your manuscript ID to load all submission information</CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="space-y-2">
-                    <Label>Journal/Publication Type *</Label>
-                    <Select
-                      value={form.watch("publicationType")}
-                      onValueChange={(value) => form.setValue("publicationType", value)}
-                    >
-                      <SelectTrigger data-testid="select-publication-type">
-                        <SelectValue placeholder="Select journal" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="sjcm">Scholar Journal of Commerce and Management</SelectItem>
-                        <SelectItem value="sjhss">Scholar Journal of Humanities and Social Sciences</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    {form.formState.errors.publicationType && (
-                      <p className="text-sm text-red-500">{form.formState.errors.publicationType.message}</p>
-                    )}
-                  </div>
-
+                <CardContent className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="manuscriptId">Manuscript ID *</Label>
                     <div className="flex gap-2">
@@ -486,10 +468,10 @@ export default function FinalPaperForm() {
                       />
                       <Button 
                         type="button" 
-                        variant="outline"
+                        variant="default"
                         onClick={fetchManuscript}
-                        disabled={isFetching}
-                        className="bg-[#213361]/10 hover:bg-[#213361]/20 text-[#213361] border-[#213361]/30"
+                        disabled={isFetching || !form.getValues("manuscriptId")}
+                        className="bg-[#213361] hover:bg-[#2a4078]"
                       >
                         {isFetching ? <Loader2 className="h-4 w-4 animate-spin" /> : "Fetch"}
                       </Button>
@@ -498,6 +480,117 @@ export default function FinalPaperForm() {
                       <p className="text-sm text-red-500">{form.formState.errors.manuscriptId.message}</p>
                     )}
                   </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {/* STEP 1: FINAL PAPER - Shows after data is fetched */}
+          {manuscriptStatus && currentStep === 1 && (
+            <div className="space-y-6">
+              <Card className="border-amber-200 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-950/20">
+                <CardContent className="pt-6">
+                  <div className="flex items-start gap-3">
+                    <AlertCircle className="w-5 h-5 text-amber-600 mt-0.5" />
+                    <div>
+                      <p className="font-semibold text-amber-800 dark:text-amber-300">Important Instructions</p>
+                      <ul className="text-sm text-amber-700 dark:text-amber-400 mt-2 space-y-1 list-disc list-inside">
+                        <li>Download the appropriate journal template below</li>
+                        <li>Format your revised paper according to the template guidelines</li>
+                        <li>Ensure all reviewer comments have been addressed</li>
+                        <li>Upload the final formatted paper in DOC/DOCX format</li>
+                      </ul>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Download className="w-5 h-5" />
+                    Download Journal Templates
+                  </CardTitle>
+                  <CardDescription>
+                    Format your final paper using the appropriate template
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <a
+                      href={commerceTemplate}
+                      download="SJCM_Article_Template.docx"
+                      className="flex items-center gap-3 p-4 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                    >
+                      <FileText className="w-8 h-8 text-green-600" />
+                      <div>
+                        <p className="font-medium text-sm">Commerce & Management Template</p>
+                        <p className="text-xs text-muted-foreground">For SJCM articles (APA style)</p>
+                      </div>
+                    </a>
+                    <a
+                      href={hssTemplate}
+                      download="SJHSS_Article_Template.docx"
+                      className="flex items-center gap-3 p-4 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                    >
+                      <FileText className="w-8 h-8 text-purple-600" />
+                      <div>
+                        <p className="font-medium text-sm">Humanities & Social Sciences Template</p>
+                        <p className="text-xs text-muted-foreground">For SJHSS articles (APA/MLA style)</p>
+                      </div>
+                    </a>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Manuscript Details Summary */}
+              <Card className="border-green-200 dark:border-green-800 bg-green-50/50 dark:bg-green-950/20">
+                <CardHeader className="bg-[#213361] rounded-t-lg overflow-hidden">
+                  <CardTitle className="text-white flex items-center gap-2">
+                    <CheckCircle className="w-5 h-5" />
+                    Manuscript Details Found
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="pt-6">
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <div>
+                      <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">Manuscript ID</p>
+                      <p className="text-lg font-bold text-gray-900 dark:text-gray-100 mt-1">{form.getValues("manuscriptId")}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">Journal</p>
+                      <p className="text-lg font-bold text-gray-900 dark:text-gray-100 mt-1">{form.getValues("publicationType") === 'sjcm' ? 'Commerce & Management' : 'Humanities & Social Sciences'}</p>
+                    </div>
+                    <div className="md:col-span-2">
+                      <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">Article Title</p>
+                      <p className="text-base font-semibold text-gray-900 dark:text-gray-100 mt-1">{form.getValues("articleTitle")}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">Corresponding Author</p>
+                      <p className="text-sm text-gray-900 dark:text-gray-100 mt-1">{form.getValues("correspondingAuthorName")}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">Status</p>
+                      <p className="text-sm font-semibold text-green-700 dark:text-green-400 mt-1 uppercase">{manuscriptStatus}</p>
+                    </div>
+                    <div className="md:col-span-2">
+                      <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">Affiliation</p>
+                      <p className="text-sm text-gray-900 dark:text-gray-100 mt-1">{form.getValues("correspondingAuthorAffiliation")}</p>
+                    </div>
+                    <div className="md:col-span-2">
+                      <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">Contact</p>
+                      <p className="text-sm text-gray-900 dark:text-gray-100 mt-1">{form.getValues("correspondingEmail")} | {form.getValues("correspondingPhone")}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Edit Submission Details</CardTitle>
+                  <CardDescription>Modify any information below before uploading your manuscript</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
 
                   <div className="space-y-2">
                     <Label htmlFor="articleTitle">Article Title *</Label>

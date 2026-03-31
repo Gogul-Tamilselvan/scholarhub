@@ -72,6 +72,7 @@ interface TabbedJournalPageProps {
   boardMembers?: EditorialMember[];
   articles?: Article[];
   archivedArticles?: Article[];
+  v2i1Articles?: Article[];
   currentVolume?: string;
   currentIssue?: string;
   referenceStyle?: "APA" | "APA_MLA";
@@ -92,6 +93,7 @@ export default function TabbedJournalPage({
   boardMembers = [],
   articles = [],
   archivedArticles = [],
+  v2i1Articles = [],
   currentVolume = "2",
   currentIssue = "1",
   referenceStyle = "APA",
@@ -630,8 +632,8 @@ export default function TabbedJournalPage({
                 const volumes = isCommerce
                   ? [
                       { key: "v2", label: "Volume 2 (Current)", period: "Jan - Dec 2026", status: "In Progress", issues: [
-                        { num: 1, label: "Issue 1", period: "Jan - Mar 2026", hasArticles: true, getArticles: () => articles },
-                        { num: 2, label: "Issue 2", period: "Apr - Jun 2026", hasArticles: false, getArticles: () => [] as Article[] },
+                        { num: 1, label: "Issue 1", period: "Jan - Mar 2026", hasArticles: true, getArticles: () => v2i1Articles },
+                        { num: 2, label: "Issue 2", period: "Apr - Jun 2026", hasArticles: true, getArticles: () => articles },
                         { num: 3, label: "Issue 3", period: "Jul - Sep 2026", hasArticles: false, getArticles: () => [] as Article[] },
                         { num: 4, label: "Issue 4", period: "Oct - Dec 2026", hasArticles: false, getArticles: () => [] as Article[] },
                       ]},

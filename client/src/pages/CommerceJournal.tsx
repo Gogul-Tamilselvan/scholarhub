@@ -160,8 +160,8 @@ export default function CommerceJournal() {
     }
   ];
 
-  // Current issue articles - Volume 2, Issue 1 (January - March 2026)
-  const articles: typeof archivedArticles = [
+  // Previous issue articles - Volume 2, Issue 1 (January - March 2026)
+  const v2i1Articles = [
     {
       id: 1,
       articleId: "sjcm-v2i1-001",
@@ -217,6 +217,9 @@ export default function CommerceJournal() {
       doi: "10.65219/sjcm.20260201006"
     }
   ];
+
+  // Current issue articles - Volume 2, Issue 2 (April - June 2026) - Under Production
+  const articles: typeof archivedArticles = [];
 
   const managingEditor = {
     name: "Dr. C. Kalaiarasan",
@@ -304,8 +307,9 @@ export default function CommerceJournal() {
         boardMembers={boardMembers}
         articles={articles}
         archivedArticles={archivedArticles}
+        v2i1Articles={v2i1Articles}
         currentVolume="2"
-        currentIssue="1"
+        currentIssue="2"
         referenceStyle="APA"
       />
     </>

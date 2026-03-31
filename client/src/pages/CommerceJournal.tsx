@@ -205,6 +205,15 @@ export default function CommerceJournal() {
       affiliation: "1. Research Scholar of Commerce, Patrician College of Arts and Science, Chennai, India\n2. Assistant Professor and Research Supervisor, Patrician College of Arts and Science, Chennai, India",
       pages: "29 - 37",
       doi: "10.65219/sjcm.20260201005"
+    },
+    {
+      id: 6,
+      articleId: "sjcm-v2i1-006",
+      title: "SOCIAL MEDIA INFLUENCE AND FINANCIAL LITERACY AS MEDIATORS BETWEEN FINTECH ADOPTION AND BEHAVIOURAL INTENTION AMONG COLLEGE YOUTH",
+      authors: "R Indumathi¹, C. Revathy²",
+      affiliation: "1. Research Scholar, PG & Research Department of Commerce, Guru Nanak College, Chennai, India\n2. Assistant Professor of PG & Research Department of Commerce, Guru Nanak College, Chennai, India",
+      pages: "38 - 44",
+      doi: "10.65219/sjcm.20260201006"
     }
   ];
 

@@ -406,6 +406,32 @@ const articles: Record<string, Article> = {
     ],
     doi: "10.65219/sjcm.20260201005",
   },
+  "sjcm-v2i1-006": {
+    id: "sjcm-v2i1-006",
+    title: "SOCIAL MEDIA INFLUENCE AND FINANCIAL LITERACY AS MEDIATORS BETWEEN FINTECH ADOPTION AND BEHAVIOURAL INTENTION AMONG COLLEGE YOUTH",
+    authors: "R Indumathi¹, C. Revathy²",
+    affiliation:
+      "1. Research Scholar, PG & Research Department of Commerce, Guru Nanak College, Chennai, India\n2. Assistant Professor of PG & Research Department of Commerce, Guru Nanak College, Chennai, India",
+    pages: "38 - 44",
+    volume: "2",
+    issue: "1",
+    year: "2026",
+    journal: "Scholar Journal of Commerce and Management",
+    pdfUrl: "/downloads/sjcm-v2i1-006.pdf",
+    abstract:
+      "The rapid expansion of financial technology (FinTech) applications has transformed the way young people manage payments, savings, and investments. College youth, in particular, represent one of the most active user groups of digital financial platforms. However, their intention to adopt and continue using FinTech services depends not only on technological convenience but also on social influence and financial understanding. This study examines the role of social media influence and financial literacy as mediators in the relationship between FinTech adoption and behavioural intention among college youth. A descriptive and analytical research design was adopted, and data were collected from 300 college students in Chennai using a structured questionnaire. Statistical techniques including reliability analysis, correlation, regression, and Structural Equation Modelling (SEM) were employed. The results indicate that FinTech adoption significantly influences behavioural intention both directly and indirectly through social media influence and financial literacy. The study concludes that increasing digital engagement and financial awareness can significantly enhance FinTech usage among young consumers.",
+    keywords: [
+      "FinTech Adoption",
+      "Social Media Influence",
+      "Financial Literacy",
+      "Behavioural Intention",
+      "College Youth",
+      "Digital Financial Services",
+      "Consumer Behavior",
+      "SEM Analysis",
+    ],
+    doi: "10.65219/sjcm.20260201006",
+  },
   "sjhss-v1i1-007": {
     id: "sjhss-v1i1-007",
     title:

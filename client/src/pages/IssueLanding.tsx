@@ -14,6 +14,15 @@ import SEO from "@/components/SEO";
 import { useEffect } from "react";
 import { useJournalStats, useTrackVisitor } from "@/hooks/useJournalStats";
 
+// Clean author names — strip *, †, ‡, superscript digits
+const cleanAuthors = (raw: string) =>
+  raw
+    .replace(/[*†‡§¶]/g, "")
+    .replace(/\d+/g, "")
+    .replace(/\s+,/g, ",")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+
 interface Article {
   id: number;
   articleId: string;
@@ -232,7 +241,7 @@ export default function IssueLanding() {
                                 Author(s):
                               </span>
                               <span className="text-sm text-gray-900 dark:text-gray-100 font-medium">
-                                {article.authors}
+                                {cleanAuthors(article.authors)}
                               </span>
                             </div>
                             {article.affiliation && (

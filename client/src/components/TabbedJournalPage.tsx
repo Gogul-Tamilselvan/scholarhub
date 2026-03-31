@@ -29,6 +29,15 @@ import GeneralManuscriptSubmissionForm from "./GeneralManuscriptSubmissionForm";
 import ReviewerApplicationForm from "./ReviewerApplicationForm";
 import Footer from "./Footer";
 
+// Clean author names — strip *, †, ‡, superscript digits
+const cleanAuthors = (raw: string) =>
+  raw
+    .replace(/[*†‡§¶]/g, "")
+    .replace(/\d+/g, "")
+    .replace(/\s+,/g, ",")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+
 interface EditorialMember {
   name: string;
   designation: string;
@@ -553,7 +562,7 @@ export default function TabbedJournalPage({
                                 </Link>
                                 <div className="flex flex-wrap items-center gap-y-1 text-gray-600 dark:text-gray-400">
                                   <Users className="h-3.5 w-3.5 mr-2 text-blue-600 dark:text-blue-400 shrink-0" />
-                                  <span className="text-sm font-medium">{article.authors}</span>
+                                  <span className="text-sm font-medium">{cleanAuthors(article.authors)}</span>
                                 </div>
                                 {article.affiliation && (
                                   <div className="flex items-start gap-2 text-gray-500 dark:text-gray-500 italic text-xs">
@@ -790,7 +799,7 @@ export default function TabbedJournalPage({
                                       </Link>
                                       <div className="flex flex-wrap items-center gap-y-1 text-gray-600 dark:text-gray-400">
                                         <Users className="h-3.5 w-3.5 mr-2 text-blue-600 dark:text-blue-400 shrink-0" />
-                                        <span className="text-sm font-medium">{article.authors}</span>
+                                        <span className="text-sm font-medium">{cleanAuthors(article.authors)}</span>
                                       </div>
                                       {article.affiliation && (
                                         <div className="flex items-start gap-2 text-gray-500 dark:text-gray-500 italic text-xs">

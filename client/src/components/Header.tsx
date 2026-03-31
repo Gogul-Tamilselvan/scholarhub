@@ -35,8 +35,8 @@ export default function Header() {
             </div>
           </Link>
           
-          {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center space-x-0.5 flex-1">
+          {/* Desktop Navigation - Centered */}
+          <nav className="hidden md:flex items-center space-x-0.5 flex-1 justify-center">
             <Button variant="ghost" className="text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 px-3 py-2 rounded-md transition-colors" asChild>
               <Link href="/" data-testid="link-nav-home" onClick={() => setMobileMenuOpen(false)}>
                 Home
@@ -122,7 +122,7 @@ export default function Header() {
           </nav>
 
           {/* Action Buttons */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 shrink-0">
             {/* Desktop Login Dropdown */}
             <div className="relative group hidden md:block">
               <Button className="text-sm font-medium bg-blue-600 dark:bg-blue-700 text-white hover:bg-blue-700 dark:hover:bg-blue-600 px-4 py-1.5 rounded-md flex items-center gap-1.5 shadow-none hover:shadow-none transition-colors" data-testid="button-login">

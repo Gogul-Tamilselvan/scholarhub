@@ -218,8 +218,17 @@ export default function CommerceJournal() {
     }
   ];
 
-  // Current issue articles - Volume 2, Issue 2 (April - June 2026) - Under Production
-  const articles: typeof archivedArticles = [];
+  // Current issue articles - Volume 2, Issue 2 (April - June 2026)
+  const articles: typeof archivedArticles = [
+    {
+      articleId: "sjcm-v2i2-001",
+      title: "WOMEN IN CORPORATE LEADERSHIP & ENTREPRENEURSHIP: TOOL OF ECONOMIC EMPOWERMENT WITH REFERENCE TO TAMIL NADU",
+      authors: "B Kalaiyarasan¹",
+      affiliation: "1. Assistant Professor, Department of MBA, School of Management Studies, Vels Institute of Science Technology & Advanced Studies (VISTAS), Pallavaram, Chennai, India",
+      pages: "1-6",
+      doi: "https://doi.org/10.65219/sjcm.20260202001"
+    }
+  ];
 
   const managingEditor = {
     name: "Dr. C. Kalaiarasan",

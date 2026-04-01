@@ -525,6 +525,34 @@ const articles: Record<string, Article> = {
     ],
     doi: "10.65219/sjhss.20260101010",
   },
+  "sjcm-v2i2-001": {
+    id: "sjcm-v2i2-001",
+    title: "WOMEN IN CORPORATE LEADERSHIP & ENTREPRENEURSHIP: TOOL OF ECONOMIC EMPOWERMENT WITH REFERENCE TO TAMIL NADU",
+    authors: "B Kalaiyarasan¹",
+    affiliation:
+      "1. Assistant Professor, Department of MBA, School of Management Studies, Vels Institute of Science Technology & Advanced Studies (VISTAS), Pallavaram, Chennai, India",
+    pages: "1-6",
+    volume: "2",
+    issue: "2",
+    year: "2026",
+    journal: "Scholar Journal of Commerce and Management",
+    pdfUrl: "/downloads/sjcm-v2i2-001.pdf",
+    abstract:
+      "Women's participation in corporate leadership and entrepreneurship has increasingly emerged as a powerful driver of inclusive and sustainable economic growth. In Tamil Nadu, this transformation is particularly significant due to the state's progressive policies, strong grassroots movements, and institutional support systems. The Tamil Nadu State Policy for Women 2024 and initiatives such as the TN-RISE Women Start-up Council have created structured opportunities for women to access incubation, mentorship, and financial resources, thereby enabling them to establish enterprises and assume leadership roles in corporate governance. These interventions have not only enhanced women's visibility in decision-making positions but have also contributed to reshaping socio-economic dynamics across both urban and rural contexts. This manuscript explores the dual role of women as corporate leaders and entrepreneurs, emphasizing their contributions to economic empowerment and regional development. Women-led enterprises in Tamil Nadu have demonstrated resilience, innovation, and community impact, particularly through self-help groups (SHGs) that have evolved into microenterprises and small businesses. At the same time, women's representation on corporate boards has strengthened organizational diversity, improved governance practices, and fostered inclusive strategies for growth. This study underscores the transformative potential of women leaders in Tamil Nadu.",
+    keywords: [
+      "Women Leadership",
+      "Entrepreneurship",
+      "Economic Empowerment",
+      "Tamil Nadu",
+      "Corporate Governance",
+      "TN-RISE",
+      "Gender Equality",
+      "Self-Help Groups",
+      "Women-Led Enterprises",
+      "Inclusive Growth",
+    ],
+    doi: "10.65219/sjcm.20260202001",
+  },
 };
 
 export default function ArticleLanding() {

@@ -226,6 +226,26 @@ const issuesData: Record<string, IssueData> = {
       },
     ],
   },
+  "sjcm-v2i2": {
+    issueId: "sjcm-v2i2",
+    journal: "Scholar Journal of Commerce and Management",
+    volume: "2",
+    issue: "2",
+    period: "April - June",
+    year: "2026",
+    articles: [
+      {
+        id: 1,
+        articleId: "sjcm-v2i2-001",
+        title: "WOMEN IN CORPORATE LEADERSHIP & ENTREPRENEURSHIP: TOOL OF ECONOMIC EMPOWERMENT WITH REFERENCE TO TAMIL NADU",
+        authors: "B Kalaiyarasan¹",
+        affiliation:
+          "1. Assistant Professor, Department of MBA, School of Management Studies, Vels Institute of Science Technology & Advanced Studies (VISTAS), Pallavaram, Chennai, India",
+        pages: "1-6",
+        doi: "10.65219/sjcm.20260202001",
+      },
+    ],
+  },
 };
 
 export default function IssueLanding() {

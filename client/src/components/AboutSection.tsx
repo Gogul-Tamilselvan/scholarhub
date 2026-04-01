@@ -1,7 +1,21 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Globe, BookOpen, ArrowRight, CheckCircle2, Megaphone, Sparkles, BookMarked, Bookmark, Users, MessageSquare, Edit3, Share2 } from "lucide-react";
+import {
+  MapPin,
+  Globe,
+  BookOpen,
+  ArrowRight,
+  CheckCircle2,
+  Megaphone,
+  Sparkles,
+  BookMarked,
+  Bookmark,
+  Users,
+  MessageSquare,
+  Edit3,
+  Share2,
+} from "lucide-react";
 import { Link } from "wouter";
 import { motion } from "framer-motion";
 import { useState } from "react";
@@ -18,7 +32,8 @@ export default function AboutSection() {
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          viewport={{ once: true }}>
+          viewport={{ once: true }}
+        >
           <Card className="bg-white dark:bg-gray-900 border-blue-200 dark:border-blue-800 overflow-hidden">
             <CardHeader className="flex flex-col space-y-1 p-4 text-center bg-[#213361] text-white">
               <div>
@@ -29,32 +44,40 @@ export default function AboutSection() {
             </CardHeader>
             <CardContent className="p-4">
               <div className="mb-6">
-                <p 
-                  className="text-base leading-relaxed mb-4 text-gray-900 dark:text-gray-200 text-justify"
-                >
-                  Scholar India Publishers (SIP) is an International Peer-Reviewed Academic Journals and Book Publishing Excellence Since 2022. 
-                  We are an MSME Registered Publisher in Chennai, Tamil Nadu. We publish two distinguished international journals: 
-                  Scholar Journal of Commerce and Management and Scholar Journal of Humanities and Social Sciences. 
-                  Bringing together academic voices from across the globe with fast publication, DOI assignment, and rigorous double-blind peer review. 
-                  We are also engaged in book publication and conference support, providing comprehensive academic publishing solutions to researchers worldwide.
+                <p className="text-base leading-relaxed mb-4 text-gray-900 dark:text-gray-200 text-justify">
+                  Scholar India Publishers (SIP) is an International
+                  Peer-Reviewed Academic Journals and Book Publishing Excellence
+                  Since 2022. We are an MSME Registered Publisher in Chennai,
+                  Tamil Nadu. We publish two distinguished international
+                  journals: Scholar Journal of Commerce and Management and
+                  Scholar Journal of Humanities and Social Sciences. Bringing
+                  together academic voices from across the globe with fast
+                  publication, DOI assignment, and rigorous double-blind peer
+                  review. We are also engaged in book publication and conference
+                  support, providing comprehensive academic publishing solutions
+                  to researchers worldwide.
                 </p>
 
-                <div 
-                  className="grid md:grid-cols-3 gap-4 mb-8"
-                >
+                <div className="grid md:grid-cols-3 gap-4 mb-8">
                   <div className="flex items-center">
                     <MapPin className="h-5 w-5 text-blue-900 dark:text-blue-300 mr-3 flex-shrink-0" />
-                    <span className="text-sm text-gray-800 dark:text-gray-300">Tiruvallur, Chennai - 631402, Tamilnadu, India</span>
+                    <span className="text-sm text-gray-800 dark:text-gray-300">
+                      Tiruvallur, Chennai - 631402, Tamilnadu, India
+                    </span>
                   </div>
-                  
+
                   <div className="flex items-center">
                     <Globe className="h-5 w-5 text-blue-900 dark:text-blue-300 mr-3 flex-shrink-0" />
-                    <span className="text-sm text-gray-800 dark:text-gray-300">International Reach</span>
+                    <span className="text-sm text-gray-800 dark:text-gray-300">
+                      International Reach
+                    </span>
                   </div>
-                  
+
                   <div className="flex items-center">
                     <BookOpen className="h-5 w-5 text-blue-900 dark:text-blue-300 mr-3 flex-shrink-0" />
-                    <span className="text-sm text-gray-800 dark:text-gray-300">Peer-Reviewed Excellence</span>
+                    <span className="text-sm text-gray-800 dark:text-gray-300">
+                      Peer-Reviewed Excellence
+                    </span>
                   </div>
                 </div>
               </div>
@@ -64,10 +87,10 @@ export default function AboutSection() {
                   <h3 className="text-xl font-serif font-semibold mb-6 text-blue-900 dark:text-blue-300">
                     Our Journals
                   </h3>
-                  
+
                   <div className="space-y-5">
                     {/* Commerce and Management Journal */}
-                    <motion.div 
+                    <motion.div
                       className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/30 dark:to-blue-900/20 p-5 rounded-lg border-2 border-blue-300 dark:border-blue-700 shadow-sm hover:shadow-md transition-all"
                       data-testid="card-journal-commerce"
                       initial={{ opacity: 0, x: -20 }}
@@ -84,13 +107,19 @@ export default function AboutSection() {
                           <h4 className="font-bold text-blue-900 dark:text-blue-200 text-base leading-tight">
                             Scholar Journal of Commerce and Management
                           </h4>
-                          <Badge className="mt-1.5 bg-blue-600 dark:bg-blue-700 text-white text-xs" data-testid="badge-issn-commerce">
+                          <Badge
+                            className="mt-1.5 bg-blue-600 dark:bg-blue-700 text-white text-xs"
+                            data-testid="badge-issn-commerce"
+                          >
                             ISSN (Online): xxxx
                           </Badge>
                         </div>
                       </div>
                       <p className="text-sm text-gray-700 dark:text-gray-300 mb-3 leading-relaxed text-justify">
-                        International peer-reviewed journal for commerce, management, accounting, finance, marketing, business law, economics, entrepreneurship, HRM, and digital transformation research.
+                        International peer-reviewed journal for commerce,
+                        management, accounting, finance, marketing, business
+                        law, economics, entrepreneurship, HRM, and digital
+                        transformation research.
                       </p>
                       <div className="space-y-1.5 mb-4">
                         <div className="flex items-center gap-2 text-xs text-gray-700 dark:text-gray-300">
@@ -107,7 +136,7 @@ export default function AboutSection() {
                         </div>
                       </div>
                       <Link href="/commerce-management">
-                        <Button 
+                        <Button
                           className="w-full bg-[#213361] hover:bg-[#2a4078] dark:bg-blue-700 dark:hover:bg-blue-600 text-white group"
                           size="sm"
                           data-testid="button-view-commerce"
@@ -117,9 +146,9 @@ export default function AboutSection() {
                         </Button>
                       </Link>
                     </motion.div>
-                    
+
                     {/* Humanities and Social Sciences Journal */}
-                    <motion.div 
+                    <motion.div
                       className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/30 dark:to-blue-900/20 p-5 rounded-lg border-2 border-blue-300 dark:border-blue-700 shadow-sm hover:shadow-md transition-all"
                       data-testid="card-journal-humanities"
                       initial={{ opacity: 0, x: -20 }}
@@ -136,13 +165,22 @@ export default function AboutSection() {
                           <h4 className="font-bold text-blue-900 dark:text-blue-200 text-base leading-tight">
                             Scholar Journal of Humanities and Social Sciences
                           </h4>
-                          <Badge className="mt-1.5 bg-blue-600 dark:bg-blue-700 text-white text-xs" data-testid="badge-issn-humanities">
+                          <Badge
+                            className="mt-1.5 bg-blue-600 dark:bg-blue-700 text-white text-xs"
+                            data-testid="badge-issn-humanities"
+                          >
                             ISSN (Online): xxxx
                           </Badge>
                         </div>
                       </div>
                       <p className="text-sm text-gray-700 dark:text-gray-300 mb-3 leading-relaxed text-justify">
-                        Leading international journal for humanities research in literature, philosophy, history, linguistics, cultural studies, art history, religious studies, and interdisciplinary humanities. Premier social sciences journal publishing research in sociology, psychology, political science, anthropology, economics, education, social work, and public policy studies.
+                        Leading international journal for humanities research in
+                        literature, philosophy, history, linguistics, cultural
+                        studies, art history, religious studies, and
+                        interdisciplinary humanities. Premier social sciences
+                        journal publishing research in sociology, psychology,
+                        political science, anthropology, economics, education,
+                        social work, and public policy studies.
                       </p>
                       <div className="space-y-1.5 mb-4">
                         <div className="flex items-center gap-2 text-xs text-gray-700 dark:text-gray-300">
@@ -159,7 +197,7 @@ export default function AboutSection() {
                         </div>
                       </div>
                       <Link href="/humanities">
-                        <Button 
+                        <Button
                           className="w-full bg-[#213361] hover:bg-[#2a4078] dark:bg-blue-700 dark:hover:bg-blue-600 text-white group"
                           size="sm"
                           data-testid="button-view-humanities"
@@ -176,19 +214,43 @@ export default function AboutSection() {
                   <h3 className="text-xl font-serif font-semibold mb-6 text-blue-900 dark:text-blue-300">
                     Our Services
                   </h3>
-                  
+
                   <div className="grid grid-cols-2 gap-3">
                     {[
-                      { icon: BookMarked, title: "Journal Publication", desc: "Peer review & DOI" },
-                      { icon: Bookmark, title: "Book Publication", desc: "ISBN & DOI" },
-                      { icon: Users, title: "Conference Support", desc: "Special issues" },
-                      { icon: Edit3, title: "Academic Editing", desc: "Professional support" },
-                      { icon: MessageSquare, title: "Plagiarism Check", desc: "Quality assurance" },
-                      { icon: Share2, title: "Collaboration", desc: "Research partnerships" }
+                      {
+                        icon: BookMarked,
+                        title: "Journal Publication",
+                        desc: "Peer review & DOI",
+                      },
+                      {
+                        icon: Bookmark,
+                        title: "Book Publication",
+                        desc: "ISBN & DOI",
+                      },
+                      {
+                        icon: Users,
+                        title: "Conference Support",
+                        desc: "Special issues",
+                      },
+                      {
+                        icon: Edit3,
+                        title: "Academic Editing",
+                        desc: "Professional support",
+                      },
+                      {
+                        icon: MessageSquare,
+                        title: "Plagiarism Check",
+                        desc: "Quality assurance",
+                      },
+                      {
+                        icon: Share2,
+                        title: "Collaboration",
+                        desc: "Research partnerships",
+                      },
                     ].map((service, idx) => {
                       const IconComponent = service.icon;
                       return (
-                        <motion.div 
+                        <motion.div
                           key={idx}
                           className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/30 dark:to-blue-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-700 hover:shadow-md transition-all"
                           initial={{ opacity: 0, y: 10 }}
@@ -216,7 +278,7 @@ export default function AboutSection() {
                   </div>
 
                   {/* News & Upcoming Events - Auto-Scrolling Section */}
-                  <motion.div 
+                  <motion.div
                     className="mt-8 pt-6 border-t-2 border-blue-200 dark:border-blue-800"
                     initial={{ opacity: 0, y: 20 }}
                     whileInView={{ opacity: 1, y: 0 }}
@@ -230,41 +292,40 @@ export default function AboutSection() {
                       </h3>
                       <Sparkles className="w-4 h-4 text-yellow-500 dark:text-yellow-400 animate-pulse" />
                     </div>
-                    
-                    <div 
-                      className="relative overflow-hidden bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-950/30 dark:to-purple-950/30 rounded-lg border-2 border-blue-200 dark:border-blue-700 p-4"
-                    >
+
+                    <div className="relative overflow-hidden bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-950/30 dark:to-purple-950/30 rounded-lg border-2 border-blue-200 dark:border-blue-700 p-4">
                       <div className="space-y-3">
                         {[
                           {
                             title: "Call for Book Chapters",
-                            description: "Publish your research with DOI and ISBN",
-                            link: "/book-publication"
+                            description:
+                              "Publish your research with DOI and ISBN",
+                            link: "/book-publication",
                           },
                           {
                             title: "Submit Your Manuscript",
-                            description: "Fast-track peer review in 10-15 days",
-                            link: "/submit"
+                            description: "Peer review in 10-15 days",
+                            link: "/submit",
                           },
                           {
                             title: "Join as a Reviewer",
                             description: "Join our distinguished review panel",
-                            link: "/join-reviewer"
-                          }
+                            link: "/join-reviewer",
+                          },
                         ].map((item, index) => (
-                          <motion.div 
-                            key={index} 
+                          <motion.div
+                            key={index}
                             className="bg-white dark:bg-gray-800 rounded-lg p-3 shadow-sm border border-blue-200 dark:border-blue-700 min-h-fit relative overflow-hidden"
                             whileHover={{ scale: 1.01 }}
                           >
                             <motion.div
                               className="absolute inset-0 bg-blue-50/50 dark:bg-blue-400/5 pointer-events-none"
                               animate={{ opacity: [0, 1, 0] }}
-                              transition={{ 
-                                duration: 3, 
+                              transition={{
+                                duration: 3,
                                 repeat: Infinity,
                                 ease: "easeInOut",
-                                delay: index * 1
+                                delay: index * 1,
                               }}
                             />
                             <div className="relative z-10">
@@ -277,7 +338,7 @@ export default function AboutSection() {
                               <p className="text-xs text-gray-700 dark:text-gray-300 mb-2">
                                 {item.description}
                               </p>
-                              <Button 
+                              <Button
                                 size="sm"
                                 variant="outline"
                                 className="border-blue-200 hover:bg-blue-50 text-blue-900 dark:text-blue-200 text-xs h-7 cursor-pointer"

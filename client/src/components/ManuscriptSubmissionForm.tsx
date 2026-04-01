@@ -157,12 +157,12 @@ export default function ManuscriptSubmissionForm({ journalName }: ManuscriptSubm
 
   return (
     <Card className="bg-card text-card-foreground max-w-2xl mx-auto border-card-border">
-      <CardHeader className="border-b border-card-border/50">
-        <CardTitle className="text-2xl font-serif flex items-center">
-          <FileText className="h-6 w-6 mr-2 text-primary" />
+      <CardHeader className="bg-[#213361] text-white border-b border-gray-200 dark:border-gray-700">
+        <CardTitle className="text-2xl font-serif flex items-center text-white">
+          <FileText className="h-6 w-6 mr-2 text-yellow-400" />
           {journalName ? `Submit Manuscript - ${journalName}` : "Submit Manuscript"}
         </CardTitle>
-        <p className="text-sm text-muted-foreground mt-2">
+        <p className="text-sm text-blue-100 mt-2">
           Please fill out all required fields and upload your manuscript in Word format (.doc or .docx)
         </p>
       </CardHeader>

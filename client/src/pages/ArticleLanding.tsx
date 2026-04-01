@@ -501,6 +501,30 @@ const articles: Record<string, Article> = {
     ],
     doi: "10.65219/sjhss.20260101009",
   },
+  "sjhss-v1i1-010": {
+    id: "sjhss-v1i1-010",
+    title: "INDIA-RUSSIA DEFENCE TIES: A STRATEGIC PILLAR IN A CHANGING WORLD",
+    authors: "Siva Kumar V¹, R. Mathaiyan²",
+    affiliation:
+      "1. Research Scholar, Department of Politics and Public Administration, IDE, University of Madras, Chennai, India\n2. Professor, Department of Politics and Public Administration, IDE, University of Madras, Chennai, India",
+    pages: "66 – 72",
+    volume: "1",
+    issue: "1",
+    year: "2026",
+    journal: "Scholar Journal of Humanities and Social Sciences",
+    pdfUrl: "/downloads/sjhss-v1i1-010.pdf",
+    abstract:
+      "The India-Russia relations is a time-tested relationship based on mutual trust, mutual respect, respect for mutual sensitivities, and one that is marked by strategic alignment. It gained momentum with the 1971 Indo-Soviet Treaty of Peace, Friendship and Cooperation and has since led to major acquisitions like Su-30, Su-30MKI fighters, T-90 tanks, INS Vikramaditya, and S-400 air defence systems. This paper will explain about collaborative projects, such as the BrahMos missile and the licensed production of various platforms, which have enhanced India's defence self-reliance. It will also discuss about the challenges in their relationship like U.S. CAATSA sanctions, delivery delays, and Russia's growing ties with China and Pakistan. It also proposes a set of recommendations to overcome those challenges and make the relationship stronger.",
+    keywords: [
+      "Strategic Alignment",
+      "CAATSA",
+      "China",
+      "Pakistan",
+      "S-400",
+      "Su-30",
+    ],
+    doi: "10.65219/sjhss.20260101010",
+  },
 };
 
 export default function ArticleLanding() {

@@ -180,6 +180,15 @@ export default function HumanitiesJournal() {
       affiliation: "1. Ph.D. Research Scholar, Department of Psychology, Annamalai University\n2. Associate Professor, Department of Psychology, Annamalai University, Annamalai Nagar, Cuddalore",
       pages: "59 – 65",
       doi: "10.65219/sjhss.20260101009"
+    },
+    {
+      id: 10,
+      articleId: "sjhss-v1i1-010",
+      title: "INDIA-RUSSIA DEFENCE TIES: A STRATEGIC PILLAR IN A CHANGING WORLD",
+      authors: "Siva Kumar V¹, R. Mathaiyan²",
+      affiliation: "1. Research Scholar, Department of Politics and Public Administration, IDE, University of Madras, Chennai, India\n2. Professor, Department of Politics and Public Administration, IDE, University of Madras, Chennai, India",
+      pages: "66 – 72",
+      doi: "10.65219/sjhss.20260101010"
     }
   ];
 

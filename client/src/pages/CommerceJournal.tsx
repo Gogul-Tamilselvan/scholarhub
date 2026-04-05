@@ -215,6 +215,24 @@ export default function CommerceJournal() {
       affiliation: "1. Research Scholar, PG & Research Department of Commerce, Guru Nanak College, Chennai, India\n2. Assistant Professor of PG & Research Department of Commerce, Guru Nanak College, Chennai, India",
       pages: "38 - 44",
       doi: "10.65219/sjcm.20260201006"
+    },
+    {
+      id: 7,
+      articleId: "sjcm-v2i1-007",
+      title: "AN ANALYSIS OF PERFORMANCE APPRAISAL SYSTEM AND ITS IMPACT ON SELECTED SOCIO-ECONOMIC PROFILE FACTORS OF THE EMPLOYEES IN THE MANUFACTURING UNITS OF SALEM DISTRICT",
+      authors: "B.Hariswaran¹",
+      affiliation: "1. Assistant Professor of Commerce, Vel Tech Ranga Sanku Arts College, Chennai, India",
+      pages: "45 - 51",
+      doi: "10.65219/sjcm.20260201007"
+    },
+    {
+      id: 8,
+      articleId: "sjcm-v2i1-008",
+      title: "DIGITAL MARKETING STRATEGIES FOR SMALL BUSINESSES",
+      authors: "P. Murali¹",
+      affiliation: "1. Head, Department of Commerce, Aditya Institute of Management, Science and Research, Pondicherry, India",
+      pages: "52 - 56",
+      doi: "10.65219/sjcm.20260201008"
     }
   ];
 

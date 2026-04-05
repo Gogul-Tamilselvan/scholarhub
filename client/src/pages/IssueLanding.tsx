@@ -108,6 +108,96 @@ const issuesData: Record<string, IssueData> = {
       },
     ],
   },
+  "sjcm-v2i1": {
+    issueId: "sjcm-v2i1",
+    journal: "Scholar Journal of Commerce and Management",
+    volume: "2",
+    issue: "1",
+    period: "January - March",
+    year: "2026",
+    articles: [
+      {
+        id: 1,
+        articleId: "sjcm-v2i1-001",
+        title: "SOCIO ECONOMIC STATUS OF REGISTERED CONSTRUCTION WORKERS IN TIRUNELVELI DISTRICT",
+        authors: "Samuel Jayaraman¹",
+        affiliation:
+          "1. Assistant Professor, Department of B.Com (Accounting & Finance), Loyola College (Autonomous), Chennai, India",
+        pages: "1-5",
+        doi: "10.65219/sjcm.20260201001",
+      },
+      {
+        id: 2,
+        articleId: "sjcm-v2i1-002",
+        title: "EXPLORING THE RELATIONSHIP BETWEEN CREATIVITY AND CURIOSITY AMONG HIGHER SECONDARY STUDENTS IN TIRUVALLUR DISTRICT",
+        authors: "N. Purusothaman¹, Nirmala²",
+        affiliation:
+          "1. Assistant Professor & Research Supervisor, Department of Commerce, Patrician College of Arts and Science, Chennai, India\n2. Student, Department of Commerce, Patrician College of Arts and Science, Chennai, India",
+        pages: "06–13",
+        doi: "10.65219/sjcm.20260201002",
+      },
+      {
+        id: 3,
+        articleId: "sjcm-v2i1-003",
+        title: "MARKETING OF JASMINE IN SATHYAMANGALAM BLOCK OF ERODE DISTRICT",
+        authors: "P. Shanmugam¹, T. Praveena²",
+        affiliation:
+          "1. Associate Professor, Department of Economics, Bharathiar University\n2. Ph.D. Research Scholar, Department of Economics, Bharathiar University, Tamil Nadu, India",
+        pages: "14 - 21",
+        doi: "10.65219/sjcm.20260201003",
+      },
+      {
+        id: 4,
+        articleId: "sjcm-v2i1-004",
+        title: "BRIDGING THE AWARENESS – ACTION GAP IN FINANCIAL LITERACY AMONG CHENNAI COLLEGE STUDENTS",
+        authors: "Kalaiarasan C¹, Kamalesh G², Kovid Raghav R², Ishit Agarwal², Shanmugapriyan J², Joi Levis A²",
+        affiliation:
+          "1. Assistant Professor, Department of B.Com Computer Applications, Loyola College (Autonomous), Chennai, India\n2. Student, Department of B.Com Computer Applications, Loyola College (Autonomous), Chennai, India",
+        pages: "22 - 28",
+        doi: "10.65219/sjcm.20260201004",
+      },
+      {
+        id: 5,
+        articleId: "sjcm-v2i1-005",
+        title: "IMPACT OF INFRASTRUCTURE TRANSPARENCY ON TRUST IN BANKING CHATBOTS",
+        authors: "S. Shilpa¹, N. Purusothaman²",
+        affiliation:
+          "1. Research Scholar of Commerce, Patrician College of Arts and Science, Chennai, India\n2. Assistant Professor and Research Supervisor, Patrician College of Arts and Science, Chennai, India",
+        pages: "29 - 37",
+        doi: "10.65219/sjcm.20260201005",
+      },
+      {
+        id: 6,
+        articleId: "sjcm-v2i1-006",
+        title: "SOCIAL MEDIA INFLUENCE AND FINANCIAL LITERACY AS MEDIATORS BETWEEN FINTECH ADOPTION AND BEHAVIOURAL INTENTION AMONG COLLEGE YOUTH",
+        authors: "R Indumathi¹, C. Revathy²",
+        affiliation:
+          "1. Research Scholar, PG & Research Department of Commerce, Guru Nanak College, Chennai, India\n2. Assistant Professor of PG & Research Department of Commerce, Guru Nanak College, Chennai, India",
+        pages: "38 - 44",
+        doi: "10.65219/sjcm.20260201006",
+      },
+      {
+        id: 7,
+        articleId: "sjcm-v2i1-007",
+        title: "AN ANALYSIS OF PERFORMANCE APPRAISAL SYSTEM AND ITS IMPACT ON SELECTED SOCIO-ECONOMIC PROFILE FACTORS OF THE EMPLOYEES IN THE MANUFACTURING UNITS OF SALEM DISTRICT",
+        authors: "B.Hariswaran¹",
+        affiliation:
+          "1. Assistant Professor of Commerce, Vel Tech Ranga Sanku Arts College, Chennai, India",
+        pages: "45 - 51",
+        doi: "10.65219/sjcm.20260201007",
+      },
+      {
+        id: 8,
+        articleId: "sjcm-v2i1-008",
+        title: "DIGITAL MARKETING STRATEGIES FOR SMALL BUSINESSES",
+        authors: "P. Murali¹",
+        affiliation:
+          "1. Head, Department of Commerce, Aditya Institute of Management, Science and Research, Pondicherry, India",
+        pages: "52 - 56",
+        doi: "10.65219/sjcm.20260201008",
+      },
+    ],
+  },
   "sjhss-v1i1": {
     issueId: "sjhss-v1i1",
     journal: "Scholar Journal of Humanities and Social Sciences",

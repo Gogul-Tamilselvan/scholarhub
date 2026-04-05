@@ -432,6 +432,57 @@ const articles: Record<string, Article> = {
     ],
     doi: "10.65219/sjcm.20260201006",
   },
+  "sjcm-v2i1-007": {
+    id: "sjcm-v2i1-007",
+    title: "AN ANALYSIS OF PERFORMANCE APPRAISAL SYSTEM AND ITS IMPACT ON SELECTED SOCIO-ECONOMIC PROFILE FACTORS OF THE EMPLOYEES IN THE MANUFACTURING UNITS OF SALEM DISTRICT",
+    authors: "B.Hariswaran¹",
+    affiliation:
+      "1. Assistant Professor of Commerce, Vel Tech Ranga Sanku Arts College, Chennai, India",
+    pages: "45-51",
+    volume: "2",
+    issue: "1",
+    year: "2026",
+    journal: "Scholar Journal of Commerce and Management",
+    pdfUrl: "/downloads/sjcm-v2i1-007.pdf",
+    abstract:
+      "Organizations are constantly challenged to meet their competition in the industry by employee evaluation, which is focused on identifying that they fall short of the goal achievement. After the employee has been hired, educated, and encouraged, he is evaluated on his work. The performance assessment process is where management determines how effective it has been in recruiting and placing employees. If any issues are discovered, steps are taken to address them with the employees. Various factors have an impact on an employee's efficiency. In several cases, the socio economic element has affected. The researcher is attempting to determine the efficacy of the performance assessment method in the manufacturing industry of Tamil Nadu, India. It is a descriptive study, with simple random sampling and primary data collected using a self-prepared, standardised questionnaire with a five-point scale. The findings show that socio economic factors and the employee's overall performance have an impact.",
+    keywords: [
+      "Performance Appraisal",
+      "Employee Welfare",
+      "Organizational Policy",
+      "Manufacturing Companies",
+      "Socio-Economic Factors",
+      "Employee Evaluation",
+      "Human Resource Management",
+    ],
+    doi: "10.65219/sjcm.20260201007",
+  },
+  "sjcm-v2i1-008": {
+    id: "sjcm-v2i1-008",
+    title: "DIGITAL MARKETING STRATEGIES FOR SMALL BUSINESSES",
+    authors: "P. Murali¹",
+    affiliation:
+      "1. Head, Department of Commerce, Aditya Institute of Management, Science and Research, Pondicherry, India",
+    pages: "52-56",
+    volume: "2",
+    issue: "1",
+    year: "2026",
+    journal: "Scholar Journal of Commerce and Management",
+    pdfUrl: "/downloads/sjcm-v2i1-008.pdf",
+    abstract:
+      "The digital revolution has reshaped the competitive landscape for businesses of all sizes. For small businesses, digital marketing represents not merely an optional add-on but a fundamental component for survival and growth. This section explores the intersection of digital transformation and small enterprise development. It identifies core challenges including budget constraints, limited human resources, and lack of strategic digital literacy. Additionally, it examines how customer expectations have shifted toward omnichannel engagement, personalization, and constant connectivity. This paper analyzes the role of digital marketing in small business competitiveness, compiles evidence-based practices into a structured strategy, and outlines future opportunities and potential research directions.",
+    keywords: [
+      "Digital Marketing",
+      "Small Business Development",
+      "Online Consumer Behavior",
+      "Search Engine Optimization",
+      "Content Marketing",
+      "Social Media Strategy",
+      "Digital Transformation",
+      "E-Commerce",
+    ],
+    doi: "10.65219/sjcm.20260201008",
+  },
   "sjhss-v1i1-007": {
     id: "sjhss-v1i1-007",
     title:

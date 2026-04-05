@@ -14,11 +14,10 @@ import SEO from "@/components/SEO";
 import { useEffect } from "react";
 import { useJournalStats, useTrackVisitor } from "@/hooks/useJournalStats";
 
-// Clean author names — strip *, †, ‡, superscript digits
+// Clean author names — strip *, †, ‡ but KEEP superscript numbers
 const cleanAuthors = (raw: string) =>
   raw
     .replace(/[*†‡§¶]/g, "")
-    .replace(/[\d⁰¹²³⁴⁵⁶⁷⁸⁹⁺⁻⁼⁽⁾]/g, "")
     .replace(/\s+,/g, ",")
     .replace(/\s{2,}/g, " ")
     .trim();

@@ -631,7 +631,16 @@ export default function ArticleLanding() {
   }
 
   // Clean author names — strip *, †, ‡, superscript digits
+  // Keep superscript numbers in display (top section)
   const cleanAuthors = (raw: string) =>
+    raw
+      .replace(/[*†‡§¶]/g, "")
+      .replace(/\s+,/g, ",")
+      .replace(/\s{2,}/g, " ")
+      .trim();
+
+  // Remove superscript numbers for citations
+  const cleanAuthorsForCitation = (raw: string) =>
     raw
       .replace(/[*†‡§¶]/g, "")
       .replace(/[\d⁰¹²³⁴⁵⁶⁷⁸⁹⁺⁻⁼⁽⁾]/g, "")
@@ -660,7 +669,7 @@ export default function ArticleLanding() {
 
   // APA 7th Edition citation
   const generateAPA7Citation = () => {
-    const authors = cleanAuthors(article.authors);
+    const authors = cleanAuthorsForCitation(article.authors);
     const title = toSentenceCase(article.title);
     const doi = article.doi ? ` https://doi.org/${article.doi}` : "";
     return `${authors}. (${article.year}). ${title}. ${article.journal}, ${article.volume}(${article.issue}), ${article.pages}.${doi}`;
@@ -668,7 +677,7 @@ export default function ArticleLanding() {
 
   // Harvard citation
   const generateHarvardCitation = () => {
-    const authors = cleanAuthors(article.authors);
+    const authors = cleanAuthorsForCitation(article.authors);
     const title = toTitleCase(article.title);
     const doi = article.doi ? ` Available at: https://doi.org/${article.doi}` : "";
     return `${authors} ${article.year}, '${title}', ${article.journal}, ${article.volume}(${article.issue}), pp. ${article.pages}.${doi}`;
@@ -676,7 +685,7 @@ export default function ArticleLanding() {
 
   // MLA 9th Edition citation
   const generateMLACitation = () => {
-    const authors = cleanAuthors(article.authors);
+    const authors = cleanAuthorsForCitation(article.authors);
     const title = toTitleCase(article.title);
     const doi = article.doi ? ` doi:${article.doi}.` : "";
     return `${authors}. "${title}." ${article.journal}, vol. ${article.volume}, no. ${article.issue}, ${article.year}, pp. ${article.pages}.${doi}`;
@@ -684,7 +693,7 @@ export default function ArticleLanding() {
 
   // Chicago citation
   const generateChicagoCitation = () => {
-    const authors = cleanAuthors(article.authors);
+    const authors = cleanAuthorsForCitation(article.authors);
     const title = toTitleCase(article.title);
     const doi = article.doi ? `. https://doi.org/${article.doi}` : "";
     return `${authors}. "${title}." ${article.journal} ${article.volume}, no. ${article.issue} (${article.year}): ${article.pages}${doi}`;

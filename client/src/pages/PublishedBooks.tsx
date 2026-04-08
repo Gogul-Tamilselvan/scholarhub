@@ -267,8 +267,32 @@ export default function PublishedBooks() {
               onView={() => handleView(book.id)}
             />
             {viewingBookId === book.id && (
-              <div className="mt-3">
-                <PdfViewer book={book} onClose={() => setViewingBookId(null)} />
+              <div className="mt-3 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+                <div className="bg-[#213361] px-4 py-3 flex items-center justify-between gap-2 flex-wrap">
+                  <p className="text-white text-sm font-semibold truncate">{book.title}</p>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <a href={book.pdfPath} download>
+                      <Button size="sm" className="bg-yellow-400 text-[#213361] hover:bg-yellow-300 h-7 text-xs gap-1">
+                        <Download className="w-3 h-3" /> Download
+                      </Button>
+                    </a>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="text-white hover:bg-white/10 h-7 shrink-0"
+                      onClick={() => setViewingBookId(null)}
+                    >
+                      <X className="w-4 h-4 mr-1" /> Close
+                    </Button>
+                  </div>
+                </div>
+                <iframe
+                  src={`${book.pdfPath}#toolbar=1`}
+                  title={book.title}
+                  className="w-full"
+                  style={{ height: "82vh", border: "none" }}
+                  data-testid="iframe-pdf-viewer"
+                />
               </div>
             )}
           </motion.div>

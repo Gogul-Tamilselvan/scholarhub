@@ -221,7 +221,6 @@
             tbody.innerHTML = filtered.map((m, i) => {
                 const msId = getVal(m, ['Manuscript ID', 'ManuscriptID']);
                 const st = String(getVal(m, ['Status', 'Status ']) || 'Submitted').trim();
-                const msId = getVal(m, ['Manuscript ID', 'ManuscriptID']);
                 const fileLink = getVal(m, ['File URL', 'Uploaded File']);
                 const isUnread = String(getVal(m, ['Read', 'Read ']) || 'No') !== 'Yes';
                 return `<tr style="${isUnread ? 'background-color: #fffbeb; font-weight: 500;' : ''}">

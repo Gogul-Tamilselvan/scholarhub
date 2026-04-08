@@ -31,9 +31,11 @@ async function apiGet(params) {
 async function apiPost(data) {
   const url = WEB_APP_URL;
   if (!url) return { status: 'error', message: 'Web App URL not configured.' };
+  // Use text/plain to avoid CORS preflight — GAS doPost reads e.postData.contents as text
+  // and JSON.parses it, so the payload format is unchanged.
   const res = await fetch(url, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
     body: JSON.stringify(data),
     redirect: 'follow'
   });

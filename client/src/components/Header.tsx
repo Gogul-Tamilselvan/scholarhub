@@ -128,16 +128,16 @@ export default function Header() {
               </Button>
               <div className="absolute top-full right-0 hidden group-hover:block pt-0.5 z-50">
                 <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded shadow-md p-0.5 space-y-0 min-w-48">
-                  <Link href="/admin/login" data-testid="link-admin-login">
+                  <a href="/erp/admin-login.html" data-testid="link-admin-login">
                     <div className="px-3.5 py-2.5 rounded hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer">
                       <div className="text-sm text-slate-900 dark:text-slate-100">Admin</div>
                     </div>
-                  </Link>
-                  <Link href="/reviewer-login" data-testid="link-reviewer-login">
+                  </a>
+                  <a href="/erp/member-login.html" data-testid="link-reviewer-login">
                     <div className="px-3.5 py-2.5 rounded hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer">
                       <div className="text-sm text-slate-900 dark:text-slate-100">Reviewer / Editor</div>
                     </div>
-                  </Link>
+                  </a>
                 </div>
               </div>
             </div>
@@ -301,16 +301,16 @@ export default function Header() {
               </Button>
               {loginOpen && (
                 <div className="pl-3 space-y-0 mt-1">
-                  <Link href="/admin/login" onClick={() => { setMobileMenuOpen(false); setLoginOpen(false); }} data-testid="link-admin-login-mobile">
+                  <a href="/erp/admin-login.html" onClick={() => { setMobileMenuOpen(false); setLoginOpen(false); }} data-testid="link-admin-login-mobile">
                     <div className="px-3 py-2 rounded hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
                       <div className="text-sm text-slate-900 dark:text-slate-100">Admin</div>
                     </div>
-                  </Link>
-                  <Link href="/reviewer-login" onClick={() => { setMobileMenuOpen(false); setLoginOpen(false); }} data-testid="link-reviewer-login-mobile">
+                  </a>
+                  <a href="/erp/member-login.html" onClick={() => { setMobileMenuOpen(false); setLoginOpen(false); }} data-testid="link-reviewer-login-mobile">
                     <div className="px-3 py-2 rounded hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
                       <div className="text-sm text-slate-900 dark:text-slate-100">Reviewer / Editor</div>
                     </div>
-                  </Link>
+                  </a>
                 </div>
               )}
             </div>

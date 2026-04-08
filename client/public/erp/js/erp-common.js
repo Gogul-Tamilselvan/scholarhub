@@ -302,19 +302,32 @@ function showToast(msg, type = 'info') {
 }
 
 function fmtDate(val) {
-  if (!val) return '—';
+  if (!val && val !== 0) return '—';
   try {
-    const d = new Date(val);
-    if (isNaN(d)) return String(val);
+    let d;
+    if (typeof val === 'number') {
+      // Excel serial date from Google Sheets (days since 1899-12-30)
+      if (val > 25000 && val < 100000) {
+        d = new Date((val - 25569) * 86400 * 1000);
+      } else {
+        d = new Date(val);
+      }
+    } else {
+      // Normalize 'yyyy-MM-dd HH:mm:ss' → 'yyyy-MM-ddTHH:mm:ss' for Safari/Firefox
+      const s = String(val).replace(' ', 'T');
+      d = new Date(s);
+    }
+    if (isNaN(d.getTime())) return String(val);
     return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
   } catch { return String(val); }
 }
 
 function fmtDT(val) {
-  if (!val) return '—';
+  if (!val && val !== 0) return '—';
   try {
-    const d = new Date(val);
-    if (isNaN(d)) return String(val);
+    const s = typeof val === 'string' ? val.replace(' ', 'T') : val;
+    const d = new Date(s);
+    if (isNaN(d.getTime())) return String(val);
     return d.toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
   } catch { return String(val); }
 }
@@ -463,8 +476,14 @@ function openModal(id) {
 
 function getVal(obj, keys) {
   if (!obj || !keys) return '';
+  const objKeys = Object.keys(obj);
   for (const k of keys) {
+    // Exact match first
     if (obj[k] !== undefined && obj[k] !== null && obj[k] !== '') return obj[k];
+    // Trimmed match (handles trailing/leading spaces in Google Sheets column names)
+    const trimmed = k.trim().toLowerCase();
+    const found = objKeys.find(ok => ok.trim().toLowerCase() === trimmed);
+    if (found && obj[found] !== undefined && obj[found] !== null && obj[found] !== '') return obj[found];
   }
   return '';
 }

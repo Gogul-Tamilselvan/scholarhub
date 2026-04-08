@@ -188,10 +188,10 @@
         }
 
         async function openAssign(msId) {
-            currentMs = manuscripts.find(m => String(m['ManuscriptID'] || m['Manuscript ID']) === String(msId));
+            currentMs = manuscripts.find(m => String(getVal(m, ['ManuscriptID', 'Manuscript ID'])) === String(msId));
             if (!currentMs) return;
 
-            const activeAssign = assignments.filter(a => String(a['ManuscriptID']) === String(msId) && String(a['Status'] || '').toLowerCase() !== 'revoked');
+            const activeAssign = assignments.filter(a => String(getVal(a, ['ManuscriptID', 'Manuscript ID'])) === String(msId) && String(getVal(a, ['Status', 'Assignment Status']) || '').toLowerCase() !== 'revoked');
 
             document.getElementById('modalMsTitle').textContent = currentMs['Manuscript Title'] || currentMs['Manuscript Title '] || 'Untitled';
             document.getElementById('modalMsId').textContent = 'ID: ' + msId;

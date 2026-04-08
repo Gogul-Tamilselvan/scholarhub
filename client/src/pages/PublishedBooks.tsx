@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { BookOpen, Download, Eye, X } from "lucide-react";
+import { BookOpen, Eye, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Header from "@/components/Header";
@@ -11,7 +11,6 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 interface Book {
   id: string;
   title: string;
-  subtitle?: string;
   type: "Edited Volume" | "Authored Book";
   contributors: string;
   contributorLabel: string;
@@ -19,6 +18,7 @@ interface Book {
   year: string;
   pages: string;
   pdfPath: string;
+  coverImage: string;
   subjects: string[];
   description: string;
 }
@@ -34,6 +34,7 @@ const books: Book[] = [
     year: "2025",
     pages: "94",
     pdfPath: "/downloads/fintech-book.pdf",
+    coverImage: "/book-covers/fintech-book-001.png",
     subjects: ["FinTech", "AI & Finance", "Blockchain", "Sustainable Finance"],
     description:
       "An edited volume exploring AI governance, crypto-asset risk, autonomous investing, green digital bonds, and FinTech-driven sustainable development across six scholarly chapters.",
@@ -49,9 +50,10 @@ const books: Book[] = [
     year: "2026",
     pages: "",
     pdfPath: "/downloads/management-accounting-book.pdf",
+    coverImage: "/book-covers/management-accounting-book-1.png",
     subjects: ["Accounting", "Commerce", "Management", "Finance"],
     description:
-      "A comprehensive academic text on Management Accounting, authored by faculty from Hindustan Institute of Technology & Science and Loyola College, Chennai. Covers core concepts for undergraduate and postgraduate students.",
+      "A comprehensive academic text on Management Accounting authored by faculty from Hindustan Institute of Technology & Science and Loyola College, Chennai.",
   },
 ];
 
@@ -67,13 +69,21 @@ function DownloadCount({ bookId }: { bookId: string }) {
   const count = data?.downloads ?? 0;
   return (
     <span className="text-xs text-muted-foreground flex items-center gap-1">
-      <Download className="w-3 h-3" />
-      {count.toLocaleString()} downloads
+      <Eye className="w-3 h-3" />
+      {count.toLocaleString()} views
     </span>
   );
 }
 
-function BookCard({ book, onView }: { book: Book; onView: (b: Book) => void }) {
+function BookCard({
+  book,
+  isViewing,
+  onView,
+}: {
+  book: Book;
+  isViewing: boolean;
+  onView: () => void;
+}) {
   const queryClient = useQueryClient();
 
   const increment = useMutation({
@@ -90,22 +100,23 @@ function BookCard({ book, onView }: { book: Book; onView: (b: Book) => void }) {
       }),
   });
 
-  const handleDownload = () => {
-    increment.mutate();
-    const a = document.createElement("a");
-    a.href = book.pdfPath;
-    a.download = `${book.title.replace(/\s+/g, "-")}.pdf`;
-    a.click();
+  const handleView = () => {
+    if (!isViewing) {
+      increment.mutate();
+    }
+    onView();
   };
 
   return (
     <div className="flex gap-5 p-5 rounded-lg border border-gray-200 dark:border-gray-700 bg-card hover:shadow-md transition-shadow">
-      {/* Cover placeholder */}
-      <div className="shrink-0 w-24 h-32 bg-gradient-to-br from-[#213361] to-[#1a2a52] rounded flex flex-col items-center justify-center border border-[#213361]/30 shadow-sm">
-        <BookOpen className="w-8 h-8 text-yellow-400 mb-1" />
-        <p className="text-[8px] text-blue-200 text-center px-1 leading-tight font-medium">
-          Scholar India Publishers
-        </p>
+      {/* Real cover image */}
+      <div className="shrink-0 w-24 h-32 rounded overflow-hidden border border-gray-300 dark:border-gray-600 shadow-sm">
+        <img
+          src={book.coverImage}
+          alt={`${book.title} cover`}
+          className="w-full h-full object-cover object-top"
+          loading="lazy"
+        />
       </div>
 
       {/* Details */}
@@ -155,22 +166,25 @@ function BookCard({ book, onView }: { book: Book; onView: (b: Book) => void }) {
         <div className="flex flex-wrap items-center gap-2 pt-1">
           <Button
             size="sm"
-            className="bg-[#213361] hover:bg-[#2a4078] text-white gap-1.5 h-8"
-            onClick={handleDownload}
-            data-testid={`button-download-${book.id}`}
-          >
-            <Download className="w-3.5 h-3.5" />
-            Download PDF
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            className="gap-1.5 h-8 border-[#213361] text-[#213361] dark:border-blue-400 dark:text-blue-400"
-            onClick={() => onView(book)}
+            className={`gap-1.5 h-8 ${
+              isViewing
+                ? "bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-200"
+                : "bg-[#213361] text-white hover:bg-[#2a4078]"
+            }`}
+            onClick={handleView}
             data-testid={`button-view-${book.id}`}
           >
-            <Eye className="w-3.5 h-3.5" />
-            View PDF
+            {isViewing ? (
+              <>
+                <X className="w-3.5 h-3.5" />
+                Close PDF
+              </>
+            ) : (
+              <>
+                <Eye className="w-3.5 h-3.5" />
+                View PDF
+              </>
+            )}
           </Button>
           <DownloadCount bookId={book.id} />
         </div>
@@ -180,22 +194,6 @@ function BookCard({ book, onView }: { book: Book; onView: (b: Book) => void }) {
 }
 
 function PdfViewer({ book, onClose }: { book: Book; onClose: () => void }) {
-  const queryClient = useQueryClient();
-
-  const increment = useMutation({
-    mutationFn: async () => {
-      await fetch(`/api/book-downloads/${book.id}/increment`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ bookTitle: book.title }),
-      });
-    },
-    onSuccess: () =>
-      queryClient.invalidateQueries({
-        queryKey: ["/api/book-downloads", book.id],
-      }),
-  });
-
   return (
     <motion.div
       initial={{ opacity: 0, y: 8 }}
@@ -204,25 +202,14 @@ function PdfViewer({ book, onClose }: { book: Book; onClose: () => void }) {
     >
       <div className="bg-[#213361] px-4 py-3 flex items-center justify-between gap-2 flex-wrap">
         <p className="text-white text-sm font-semibold truncate">{book.title}</p>
-        <div className="flex items-center gap-2 shrink-0">
-          <a
-            href={book.pdfPath}
-            download
-            onClick={() => increment.mutate()}
-          >
-            <Button size="sm" className="bg-yellow-400 text-[#213361] hover:bg-yellow-300 h-7 text-xs gap-1">
-              <Download className="w-3 h-3" /> Download
-            </Button>
-          </a>
-          <Button
-            size="sm"
-            variant="ghost"
-            className="text-white hover:bg-white/10 h-7"
-            onClick={onClose}
-          >
-            <X className="w-4 h-4" />
-          </Button>
-        </div>
+        <Button
+          size="sm"
+          variant="ghost"
+          className="text-white hover:bg-white/10 h-7 shrink-0"
+          onClick={onClose}
+        >
+          <X className="w-4 h-4 mr-1" /> Close
+        </Button>
       </div>
       <iframe
         src={`${book.pdfPath}#toolbar=1`}
@@ -236,17 +223,17 @@ function PdfViewer({ book, onClose }: { book: Book; onClose: () => void }) {
 }
 
 export default function PublishedBooks() {
-  const [viewingBook, setViewingBook] = useState<Book | null>(null);
+  const [viewingBookId, setViewingBookId] = useState<string | null>(null);
 
-  const handleView = (book: Book) => {
-    setViewingBook((prev) => (prev?.id === book.id ? null : book));
+  const handleView = (bookId: string) => {
+    setViewingBookId((prev) => (prev === bookId ? null : bookId));
   };
 
   return (
     <div className="min-h-screen bg-background">
       <SEO
         title="Published Academic Books | Scholar India Publishers"
-        description="Browse academic books published by Scholar India Publishers — FinTech, Management Accounting, and more. All books available for free download."
+        description="Browse academic books published by Scholar India Publishers — FinTech, Management Accounting, and more."
         canonical="https://scholarindiapub.com/published-books"
       />
       <Header />
@@ -263,7 +250,6 @@ export default function PublishedBooks() {
       </div>
 
       <div className="max-w-4xl mx-auto px-4 py-10 space-y-4">
-        {/* Book count */}
         <p className="text-sm text-muted-foreground">
           Showing {books.length} book{books.length !== 1 ? "s" : ""}
         </p>
@@ -275,10 +261,17 @@ export default function PublishedBooks() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
           >
-            <BookCard book={book} onView={handleView} />
-            {viewingBook?.id === book.id && (
+            <BookCard
+              book={book}
+              isViewing={viewingBookId === book.id}
+              onView={() => handleView(book.id)}
+            />
+            {viewingBookId === book.id && (
               <div className="mt-3">
-                <PdfViewer book={viewingBook} onClose={() => setViewingBook(null)} />
+                <PdfViewer
+                  book={book}
+                  onClose={() => setViewingBookId(null)}
+                />
               </div>
             )}
           </motion.div>

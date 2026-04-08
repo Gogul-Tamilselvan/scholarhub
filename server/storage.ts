@@ -553,10 +553,10 @@ export class MemStorage implements IStorage {
   async getBookDownloads(bookId: string): Promise<BookDownload | undefined> {
     if (!this.rawSql) return undefined;
     try {
-      const result = await this.rawSql`SELECT id, book_id, book_title, downloads FROM book_downloads WHERE book_id = ${bookId} LIMIT 1`;
-      if (!result || result.length === 0) return undefined;
-      const r = result[0];
-      return { id: r.id, bookId: r.book_id, bookTitle: r.book_title, downloads: Number(r.downloads) };
+      const countResult = await this.rawSql`SELECT COUNT(*) as cnt, COALESCE(MAX(downloads), 0) as downloads, MAX(id) as id, MAX(book_title) as book_title FROM book_downloads WHERE book_id = ${bookId}`;
+      if (!countResult || !countResult[0] || Number(countResult[0].cnt) === 0) return undefined;
+      const r = countResult[0];
+      return { id: r.id, bookId, bookTitle: r.book_title, downloads: Number(r.downloads) };
     } catch (error) {
       console.warn("Error fetching book downloads:", error);
       return undefined;

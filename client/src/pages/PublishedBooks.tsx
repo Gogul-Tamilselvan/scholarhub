@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { BookOpen, Eye, X } from "lucide-react";
+import { BookOpen, Download, Eye, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Header from "@/components/Header";
@@ -11,7 +11,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 interface Book {
   id: string;
   title: string;
-  type: "Edited Volume" | "Authored Book";
+  type: string;
   contributors: string;
   contributorLabel: string;
   isbn: string;
@@ -27,7 +27,7 @@ const books: Book[] = [
   {
     id: "fintech-book-2025",
     title: "Future Trends and Innovations in FinTech",
-    type: "Edited Volume",
+    type: "Edited volume",
     contributors: "Dr. J. Samuel · Dr. Hesil Jerda George",
     contributorLabel: "Editors",
     isbn: "978-81-994331-6-8",
@@ -42,9 +42,8 @@ const books: Book[] = [
   {
     id: "management-accounting-book",
     title: "Management Accounting",
-    type: "Authored Book",
-    contributors:
-      "Dr. R. Ramki · Dr. Dhandapani · G. Saranya · Kalaiarasan C",
+    type: "Book",
+    contributors: "Dr. R. Ramki · Dr. Dhandapani · G. Saranya · Kalaiarasan C",
     contributorLabel: "Authors",
     isbn: "978-81-994331-5-1",
     year: "2026",
@@ -109,7 +108,6 @@ function BookCard({
 
   return (
     <div className="flex gap-5 p-5 rounded-lg border border-gray-200 dark:border-gray-700 bg-card hover:shadow-md transition-shadow">
-      {/* Real cover image */}
       <div className="shrink-0 w-24 h-32 rounded overflow-hidden border border-gray-300 dark:border-gray-600 shadow-sm">
         <img
           src={book.coverImage}
@@ -119,18 +117,13 @@ function BookCard({
         />
       </div>
 
-      {/* Details */}
       <div className="flex-1 min-w-0 space-y-2">
         <div className="flex flex-wrap gap-1.5 items-center">
           <Badge className="bg-[#213361]/10 text-[#213361] dark:bg-[#213361]/30 dark:text-blue-300 text-[10px]">
             {book.type}
           </Badge>
           {book.subjects.map((s) => (
-            <Badge
-              key={s}
-              variant="outline"
-              className="text-[10px] text-muted-foreground"
-            >
+            <Badge key={s} variant="outline" className="text-[10px] text-muted-foreground">
               {s}
             </Badge>
           ))}
@@ -141,8 +134,7 @@ function BookCard({
         </h2>
 
         <p className="text-xs text-muted-foreground">
-          <span className="font-medium">{book.contributorLabel}:</span>{" "}
-          {book.contributors}
+          <span className="font-medium">{book.contributorLabel}:</span> {book.contributors}
         </p>
 
         <p className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed line-clamp-2">
@@ -193,7 +185,13 @@ function BookCard({
   );
 }
 
-function PdfViewer({ book, onClose }: { book: Book; onClose: () => void }) {
+function PdfViewer({
+  book,
+  onClose,
+}: {
+  book: Book;
+  onClose: () => void;
+}) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 8 }}
@@ -202,14 +200,21 @@ function PdfViewer({ book, onClose }: { book: Book; onClose: () => void }) {
     >
       <div className="bg-[#213361] px-4 py-3 flex items-center justify-between gap-2 flex-wrap">
         <p className="text-white text-sm font-semibold truncate">{book.title}</p>
-        <Button
-          size="sm"
-          variant="ghost"
-          className="text-white hover:bg-white/10 h-7 shrink-0"
-          onClick={onClose}
-        >
-          <X className="w-4 h-4 mr-1" /> Close
-        </Button>
+        <div className="flex items-center gap-2 shrink-0">
+          <a href={book.pdfPath} download>
+            <Button size="sm" className="bg-yellow-400 text-[#213361] hover:bg-yellow-300 h-7 text-xs gap-1">
+              <Download className="w-3 h-3" /> Download
+            </Button>
+          </a>
+          <Button
+            size="sm"
+            variant="ghost"
+            className="text-white hover:bg-white/10 h-7 shrink-0"
+            onClick={onClose}
+          >
+            <X className="w-4 h-4 mr-1" /> Close
+          </Button>
+        </div>
       </div>
       <iframe
         src={`${book.pdfPath}#toolbar=1`}
@@ -238,15 +243,10 @@ export default function PublishedBooks() {
       />
       <Header />
 
-      {/* Hero */}
       <div className="bg-[#213361] py-14 px-4 text-center">
         <BookOpen className="w-12 h-12 mx-auto mb-4 text-yellow-400" />
-        <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">
-          Published Books
-        </h1>
-        <p className="text-blue-200 text-base">
-          Academic books published by Scholar India Publishers
-        </p>
+        <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">Published Books</h1>
+        <p className="text-blue-200 text-base">Academic books published by Scholar India Publishers</p>
       </div>
 
       <div className="max-w-4xl mx-auto px-4 py-10 space-y-4">
@@ -268,10 +268,7 @@ export default function PublishedBooks() {
             />
             {viewingBookId === book.id && (
               <div className="mt-3">
-                <PdfViewer
-                  book={book}
-                  onClose={() => setViewingBookId(null)}
-                />
+                <PdfViewer book={book} onClose={() => setViewingBookId(null)} />
               </div>
             )}
           </motion.div>

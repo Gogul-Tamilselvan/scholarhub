@@ -201,18 +201,18 @@
             if (activeAssign.length > 0) {
                 ca.innerHTML = `<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:10px 14px;margin-bottom:4px;">
           <div style="font-size:.72rem;font-weight:700;color:var(--success);text-transform:uppercase;margin-bottom:6px;">Currently Assigned (${activeAssign.length}/3)</div>
-          ${activeAssign.map(a => `<div style="font-size:.82rem;font-weight:500;margin-bottom:3px;"><i class="fa fa-user" style="color:var(--accent);margin-right:6px;"></i>${a['ReviewerFullName']} <span style="color:var(--text-muted);">(${a['ReviewerID']})</span> — Due: ${fmtDate(a['DueDate'])}</div>`).join('')}
+          ${activeAssign.map(a => `<div style="font-size:.82rem;font-weight:500;margin-bottom:3px;"><i class="fa fa-user" style="color:var(--accent);margin-right:6px;"></i>${getVal(a,['ReviewerFullName','Reviewer Full Name','Reviewer Name'])} <span style="color:var(--text-muted);">(${getVal(a,['ReviewerID','Reviewer ID'])})</span> — Due: ${fmtDate(getVal(a,['DueDate','Due Date']))}</div>`).join('')}
         </div>`;
             } else {
                 ca.innerHTML = '';
             }
 
             // Populate reviewer select (exclude already assigned)
-            const assignedIds = activeAssign.map(a => String(a['Reviewer ID']));
-            const available = reviewers.filter(r => !assignedIds.includes(String(r['Reviewer ID'])));
+            const assignedIds = activeAssign.map(a => String(getVal(a,['ReviewerID','Reviewer ID'])));
+            const available = reviewers.filter(r => !assignedIds.includes(String(getVal(r,['ReviewerID','Reviewer ID']))));
             const sel = document.getElementById('reviewerSelect');
             sel.innerHTML = '<option value="">— Choose Active Reviewer —</option>' +
-                available.map(r => `<option value="${r['Reviewer ID']}" data-name="${r['First Name']} ${r['Last Name']}" data-email="${r['Email']}">${r['First Name']} ${r['Last Name']} (${r['Role'] || 'Reviewer'}) — ${r['Journal'] || ''}</option>`).join('');
+                available.map(r => `<option value="${getVal(r,['ReviewerID','Reviewer ID'])}" data-name="${getVal(r,['First Name','FirstName'])} ${getVal(r,['Last Name','LastName'])}" data-email="${getVal(r,['Email','Email '])}">${getVal(r,['First Name','FirstName'])} ${getVal(r,['Last Name','LastName'])} (${getVal(r,['Role','Role ']) || 'Reviewer'}) — ${getVal(r,['Journal','Journal ']) || ''}</option>`).join('');
 
             // Set default due date to 2 weeks from now
             const d = new Date(); d.setDate(d.getDate() + 14);

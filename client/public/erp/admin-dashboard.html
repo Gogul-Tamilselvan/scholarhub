@@ -335,8 +335,12 @@
                     { action: 'getMessages', userId: 'admin' }
                 ]);
 
-                // Batch may succeed overall but individual results can fail — be safe
-                const batch = (res && res.data) ? res.data : {};
+                // Check top-level batch status — if the whole request failed, surface that error
+                if (!res || res.status !== 'success') {
+                    throw new Error(res && res.message ? res.message : 'Batch API request failed');
+                }
+                // Batch may succeed overall but individual results can fail — be safe for each sheet
+                const batch = res.data || {};
 
                 // --- Manuscripts ---
                 const msRes = batch['getManuscripts'];

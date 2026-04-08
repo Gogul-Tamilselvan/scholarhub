@@ -34,12 +34,15 @@
                 <div class="page-header">
                     <div class="page-header-left">
                         <h1>All Manuscripts</h1>
-                        <p>Manage submission status. Published manuscripts are hidden by default.</p>
+                        <p>Manage submissions. By default, the list shows Under Review, Under Process, Accepted, and Complement manuscripts.</p>
                     </div>
                     <div class="page-header-actions">
-                        <label
+                            <label
                             style="display:flex;align-items:center;gap:6px;font-size:.82rem;font-weight:600;cursor:pointer;">
                             <input type="checkbox" id="showPublished" onchange="applyFilters()"> Show Published
+                        </label>
+                        <label style="display:flex;align-items:center;gap:6px;font-size:.82rem;font-weight:600;cursor:pointer;">
+                            <input type="checkbox" id="showRejected" onchange="applyFilters()"> Show Rejected
                         </label>
                         <button class="btn btn-gray" onclick="loadData()"><i class="fa fa-sync"></i> Refresh</button>
                         <button class="btn btn-gray" onclick="printTable('Manuscripts')"><i class="fa fa-print"></i>
@@ -67,8 +70,9 @@
                                 <option>Accepted</option>
                                 <option>Rejected</option>
                                 <option>Published</option>
-                                <option>Hold</option>
+                                <option>Under Process</option>
                                 <option>Complement</option>
+                                <option>Hold</option>
                             </select>
                             <span id="countLabel"
                                 style="font-size:.82rem;color:var(--text-muted);white-space:nowrap;"></span>
@@ -183,17 +187,22 @@
             const sf = document.getElementById('statusFilter').value;
             const jf = document.getElementById('journalFilter').value;
             const sp = document.getElementById('showPublished').checked;
+            const sr = document.getElementById('showRejected').checked;
             filtered = allData.filter(m => {
-                const st = String(getVal(m, ['Status'])).trim();
-                const journal = String(getVal(m, ['Journal']) || getVal(m, ['Journal Type']));
+                const stRaw = String(getVal(m, ['Status', 'Status ']) || '').trim();
+                const journal = String(getVal(m, ['Journal', 'Journal Type', 'Journal ']) || '').trim();
+                const norm = stRaw.toLowerCase().replace(/[-_]+/g, ' ').replace(/\s+/g, ' ').trim();
+                const visibleStatuses = ['under review', 'under process', 'accepted', 'complement'];
 
-                if (!sp && st.toLowerCase() === 'published') return false;
+                if (!sp && norm === 'published') return false;
+                if (!sr && norm === 'rejected') return false;
+                if (!sp && !sr && visibleStatuses.indexOf(norm) === -1) return false;
                 if (sf) {
                     const searchStatus = sf.toLowerCase().trim();
-                    if (st.toLowerCase().trim() !== searchStatus) return false;
+                    if (norm !== searchStatus) return false;
                 }
                 if (jf && journal !== jf) return false;
-                if (q) return ['Manuscript Title', 'Author Name', 'Journal', 'Manuscript ID', 'Email', 'Mobile'].some(k => String(getVal(m, [k])).toLowerCase().includes(q));
+                if (q) return ['Manuscript Title', 'Author Name', 'Journal', 'Journal Type', 'Manuscript ID', 'Email', 'Mobile', 'Submitted Date', 'Timestamp'].some(k => String(getVal(m, [k])).toLowerCase().includes(q));
                 return true;
             });
             if (sortKey) filtered = sortTable(filtered, sortKey, sortAsc);
@@ -210,10 +219,11 @@
             document.getElementById('countLabel').textContent = filtered.length + ' record(s)';
             if (!filtered.length) { tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state"><i class="fa fa-file-alt"></i><h4>No manuscripts</h4><p>No records match your filters</p></div></td></tr>'; return; }
             tbody.innerHTML = filtered.map((m, i) => {
-                const st = String(getVal(m, ['Status']) || 'Submitted').trim();
+                const msId = getVal(m, ['Manuscript ID', 'ManuscriptID']);
+                const st = String(getVal(m, ['Status', 'Status ']) || 'Submitted').trim();
                 const msId = getVal(m, ['Manuscript ID', 'ManuscriptID']);
                 const fileLink = getVal(m, ['File URL', 'Uploaded File']);
-                const isUnread = (m['Read'] || 'No') !== 'Yes';
+                const isUnread = String(getVal(m, ['Read', 'Read ']) || 'No') !== 'Yes';
                 return `<tr style="${isUnread ? 'background-color: #fffbeb; font-weight: 500;' : ''}">
           <td>
             <div style="font-weight:700;color:var(--text-muted);font-size:.7rem;margin-bottom:4px;">${msId} ${isUnread ? '<span class="badge badge-danger" style="font-size: .6rem; padding: 1px 4px;">NEW</span>' : ''}</div>
@@ -254,7 +264,7 @@
             // Map our ideal field names to the actual Google Sheet column names
             const fieldMapping = {
                 'Manuscript ID': 'Manuscript ID',
-                'Submitted Date': ['Timestamp', 'Submitted Date'],
+                'Submitted Date': ['Timestamp', 'Submitted Date', 'Submitted Date '],
                 'Author Name': ['First Author Name', 'Author Name', 'Author Name '],
                 'Email': 'Email',
                 'Mobile': 'Mobile',
@@ -275,13 +285,10 @@
             Object.keys(fieldMapping).forEach(f => {
                 const keysToCheck = Array.isArray(fieldMapping[f]) ? fieldMapping[f] : [fieldMapping[f]];
                 let val = '—';
-                for (let key of keysToCheck) {
-                    if (m[key]) {
-                        val = m[key];
-                        // special date formatting for 'Submitted Date'
-                        if (f === 'Submitted Date') val = fmtDate(val);
-                        break;
-                    }
+                const match = getVal(m, keysToCheck);
+                if (match) {
+                    val = match;
+                    if (f === 'Submitted Date') val = fmtDate(val);
                 }
 
                 html += `<div style="background:var(--bg);padding:10px;border-radius:8px;">
@@ -291,7 +298,7 @@
             });
             html += '</div>';
 
-            const fileUrl = m['File URL'] || m['Uploaded File'] || m['Uploaded File '];
+            const fileUrl = getVal(m, ['File URL', 'Uploaded File', 'Uploaded File ']);
             if (fileUrl) {
                 html += `<div style="margin-top:16px;padding:14px;background:#eff6ff;border-radius:8px;border-left:4px solid var(--accent);">
         <i class="fa fa-file-pdf" style="color:var(--accent);margin-right:8px;"></i>
@@ -307,7 +314,7 @@
             };
 
             document.getElementById('detailModal').classList.add('show');
-            if ((m['Read'] || 'No') !== 'Yes') markAsRead(msId);
+            if (String(getVal(m, ['Read', 'Read ']) || 'No') !== 'Yes') markAsRead(msId);
         }
 
         async function markAsRead(msId) {

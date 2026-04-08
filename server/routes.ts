@@ -3402,6 +3402,33 @@ Sitemap: https://scholarindiapub.com/sitemap.xml`;
   });
 
   // Newsletter Subscribe
+  // Book download tracking - GET download count
+  app.get('/api/book-downloads/:bookId', async (req: Request, res: Response) => {
+    try {
+      const { bookId } = req.params;
+      const { storage } = await import('./storage');
+      const record = await storage.getBookDownloads(bookId);
+      res.json({ bookId, downloads: record?.downloads ?? 0 });
+    } catch (error) {
+      console.error('Error fetching book downloads:', error);
+      res.json({ bookId: req.params.bookId, downloads: 0 });
+    }
+  });
+
+  // Book download tracking - POST to increment count and serve file
+  app.post('/api/book-downloads/:bookId/increment', async (req: Request, res: Response) => {
+    try {
+      const { bookId } = req.params;
+      const { bookTitle } = req.body;
+      const { storage } = await import('./storage');
+      const record = await storage.incrementBookDownloads(bookId, bookTitle || bookId);
+      res.json({ success: true, downloads: record.downloads });
+    } catch (error) {
+      console.error('Error incrementing book downloads:', error);
+      res.json({ success: false, downloads: 0 });
+    }
+  });
+
   app.post('/api/newsletter/subscribe', async (req: Request, res: Response) => {
     try {
       const { email } = req.body;

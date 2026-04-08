@@ -1,4 +1,4 @@
-import { type User, type InsertUser, type JournalStats, type Notification, type InsertNotification, type AdminMessage, type InsertAdminMessage, type LoginActivity, type InsertLoginActivity, type NewsletterSubscriber, type InsertNewsletterSubscriber, type AssignmentStatus, type InsertAssignmentStatus, users, journalStats, notifications, adminMessage, loginActivity, reviewerPasswords, editorPasswords, messageReadStatus, newsletterSubscriber, assignmentStatus } from "@shared/schema";
+import { type User, type InsertUser, type JournalStats, type Notification, type InsertNotification, type AdminMessage, type InsertAdminMessage, type LoginActivity, type InsertLoginActivity, type NewsletterSubscriber, type InsertNewsletterSubscriber, type AssignmentStatus, type InsertAssignmentStatus, type BookDownload, users, journalStats, notifications, adminMessage, loginActivity, reviewerPasswords, editorPasswords, messageReadStatus, newsletterSubscriber, assignmentStatus, bookDownloads } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { eq, desc } from "drizzle-orm";
 import { neon } from "@neondatabase/serverless";
@@ -38,16 +38,20 @@ export interface IStorage {
   getAssignmentStatus(reviewerId: string, manuscriptId: string): Promise<AssignmentStatus | undefined>;
   isAssignmentAccepted(reviewerId: string, manuscriptId: string): Promise<boolean>;
   deactivateUser(reviewerId: string): Promise<void>;
+  getBookDownloads(bookId: string): Promise<BookDownload | undefined>;
+  incrementBookDownloads(bookId: string, bookTitle: string): Promise<BookDownload>;
 }
 
 // In-memory storage for users (unchanged)
 export class MemStorage implements IStorage {
   private users: Map<string, User>;
   private db: any;
+  private rawSql: any;
 
-  constructor(db?: any) {
+  constructor(db?: any, rawSql?: any) {
     this.users = new Map();
     this.db = db;
+    this.rawSql = rawSql;
   }
 
   async getUser(id: string): Promise<User | undefined> {
@@ -545,6 +549,44 @@ export class MemStorage implements IStorage {
     // For now, just log the action - actual deactivation happens in Google Sheets via the API
     console.log(`User ${reviewerId} marked for deactivation`);
   }
+
+  async getBookDownloads(bookId: string): Promise<BookDownload | undefined> {
+    if (!this.rawSql) return undefined;
+    try {
+      const result = await this.rawSql`SELECT id, book_id, book_title, downloads FROM book_downloads WHERE book_id = ${bookId} LIMIT 1`;
+      if (!result || result.length === 0) return undefined;
+      const r = result[0];
+      return { id: r.id, bookId: r.book_id, bookTitle: r.book_title, downloads: Number(r.downloads) };
+    } catch (error) {
+      console.warn("Error fetching book downloads:", error);
+      return undefined;
+    }
+  }
+
+  async incrementBookDownloads(bookId: string, bookTitle: string): Promise<BookDownload> {
+    if (!this.rawSql) {
+      return { id: "mem", bookId, bookTitle, downloads: 0 };
+    }
+    try {
+      const countResult = await this.rawSql`SELECT COUNT(*) as cnt FROM book_downloads WHERE book_id = ${bookId}`;
+      const exists = countResult && countResult[0] && Number(countResult[0].cnt) > 0;
+
+      if (!exists) {
+        const id = randomUUID();
+        await this.rawSql`INSERT INTO book_downloads (id, book_id, book_title, downloads) VALUES (${id}, ${bookId}, ${bookTitle}, 1)`;
+        return { id, bookId, bookTitle, downloads: 1 };
+      } else {
+        const current = await this.rawSql`SELECT id, downloads FROM book_downloads WHERE book_id = ${bookId} LIMIT 1`;
+        const currentDownloads = current && current[0] ? Number(current[0].downloads) : 0;
+        const newCount = currentDownloads + 1;
+        await this.rawSql`UPDATE book_downloads SET downloads = ${newCount} WHERE book_id = ${bookId}`;
+        return { id: current[0].id, bookId, bookTitle, downloads: newCount };
+      }
+    } catch (error) {
+      console.warn("Error incrementing book downloads:", error);
+      return { id: "err", bookId, bookTitle, downloads: 0 };
+    }
+  }
 }
 
 // Initialize storage with database
@@ -558,7 +600,19 @@ export async function initializeStorage() {
       const sql = neon(dbUrl);
       const db = drizzle(sql);
       
-      storage = new MemStorage(db);
+      storage = new MemStorage(db, sql);
+
+      // Ensure book_downloads table exists
+      try {
+        await sql`CREATE TABLE IF NOT EXISTS book_downloads (
+          id VARCHAR PRIMARY KEY DEFAULT gen_random_uuid(),
+          book_id TEXT NOT NULL UNIQUE,
+          book_title TEXT NOT NULL,
+          downloads INTEGER NOT NULL DEFAULT 0
+        )`;
+      } catch (tableErr) {
+        console.warn("Could not create book_downloads table:", tableErr);
+      }
       
       // Initialize default journals
       await storage.initializeJournalStats([

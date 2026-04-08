@@ -182,6 +182,20 @@ export const insertFinalPaperSubmissionSchema = createInsertSchema(finalPaperSub
   createdAt: true,
 });
 
+export const bookDownloads = pgTable("book_downloads", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  bookId: text("book_id").notNull().unique(),
+  bookTitle: text("book_title").notNull(),
+  downloads: integer("downloads").notNull().default(0),
+});
+
+export const insertBookDownloadSchema = createInsertSchema(bookDownloads).omit({
+  id: true,
+});
+
+export type BookDownload = typeof bookDownloads.$inferSelect;
+export type InsertBookDownload = z.infer<typeof insertBookDownloadSchema>;
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 export type JournalStats = typeof journalStats.$inferSelect;

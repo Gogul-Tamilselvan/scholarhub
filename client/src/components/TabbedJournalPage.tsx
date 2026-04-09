@@ -75,6 +75,7 @@ interface TabbedJournalPageProps {
   v2i1Articles?: Article[];
   currentVolume?: string;
   currentIssue?: string;
+  startingYear?: string;
   referenceStyle?: "APA" | "APA_MLA";
 }
 
@@ -96,6 +97,7 @@ export default function TabbedJournalPage({
   v2i1Articles = [],
   currentVolume = "2",
   currentIssue = "1",
+  startingYear = "2026",
   referenceStyle = "APA",
 }: TabbedJournalPageProps) {
   const [location] = useLocation();
@@ -256,7 +258,7 @@ export default function TabbedJournalPage({
                   <div className="space-y-3">
                     <div className="border-l-4 border-blue-200 pl-4">
                       <p className="text-sm text-blue-600 dark:text-blue-400 font-semibold">Starting Year</p>
-                      <p className="text-base text-gray-900 dark:text-gray-100">2026</p>
+                      <p className="text-base text-gray-900 dark:text-gray-100">{startingYear}</p>
                     </div>
                     <div className="border-l-4 border-blue-200 pl-4">
                       <p className="text-sm text-blue-600 dark:text-blue-400 font-semibold">Subject</p>

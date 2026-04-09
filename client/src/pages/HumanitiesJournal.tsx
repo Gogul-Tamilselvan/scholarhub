@@ -253,6 +253,7 @@ export default function HumanitiesJournal() {
       </section>
       <TabbedJournalPage
         title="Scholar Journal of Humanities and Social Sciences"
+        startingYear="2026"
         aim="The Scholar Journal of Humanities and Social Sciences serves as a premier international platform for disseminating cutting-edge research and scholarly discourse in humanities and social sciences disciplines. The journal is committed to advancing theoretical knowledge and evidence-based practices while fostering interdisciplinary dialogue among academics, researchers, and policymakers."
         scope="The Scholar Journal of Humanities and Social Sciences welcomes original research contributions across diverse areas including literature, philosophy, history, linguistics, cultural studies, religious studies, art history, classical studies, sociology, psychology, political science, anthropology, economics, education, social work, public policy, development studies, gender studies, urban studies, and emerging interdisciplinary domains that bridge humanities and social sciences with contemporary challenges in culture, society, and human behavior."
         publicationTypes="The journal publishes original research articles, empirical studies, theoretical contributions, critical essays, comparative studies, case studies, methodological papers, book reviews, and scholarly commentaries on significant works and movements in the humanities and social sciences."

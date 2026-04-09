@@ -3,7 +3,6 @@ import { motion } from "framer-motion";
 import { BookOpen, Download, Eye, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import fintechBookCover from "@assets/{16B8528C-AD89-42D7-B4CE-A19592C3C203}_1775752788032.png";
 import Header from "@/components/Header";
 import SEO from "@/components/SEO";
 import Footer from "@/components/Footer";
@@ -35,7 +34,7 @@ const books: Book[] = [
     year: "2025",
     pages: "94",
     pdfPath: "/downloads/fintech-book.pdf",
-    coverImage: fintechBookCover,
+    coverImage: "/book-covers/fintech-book-001.png",
     subjects: ["FinTech", "AI & Finance", "Blockchain", "Sustainable Finance"],
     description:
       "An edited volume exploring AI governance, crypto-asset risk, autonomous investing, green digital bonds, and FinTech-driven sustainable development across six scholarly chapters.",

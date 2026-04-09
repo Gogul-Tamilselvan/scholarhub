@@ -54,16 +54,6 @@ function ErpRedirect({ to }: { to: string }) {
 function Router() {
   return (
     <Switch>
-      <Route path="/">
-        <div className="min-h-screen flex items-center justify-center bg-background px-6">
-          <div className="max-w-xl text-center space-y-3">
-            <h1 className="text-3xl font-bold text-foreground">Scholar India Publishers</h1>
-            <p className="text-muted-foreground">
-              Preview is ready. Use the site navigation to browse the home page, journals, books, and ERP pages.
-            </p>
-          </div>
-        </div>
-      </Route>
       <Route path="/" component={Home} />
       <Route path="/about" component={About} />
       <Route path="/founder" component={FounderProfile} />

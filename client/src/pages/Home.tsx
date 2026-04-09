@@ -57,7 +57,7 @@ export default function Home() {
               </motion.div>
               
               <div className="max-w-4xl">
-                <p className="text-base md:text-lg font-medium text-blue-50 leading-relaxed drop-shadow-sm whitespace-nowrap">
+                <p className="text-base md:text-lg font-medium text-blue-50 leading-relaxed drop-shadow-sm">
                   International Peer-Reviewed Academic Journals and Book Publishing Excellence Since 2022
                 </p>
                 <div className="mt-3 flex flex-wrap justify-center gap-3">

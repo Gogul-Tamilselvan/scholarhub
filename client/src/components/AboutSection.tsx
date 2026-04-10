@@ -1,9 +1,7 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
-  MapPin,
-  Globe,
   BookOpen,
   ArrowRight,
   CheckCircle2,
@@ -35,53 +33,7 @@ export default function AboutSection() {
           viewport={{ once: true }}
         >
           <Card className="bg-white dark:bg-gray-900 border-blue-200 dark:border-blue-800 overflow-hidden">
-            <CardHeader className="flex flex-col space-y-1 p-4 text-center bg-[#213361] text-white">
-              <div>
-                <CardTitle className="text-2xl font-serif text-white mb-2">
-                  About Us
-                </CardTitle>
-              </div>
-            </CardHeader>
             <CardContent className="p-4">
-              <div className="mb-6">
-                <p className="text-base leading-relaxed mb-4 text-gray-900 dark:text-gray-200 text-justify">
-                  Scholar India Publishers (SIP) is an International
-                  Peer-Reviewed Academic Journals and Book Publishing Excellence
-                  Since 2022. We are an MSME Registered Publisher in Chennai,
-                  Tamil Nadu. We publish two distinguished international
-                  journals: Scholar Journal of Commerce and Management and
-                  Scholar Journal of Humanities and Social Sciences. Bringing
-                  together academic voices from across the globe with fast
-                  publication, DOI assignment, and rigorous double-blind peer
-                  review. We are also engaged in book publication and conference
-                  support, providing comprehensive academic publishing solutions
-                  to researchers worldwide.
-                </p>
-
-                <div className="grid md:grid-cols-3 gap-4 mb-8">
-                  <div className="flex items-center">
-                    <MapPin className="h-5 w-5 text-blue-900 dark:text-blue-300 mr-3 flex-shrink-0" />
-                    <span className="text-sm text-gray-800 dark:text-gray-300">
-                      Tiruvallur, Chennai - 631402, Tamilnadu, India
-                    </span>
-                  </div>
-
-                  <div className="flex items-center">
-                    <Globe className="h-5 w-5 text-blue-900 dark:text-blue-300 mr-3 flex-shrink-0" />
-                    <span className="text-sm text-gray-800 dark:text-gray-300">
-                      International Reach
-                    </span>
-                  </div>
-
-                  <div className="flex items-center">
-                    <BookOpen className="h-5 w-5 text-blue-900 dark:text-blue-300 mr-3 flex-shrink-0" />
-                    <span className="text-sm text-gray-800 dark:text-gray-300">
-                      Peer-Reviewed Excellence
-                    </span>
-                  </div>
-                </div>
-              </div>
-
               <div className="grid md:grid-cols-2 gap-8">
                 <div>
                   <h3 className="text-xl font-serif font-semibold mb-6 text-blue-900 dark:text-blue-300">

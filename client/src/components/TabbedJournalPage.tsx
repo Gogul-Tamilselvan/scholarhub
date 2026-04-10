@@ -602,7 +602,13 @@ export default function TabbedJournalPage({
                                     </Link>
                                   </Button>
                                   <Button asChild variant="ghost" className="h-8 text-xs font-bold text-blue-900 hover:text-blue-800 hover:bg-blue-50 px-3 border border-transparent hover:border-blue-100">
-                                    <a href={`/downloads/${article.articleId}.pdf`} target="_blank" rel="noopener noreferrer">
+                                        <a href={
+                                          article.articleId === "sjhss-v1i2-001"
+                                            ? "/downloads/SIPHSv1i201.pdf"
+                                            : article.articleId === "sjhss-v1i2-002"
+                                              ? "/downloads/SIPHSv1i202.pdf"
+                                              : `/downloads/${article.articleId}.pdf`
+                                        } target="_blank" rel="noopener noreferrer">
                                       <FileText className="h-3.5 w-3.5 mr-2" /> Full PDF
                                     </a>
                                   </Button>

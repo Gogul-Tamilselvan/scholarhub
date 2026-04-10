@@ -569,7 +569,13 @@ export default function IssueLanding() {
                             data-testid={`button-download-pdf-${article.id}`}
                           >
                             <a
-                              href={`/downloads/${article.articleId}.pdf`}
+                              href={
+                                article.articleId === "sjhss-v1i2-001"
+                                  ? "/downloads/SIPHSv1i201.pdf"
+                                  : article.articleId === "sjhss-v1i2-002"
+                                    ? "/downloads/SIPHSv1i202.pdf"
+                                    : `/downloads/${article.articleId}.pdf`
+                              }
                               target="_blank"
                               rel="noopener noreferrer"
                             >

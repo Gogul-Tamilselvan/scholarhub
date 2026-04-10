@@ -311,16 +311,6 @@ export default function Home() {
                     </div>
                   </motion.div>
                 ))}
-                <motion.div {...fadeUp(0.3)}
-                  className="mt-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg px-5 py-4 text-center"
-                >
-                  <p className="text-sm font-medium text-amber-800 dark:text-amber-300 mb-3">Ready to submit your manuscript?</p>
-                  <Link href="/submit">
-                    <button className="inline-flex items-center gap-2 bg-amber-400 text-[#213361] font-bold text-sm px-6 py-2.5 rounded-md hover:bg-amber-300 transition-colors">
-                      Submit Now <ArrowRight className="h-4 w-4" />
-                    </button>
-                  </Link>
-                </motion.div>
               </div>
             </motion.div>
           </div>

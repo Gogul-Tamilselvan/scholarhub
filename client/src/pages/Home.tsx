@@ -8,7 +8,6 @@ import StructuredData, { createOrganizationData } from "@/components/StructuredD
 import { motion } from "framer-motion";
 import { Link } from "wouter";
 import {
-  ArrowRight,
   BookOpen,
   ShieldCheck,
   Award,
@@ -123,28 +122,6 @@ export default function Home() {
                 Management, Humanities &amp; Social Sciences — with DOI assignment, ISSN certification,
                 and a rigorous double-blind review process.
               </p>
-
-              {/* CTA buttons */}
-              <div className="flex flex-wrap gap-3 justify-center lg:justify-start mb-10">
-                <Link href="/submit">
-                  <motion.button
-                    whileHover={{ scale: 1.03 }}
-                    whileTap={{ scale: 0.97 }}
-                    className="inline-flex items-center gap-2 bg-amber-400 text-[#213361] font-bold text-sm px-7 py-3 rounded-md shadow-md hover:bg-amber-300 transition-colors"
-                  >
-                    Submit Manuscript <ArrowRight className="h-4 w-4" />
-                  </motion.button>
-                </Link>
-                <Link href="/commerce-management">
-                  <motion.button
-                    whileHover={{ scale: 1.03 }}
-                    whileTap={{ scale: 0.97 }}
-                    className="inline-flex items-center gap-2 bg-white/10 border border-white/25 text-white font-semibold text-sm px-7 py-3 rounded-md hover:bg-white/20 transition-colors"
-                  >
-                    <BookOpen className="h-4 w-4" /> Browse Journals
-                  </motion.button>
-                </Link>
-              </div>
 
               {/* Feature pills */}
               <div className="flex flex-wrap gap-2 justify-center lg:justify-start">

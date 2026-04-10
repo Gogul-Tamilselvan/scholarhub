@@ -29,8 +29,12 @@ export default function Header() {
                 className="h-16 w-auto object-contain"
               />
               <div className="hidden sm:block">
-                <div className="text-base font-bold text-white leading-tight">Scholar India</div>
-                <div className="text-sm font-semibold text-amber-300">Publishers</div>
+                <div className="text-lg font-extrabold text-white leading-tight tracking-wide">
+                  Scholar India <span className="text-amber-400">Publishers</span>
+                </div>
+                <div className="text-[10px] font-semibold text-white/60 tracking-[0.18em] uppercase mt-0.5">
+                  Academic Publishing House
+                </div>
               </div>
             </div>
           </Link>

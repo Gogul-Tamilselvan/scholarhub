@@ -23,7 +23,7 @@ export default function Home() {
     <div className="min-h-screen bg-background">
       <SEO
         title="Scholar India Publishers | International Peer-Reviewed Academic Journals"
-        description="Scholar India Publishers - International peer-reviewed academic journals in Commerce, Management, Humanities & Social Sciences. Fast DOI, double-blind review, ISSN certified. Submit your manuscript online from India or abroad."
+        description="Scholar India Publishers - International peer-reviewed academic journals in Commerce, Management, Humanities & Social Sciences. DOI, double-blind review, ISSN certified. Submit your manuscript online from India or abroad."
         keywords="scholar india publishers, academic journal publisher India, peer-reviewed journal India, commerce journal India, management journal, humanities journal India, social sciences journal, academic publishing Chennai, research publication India, journal submission 2025, DOI assignment, ISSN journal India, international academic journal, open access journal India"
         ogImage={ogImage}
         canonical="https://scholarindiapub.com/"
@@ -69,7 +69,7 @@ export default function Home() {
                 transition={{ delay: 0.2, duration: 0.5 }}
               >
                 <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
-                Est. 2022 &mdash; Peer-Reviewed Excellence
+                International Peer-Reviewed Academic Journals and Book Publishing Excellence Since 2022
               </motion.div>
 
               <h1 className="text-4xl md:text-5xl lg:text-[3.4rem] font-extrabold text-white leading-tight mb-5 tracking-tight">
@@ -81,8 +81,8 @@ export default function Home() {
 
               <p className="text-base md:text-lg text-white/65 leading-relaxed max-w-xl mb-8 mx-auto lg:mx-0">
                 Scholar India Publishers offers internationally peer-reviewed journals in Commerce,
-                Management, Humanities & Social Sciences — with fast DOI assignment, ISSN
-                certification, and a rigorous double-blind review process.
+                Management, Humanities & Social Sciences — with DOI assignment, ISSN certification,
+                and a rigorous double-blind review process.
               </p>
 
               {/* CTA Buttons */}
@@ -143,7 +143,7 @@ export default function Home() {
               { value: "2", label: "Active Journals" },
               { value: "100+", label: "Published Articles" },
               { value: "15+", label: "Countries Reached" },
-              { value: "Fast", label: "Review Process" },
+              { value: "10-15 Days", label: "Review Process" },
             ].map(({ value, label }) => (
               <div key={label}>
                 <div className="text-2xl md:text-3xl font-extrabold text-amber-400 mb-0.5">{value}</div>

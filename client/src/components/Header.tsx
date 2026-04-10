@@ -35,9 +35,6 @@ export default function Header() {
                 <span className="text-[17px] font-extrabold text-white leading-none tracking-wide">
                   Scholar India <span className="text-amber-400">Publishers</span>
                 </span>
-                <span className="text-[10px] font-medium text-white/50 tracking-[0.22em] uppercase mt-1">
-                  Est. 2022
-                </span>
               </div>
             </div>
           </Link>

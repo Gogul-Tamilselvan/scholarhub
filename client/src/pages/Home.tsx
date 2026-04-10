@@ -23,7 +23,7 @@ export default function Home() {
       <StructuredData type="Organization" data={createOrganizationData()} />
       <Header />
       {/* Publisher Title Section */}
-      <section className="w-full py-8 md:py-12 bg-[#213361] relative overflow-hidden">
+      <section className="w-full py-8 md:py-12 bg-gradient-to-br from-[#1a2e5a] via-[#0f1d3a] to-[#0a1628] relative overflow-hidden">
         {/* Animated background elements */}
         <motion.div 
           className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none"

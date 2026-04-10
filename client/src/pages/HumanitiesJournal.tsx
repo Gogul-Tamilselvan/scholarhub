@@ -192,9 +192,26 @@ export default function HumanitiesJournal() {
     }
   ];
 
-  // Current issue articles - Volume 1, Issue 2 (April - June 2026) - Under Production
+  // Current issue articles - Volume 1, Issue 2 (April - June 2026)
   const articles: typeof archivedArticles = [
-    // Empty - Under Production
+    {
+      id: 1,
+      articleId: "sjhss-v1i2-001",
+      title: "POVERTY AND CRIMINAL JUSTICE IN URBAN POOR HABITAT – SOCIAL WORK PERSPECTIVE",
+      authors: "S. Sakthi Devi¹, M. Arivanandan²",
+      affiliation: "1. Research Scholar, Department of Social Science, Tamil University, Thanjavur, Tamil Nadu, India\n2. Assistant Professor, Department of Social Science, Tamil University, Thanjavur, Tamil Nadu, India",
+      pages: "01 – 08",
+      doi: "10.65219/sjhss.20260102001"
+    },
+    {
+      id: 2,
+      articleId: "sjhss-v1i2-002",
+      title: "CAPACITY BUILDING AND SOCIAL RESILIENCE: INSIGHTS FROM INFOSYS INITIATIVES",
+      authors: "B Kalaiyarasan¹",
+      affiliation: "1. Assistant Professor, Department of MBA, School of Management Studies, Vels Institute of Science Technology & Advanced Studies (VISTAS), Pallavaram, Chennai, Tamil Nadu, India",
+      pages: "09 – 14",
+      doi: "10.65219/sjhss.20260102002"
+    },
   ];
 
   return (

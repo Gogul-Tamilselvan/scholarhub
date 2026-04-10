@@ -7,16 +7,51 @@ import SEO from "@/components/SEO";
 import StructuredData, { createOrganizationData } from "@/components/StructuredData";
 import { motion } from "framer-motion";
 import { Link } from "wouter";
-import { ArrowRight, BookOpen, Globe, ShieldCheck, Award } from "lucide-react";
+import {
+  ArrowRight,
+  BookOpen,
+  ShieldCheck,
+  Award,
+  Clock,
+  FileCheck,
+  ChevronRight,
+} from "lucide-react";
 
 export default function Home() {
-  const ogImage = typeof window !== 'undefined' ? `${window.location.origin}/og-image.jpg` : '/og-image.jpg';
+  const ogImage =
+    typeof window !== "undefined"
+      ? `${window.location.origin}/og-image.jpg`
+      : "/og-image.jpg";
 
-  const badges = [
+  const features = [
     { icon: ShieldCheck, label: "Double-Blind Peer Review" },
-    { icon: Globe, label: "International Journals" },
+    { icon: Clock, label: "Review in 10–15 Days" },
     { icon: Award, label: "DOI & ISSN Certified" },
-    { icon: BookOpen, label: "Open Access" },
+    { icon: FileCheck, label: "Open Access Publishing" },
+  ];
+
+  const stats = [
+    { value: "2", label: "Active Journals" },
+    { value: "100+", label: "Published Articles" },
+    { value: "15+", label: "Countries Reached" },
+    { value: "10–15", label: "Days to Review" },
+  ];
+
+  const journals = [
+    {
+      short: "SJCM",
+      full: "Scholar Journal of Commerce and Management",
+      color: "from-blue-600 to-blue-800",
+      iconColor: "bg-blue-500",
+      href: "/commerce-management",
+    },
+    {
+      short: "SJHSS",
+      full: "Scholar Journal of Humanities and Social Sciences",
+      color: "from-indigo-600 to-indigo-800",
+      iconColor: "bg-indigo-500",
+      href: "/humanities",
+    },
   ];
 
   return (
@@ -31,67 +66,71 @@ export default function Home() {
       <StructuredData type="Organization" data={createOrganizationData()} />
       <Header />
 
-      {/* Hero Section */}
-      <section className="relative w-full overflow-hidden bg-[#0d1b3e]">
-        {/* Background decoration */}
-        <div className="absolute inset-0 pointer-events-none">
-          {/* Large soft glows */}
-          <div className="absolute -top-32 -left-32 w-[500px] h-[500px] rounded-full bg-amber-400/5 blur-3xl" />
-          <div className="absolute -bottom-32 -right-32 w-[600px] h-[600px] rounded-full bg-blue-600/10 blur-3xl" />
-          {/* Diagonal grid pattern */}
+      {/* ── HERO ─────────────────────────────────────────────── */}
+      <section className="relative w-full overflow-hidden" style={{ background: "linear-gradient(135deg, #213361 0%, #1a2a52 55%, #152240 100%)" }}>
+
+        {/* Decorative background shapes */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          {/* Top-right large gold circle */}
+          <div className="absolute -top-24 -right-24 w-96 h-96 rounded-full border border-amber-400/10 opacity-60" />
+          <div className="absolute -top-12 -right-12 w-64 h-64 rounded-full border border-amber-400/15" />
+          {/* Bottom-left subtle glow */}
+          <div className="absolute -bottom-40 -left-20 w-[500px] h-[500px] rounded-full bg-blue-400/5 blur-3xl" />
+          {/* Dot-grid pattern */}
           <div
-            className="absolute inset-0 opacity-[0.04]"
+            className="absolute inset-0 opacity-[0.06]"
             style={{
-              backgroundImage:
-                "linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)",
-              backgroundSize: "40px 40px",
+              backgroundImage: "radial-gradient(circle, #fff 1px, transparent 1px)",
+              backgroundSize: "28px 28px",
             }}
           />
-          {/* Gold accent bar on left */}
-          <div className="absolute left-0 top-0 h-full w-1 bg-gradient-to-b from-amber-400/80 via-amber-400/30 to-transparent" />
+          {/* Diagonal gold accent — top left */}
+          <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-amber-400 via-amber-400/40 to-transparent" />
+          {/* Horizontal gold line near bottom of hero */}
+          <div className="absolute bottom-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-amber-400/40 to-transparent" />
         </div>
 
-        <div className="relative z-10 max-w-7xl mx-auto px-6 py-14 md:py-20">
-          <div className="flex flex-col lg:flex-row items-center gap-12">
+        <div className="relative z-10 max-w-7xl mx-auto px-6 pt-14 pb-0 md:pt-20">
+          <div className="flex flex-col lg:flex-row items-start gap-10 lg:gap-16">
 
-            {/* Left: Text content */}
+            {/* ── LEFT: Headline + CTAs ── */}
             <motion.div
               className="flex-1 text-center lg:text-left"
-              initial={{ opacity: 0, x: -30 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.7 }}
+              initial={{ opacity: 0, y: 24 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.65 }}
             >
-              {/* Pre-headline badge */}
+              {/* Eyebrow badge */}
               <motion.div
-                className="inline-flex items-center gap-2 bg-amber-400/15 border border-amber-400/30 text-amber-300 text-xs font-semibold uppercase tracking-widest px-4 py-1.5 rounded-full mb-5"
-                initial={{ opacity: 0, y: -10 }}
+                className="inline-flex items-center gap-2 mb-6 px-4 py-1.5 rounded-full border border-amber-400/35 bg-amber-400/10 text-amber-300 text-[11px] font-semibold tracking-wider uppercase"
+                initial={{ opacity: 0, y: -8 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2, duration: 0.5 }}
+                transition={{ delay: 0.15, duration: 0.5 }}
               >
                 <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
-                International Peer-Reviewed Academic Journals and Book Publishing Excellence Since 2022
+                International Peer-Reviewed Academic Journals &amp; Book Publishing Excellence Since 2022
               </motion.div>
 
-              <h1 className="text-4xl md:text-5xl lg:text-[3.4rem] font-extrabold text-white leading-tight mb-5 tracking-tight">
+              {/* Headline */}
+              <h1 className="text-4xl md:text-5xl lg:text-[3.2rem] font-extrabold text-white leading-[1.12] mb-5 tracking-tight">
                 Publish Your Research<br />
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-300 to-yellow-400">
-                  With Global Impact
-                </span>
+                <span className="text-amber-400">With Global Impact</span>
               </h1>
 
-              <p className="text-base md:text-lg text-white/65 leading-relaxed max-w-xl mb-8 mx-auto lg:mx-0">
+              {/* Sub-text */}
+              <p className="text-base md:text-[17px] text-white/60 leading-relaxed max-w-lg mb-8 mx-auto lg:mx-0">
                 Scholar India Publishers offers internationally peer-reviewed journals in Commerce,
-                Management, Humanities & Social Sciences — with DOI assignment, ISSN certification,
+                Management, Humanities &amp; Social Sciences — with DOI assignment, ISSN certification,
                 and a rigorous double-blind review process.
               </p>
 
-              {/* CTA Buttons */}
-              <div className="flex flex-wrap gap-3 justify-center lg:justify-start">
+              {/* CTA buttons */}
+              <div className="flex flex-wrap gap-3 justify-center lg:justify-start mb-10">
                 <Link href="/submit">
                   <motion.button
                     whileHover={{ scale: 1.03 }}
-                    whileTap={{ scale: 0.98 }}
-                    className="inline-flex items-center gap-2 bg-amber-400 text-[#0d1b3e] font-bold text-sm px-6 py-3 rounded-md shadow-lg hover:bg-amber-300 transition-colors"
+                    whileTap={{ scale: 0.97 }}
+                    className="inline-flex items-center gap-2 bg-amber-400 text-[#213361] font-bold text-sm px-7 py-3 rounded-md shadow-md hover:bg-amber-300 transition-colors"
                   >
                     Submit Manuscript <ArrowRight className="h-4 w-4" />
                   </motion.button>
@@ -99,60 +138,102 @@ export default function Home() {
                 <Link href="/commerce-management">
                   <motion.button
                     whileHover={{ scale: 1.03 }}
-                    whileTap={{ scale: 0.98 }}
-                    className="inline-flex items-center gap-2 bg-white/10 border border-white/25 text-white font-semibold text-sm px-6 py-3 rounded-md hover:bg-white/20 transition-colors"
+                    whileTap={{ scale: 0.97 }}
+                    className="inline-flex items-center gap-2 bg-white/10 border border-white/25 text-white font-semibold text-sm px-7 py-3 rounded-md hover:bg-white/20 transition-colors"
                   >
                     <BookOpen className="h-4 w-4" /> Browse Journals
                   </motion.button>
                 </Link>
               </div>
+
+              {/* Feature pills */}
+              <div className="flex flex-wrap gap-2 justify-center lg:justify-start">
+                {features.map(({ icon: Icon, label }) => (
+                  <div
+                    key={label}
+                    className="inline-flex items-center gap-1.5 bg-white/5 border border-white/10 text-white/70 text-xs font-medium px-3 py-1.5 rounded-full"
+                  >
+                    <Icon className="h-3.5 w-3.5 text-amber-400 shrink-0" />
+                    {label}
+                  </div>
+                ))}
+              </div>
             </motion.div>
 
-            {/* Right: Feature cards */}
+            {/* ── RIGHT: Journal Cards ── */}
             <motion.div
-              className="flex-shrink-0 w-full lg:w-auto grid grid-cols-2 gap-3 lg:grid-cols-1 lg:w-64"
+              className="flex-shrink-0 w-full lg:w-72 flex flex-col gap-4 lg:pt-2"
               initial={{ opacity: 0, x: 30 }}
               animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.7, delay: 0.1 }}
+              transition={{ duration: 0.7, delay: 0.15 }}
             >
-              {badges.map(({ icon: Icon, label }, i) => (
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-white/40 mb-1 text-center lg:text-left">
+                Our Journals
+              </p>
+              {journals.map(({ short, full, href }, i) => (
                 <motion.div
-                  key={label}
-                  initial={{ opacity: 0, y: 20 }}
+                  key={short}
+                  initial={{ opacity: 0, y: 16 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.3 + i * 0.1, duration: 0.5 }}
-                  className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-md px-4 py-3 backdrop-blur-sm"
+                  transition={{ delay: 0.3 + i * 0.12, duration: 0.5 }}
                 >
-                  <div className="flex-shrink-0 w-8 h-8 rounded-md bg-amber-400/20 flex items-center justify-center">
-                    <Icon className="h-4 w-4 text-amber-400" />
-                  </div>
-                  <span className="text-sm font-medium text-white/80">{label}</span>
+                  <Link href={href}>
+                    <div className="group flex items-center gap-4 bg-white/8 border border-white/12 rounded-lg px-4 py-4 hover:bg-white/14 hover:border-amber-400/40 transition-all cursor-pointer">
+                      <div className="flex-shrink-0 w-12 h-12 rounded-md bg-amber-400/20 flex items-center justify-center">
+                        <BookOpen className="h-5 w-5 text-amber-400" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-[11px] font-bold text-amber-400 uppercase tracking-widest mb-0.5">{short}</div>
+                        <div className="text-sm font-semibold text-white/85 leading-snug line-clamp-2">{full}</div>
+                      </div>
+                      <ChevronRight className="h-4 w-4 text-white/30 group-hover:text-amber-400 transition-colors shrink-0" />
+                    </div>
+                  </Link>
                 </motion.div>
               ))}
+
+              {/* Quick-access card */}
+              <motion.div
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.56, duration: 0.5 }}
+                className="bg-amber-400/10 border border-amber-400/25 rounded-lg px-4 py-4 text-center"
+              >
+                <p className="text-xs text-amber-300/80 mb-2 font-medium">Ready to publish?</p>
+                <Link href="/submit">
+                  <button className="w-full text-xs font-bold text-[#213361] bg-amber-400 hover:bg-amber-300 py-2 rounded-md transition-colors">
+                    Start Submission →
+                  </button>
+                </Link>
+              </motion.div>
             </motion.div>
+
           </div>
 
-          {/* Bottom divider stat strip */}
+          {/* ── STATS BAR ── */}
           <motion.div
-            className="mt-12 pt-8 border-t border-white/10 grid grid-cols-2 md:grid-cols-4 gap-6 text-center"
-            initial={{ opacity: 0, y: 20 }}
+            className="mt-12 border-t border-white/10 grid grid-cols-2 md:grid-cols-4"
+            initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.6, duration: 0.6 }}
+            transition={{ delay: 0.55, duration: 0.6 }}
           >
-            {[
-              { value: "2", label: "Active Journals" },
-              { value: "100+", label: "Published Articles" },
-              { value: "15+", label: "Countries Reached" },
-              { value: "10-15 Days", label: "Review Process" },
-            ].map(({ value, label }) => (
-              <div key={label}>
-                <div className="text-2xl md:text-3xl font-extrabold text-amber-400 mb-0.5">{value}</div>
-                <div className="text-xs text-white/50 uppercase tracking-widest font-medium">{label}</div>
+            {stats.map(({ value, label }, i) => (
+              <div
+                key={label}
+                className={`py-5 text-center ${i < stats.length - 1 ? "border-r border-white/10" : ""}`}
+              >
+                <div className="text-2xl md:text-3xl font-extrabold text-amber-400 leading-none mb-1">
+                  {value}
+                </div>
+                <div className="text-[11px] text-white/45 uppercase tracking-widest font-medium">
+                  {label}
+                </div>
               </div>
             ))}
           </motion.div>
         </div>
       </section>
+      {/* ── END HERO ─────────────────────────────────────────── */}
 
       <AboutSection />
       <StatisticsSection />

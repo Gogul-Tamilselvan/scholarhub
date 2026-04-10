@@ -1,5 +1,4 @@
 import Header from "@/components/Header";
-import AboutSection from "@/components/AboutSection";
 import StatisticsSection from "@/components/StatisticsSection";
 import PartnerLogos from "@/components/PartnerLogos";
 import Footer from "@/components/Footer";
@@ -154,7 +153,6 @@ export default function Home() {
         </div>
       </section>
 
-      <AboutSection />
       <StatisticsSection />
       <PartnerLogos />
       <Footer />

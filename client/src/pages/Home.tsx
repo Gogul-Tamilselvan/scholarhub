@@ -26,7 +26,6 @@ export default function Home() {
   const ogImage =
     typeof window !== "undefined" ? `${window.location.origin}/og-image.jpg` : "/og-image.jpg";
 
-  // ── data ──────────────────────────────────────────────────
   const features = [
     { icon: ShieldCheck, label: "Double-Blind Peer Review" },
     { icon: Clock, label: "Review in 10–15 Days" },
@@ -103,7 +102,6 @@ export default function Home() {
       <StructuredData type="Organization" data={createOrganizationData()} />
       <Header />
 
-      {/* ━━━━━━━━━━━━━━ HERO ━━━━━━━━━━━━━━ */}
       <section
         className="relative w-full overflow-hidden"
         style={{ background: "linear-gradient(135deg, #213361 0%, #1a2a52 55%, #152240 100%)" }}
@@ -155,7 +153,6 @@ export default function Home() {
             ))}
           </motion.div>
 
-          {/* Stats bar */}
           <motion.div
             className="border-t border-white/10 grid grid-cols-2 md:grid-cols-4"
             initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.55, duration: 0.6 }}
@@ -170,7 +167,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ━━━━━━━━━━━━━━ OUR JOURNALS ━━━━━━━━━━━━━━ */}
       <section className="w-full py-14 bg-white dark:bg-background">
         <div className="max-w-7xl mx-auto px-6">
           <motion.div {...fadeUp()} className="text-center mb-10">
@@ -206,7 +202,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ━━━━━━━━━━━━━━ OUR SERVICES ━━━━━━━━━━━━━━ */}
       <section className="w-full py-14 bg-[#213361] text-white">
         <div className="max-w-7xl mx-auto px-6">
           <motion.div {...fadeUp()} className="text-center mb-10">
@@ -233,14 +228,11 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ━━━━━━━━━━━━━━ NEWS & EVENTS + PUBLICATION INFO ━━━━━━━━━━━━━━ */}
       <section className="w-full py-14 bg-white dark:bg-background">
         <div className="max-w-7xl mx-auto px-6">
           <div className="grid md:grid-cols-2 gap-10">
 
-            {/* News & Events — Notice Board */}
             <motion.div {...fadeUp()}>
-              {/* Board header */}
               <div className="rounded-t-lg bg-[#213361] px-4 py-3 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Megaphone className="h-4 w-4 text-amber-400" />
@@ -255,7 +247,6 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* Scrolling ticker */}
               <div
                 className="border border-t-0 border-[#213361]/30 rounded-b-lg overflow-hidden bg-white dark:bg-gray-900"
                 style={{ height: "272px" }}
@@ -274,9 +265,11 @@ export default function Home() {
                 `}</style>
                 <div className="notice-scroll">
                   {[...news, ...news].map(({ title, description, link, isNew }, i) => (
-                    <div
-                      key={i}
-                      onClick={() => setLocation(link)}
+                    <a
+                      key={`${title}-${i}`}
+                      href={link}
+                      target="_blank"
+                      rel="noreferrer"
                       className="flex items-start gap-3 px-4 py-3.5 border-b border-gray-100 dark:border-gray-800 cursor-pointer hover:bg-amber-50 dark:hover:bg-amber-900/10 transition-colors"
                     >
                       <span className="mt-0.5 h-2 w-2 rounded-full bg-[#213361] shrink-0 animate-pulse" />
@@ -292,7 +285,7 @@ export default function Home() {
                         <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate">{description}</p>
                       </div>
                       <ArrowRight className="h-3.5 w-3.5 text-[#213361]/40 shrink-0 mt-1" />
-                    </div>
+                    </a>
                   ))}
                 </div>
               </div>
@@ -300,7 +293,6 @@ export default function Home() {
               <p className="text-[10px] text-gray-400 mt-2 text-right">Hover to pause scroll</p>
             </motion.div>
 
-            {/* Publication Information */}
             <motion.div {...fadeUp(0.1)}>
               <div className="flex items-center gap-2 mb-6">
                 <h2 className="text-xl font-serif font-bold text-[#213361] dark:text-white">Publication Information</h2>
@@ -335,7 +327,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ━━━━━━━━━━━━━━ PARTNERS ━━━━━━━━━━━━━━ */}
       <section className="w-full py-12 bg-slate-50 dark:bg-slate-950/40">
         <div className="max-w-7xl mx-auto px-6 text-center">
           <motion.div {...fadeUp()} className="mb-8">

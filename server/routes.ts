@@ -266,6 +266,16 @@ Sitemap: https://scholarindiapub.com/sitemap.xml`;
     res.status(404).send('DOI not found');
   });
 
+  app.get('/downloads/SIPHSv1i201.pdf', (req: Request, res: Response) => {
+    const filePath = path.join(process.cwd(), 'public', 'downloads', 'SIPHSv1i201.pdf');
+    res.sendFile(filePath);
+  });
+
+  app.get('/downloads/SIPHSv1i202.pdf', (req: Request, res: Response) => {
+    const filePath = path.join(process.cwd(), 'public', 'downloads', 'SIPHSv1i202.pdf');
+    res.sendFile(filePath);
+  });
+
   // Create HTTP server
   import('http').then((http) => {
     return http.createServer(app);

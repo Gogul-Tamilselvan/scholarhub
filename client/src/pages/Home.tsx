@@ -74,9 +74,13 @@ export default function Home() {
   ];
 
   const news = [
-    { title: "Call for Book Chapters", description: "Publish your research with DOI and ISBN", link: "/book-publication" },
-    { title: "Submit Your Manuscript", description: "Peer review in 10–15 days", link: "/submit" },
-    { title: "Join as a Reviewer", description: "Join our distinguished review panel", link: "/join-reviewer" },
+    { title: "Call for Book Chapters", description: "Publish your research with DOI and ISBN", link: "/call-for-books", isNew: true },
+    { title: "Submit Your Manuscript", description: "Peer review in 10–15 days", link: "/submit", isNew: true },
+    { title: "Join as a Reviewer", description: "Join our distinguished review panel", link: "/join-reviewer", isNew: false },
+    { title: "Conference Special Issue", description: "Open for submissions — conference papers welcome", link: "/conference-seminars", isNew: true },
+    { title: "Open Access Publishing", description: "All articles freely available worldwide at no cost", link: "/about", isNew: false },
+    { title: "Editorial Board Applications", description: "Seeking subject experts to join our review panel", link: "/join-reviewer", isNew: false },
+    { title: "Book Publication with DOI", description: "Get your research book published with ISBN & DOI", link: "/book-publication-info", isNew: true },
   ];
 
   const partners = [
@@ -240,39 +244,66 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-6">
           <div className="grid md:grid-cols-2 gap-10">
 
-            {/* News & Events */}
+            {/* News & Events — Notice Board */}
             <motion.div {...fadeUp()}>
-              <div className="flex items-center gap-2 mb-6">
-                <Megaphone className="h-5 w-5 text-[#213361] dark:text-blue-400" />
-                <h2 className="text-xl font-serif font-bold text-[#213361] dark:text-white">News &amp; Events</h2>
-                <Sparkles className="h-4 w-4 text-amber-500 animate-pulse" />
+              {/* Board header */}
+              <div className="rounded-t-lg bg-[#213361] px-4 py-3 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Megaphone className="h-4 w-4 text-amber-400" />
+                  <span className="text-white font-bold text-sm uppercase tracking-widest">Notice Board</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="relative flex h-2.5 w-2.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
+                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500" />
+                  </span>
+                  <span className="text-red-300 text-[10px] font-bold uppercase tracking-widest">Live</span>
+                </div>
               </div>
-              <div className="space-y-3">
-                {news.map(({ title, description, link }, i) => (
-                  <motion.div key={i} {...fadeUp(i * 0.08)}
-                    className="bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-950/30 dark:to-purple-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-4 relative overflow-hidden"
-                  >
-                    <motion.div
-                      className="absolute inset-0 bg-blue-50/50 dark:bg-blue-400/5 pointer-events-none"
-                      animate={{ opacity: [0, 1, 0] }}
-                      transition={{ duration: 3, repeat: Infinity, delay: i * 1 }}
-                    />
-                    <div className="relative z-10">
-                      <div className="flex items-center gap-2 mb-1">
-                        <div className="h-1.5 w-1.5 rounded-full bg-[#213361] animate-pulse" />
-                        <h4 className="text-sm font-bold text-[#213361] dark:text-blue-200">{title}</h4>
+
+              {/* Scrolling ticker */}
+              <div
+                className="border border-t-0 border-[#213361]/30 rounded-b-lg overflow-hidden bg-white dark:bg-gray-900"
+                style={{ height: "272px" }}
+              >
+                <style>{`
+                  @keyframes noticeScroll {
+                    0%   { transform: translateY(0); }
+                    100% { transform: translateY(-50%); }
+                  }
+                  .notice-scroll {
+                    animation: noticeScroll 18s linear infinite;
+                  }
+                  .notice-scroll:hover {
+                    animation-play-state: paused;
+                  }
+                `}</style>
+                <div className="notice-scroll">
+                  {[...news, ...news].map(({ title, description, link, isNew }, i) => (
+                    <div
+                      key={i}
+                      onClick={() => setLocation(link)}
+                      className="flex items-start gap-3 px-4 py-3.5 border-b border-gray-100 dark:border-gray-800 cursor-pointer hover:bg-amber-50 dark:hover:bg-amber-900/10 transition-colors"
+                    >
+                      <span className="mt-0.5 h-2 w-2 rounded-full bg-[#213361] shrink-0 animate-pulse" />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-sm font-semibold text-[#213361] dark:text-white leading-tight">{title}</span>
+                          {isNew && (
+                            <span className="text-[9px] font-black uppercase tracking-widest bg-red-500 text-white px-1.5 py-0.5 rounded animate-pulse">
+                              NEW
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate">{description}</p>
                       </div>
-                      <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">{description}</p>
-                      <button
-                        onClick={() => setLocation(link)}
-                        className="text-xs font-semibold text-[#213361] dark:text-blue-300 border border-blue-200 hover:bg-blue-50 px-3 py-1.5 rounded-md transition-colors"
-                      >
-                        Learn More →
-                      </button>
+                      <ArrowRight className="h-3.5 w-3.5 text-[#213361]/40 shrink-0 mt-1" />
                     </div>
-                  </motion.div>
-                ))}
+                  ))}
+                </div>
               </div>
+
+              <p className="text-[10px] text-gray-400 mt-2 text-right">Hover to pause scroll</p>
             </motion.div>
 
             {/* Publication Information */}

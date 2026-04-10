@@ -116,9 +116,9 @@ export default function ContactUs() {
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="flex gap-4">
-                  <MapPin className="w-6 h-6 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-1" />
+                  <MapPin className="w-6 h-6 text-[#213361] dark:text-amber-400 flex-shrink-0 mt-1" />
                   <div>
-                    <h3 className="font-semibold text-blue-900 dark:text-blue-300 mb-1">Address</h3>
+                    <h3 className="font-semibold text-[#213361] dark:text-amber-400 mb-1">Address</h3>
                     <p className="text-sm text-gray-900 dark:text-gray-100">
                       Scholar India Publishers<br />
                       2/477, Perumal Kovil Street,<br />
@@ -129,21 +129,21 @@ export default function ContactUs() {
                 </div>
                 
                 <div className="flex gap-4">
-                  <Mail className="w-6 h-6 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-1" />
+                  <Mail className="w-6 h-6 text-[#213361] dark:text-amber-400 flex-shrink-0 mt-1" />
                   <div>
-                    <h3 className="font-semibold text-blue-900 dark:text-blue-300 mb-1">Email</h3>
+                    <h3 className="font-semibold text-[#213361] dark:text-amber-400 mb-1">Email</h3>
                     <a 
                       href="mailto:editor@scholarindiapub.com" 
-                      className="text-sm text-gray-900 dark:text-gray-100 hover:text-blue-600 dark:hover:text-blue-400 hover:underline"
+                      className="text-sm text-gray-900 dark:text-gray-100 hover:text-[#213361] dark:hover:text-amber-400 hover:underline"
                       data-testid="link-contact-email"
                     >editor@scholarindiapub.com</a>
                   </div>
                 </div>
                 
                 <div className="flex gap-4">
-                  <Phone className="w-6 h-6 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-1" />
+                  <Phone className="w-6 h-6 text-[#213361] dark:text-amber-400 flex-shrink-0 mt-1" />
                   <div>
-                    <h3 className="font-semibold text-blue-900 dark:text-blue-300 mb-1">Phone</h3>
+                    <h3 className="font-semibold text-[#213361] dark:text-amber-400 mb-1">Phone</h3>
                     <p className="text-sm text-gray-900 dark:text-gray-100">
                       Available via email
                     </p>

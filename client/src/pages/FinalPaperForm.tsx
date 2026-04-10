@@ -1419,7 +1419,7 @@ export default function FinalPaperForm() {
         {showAlert.type === "copyright" && showAlert.visible && (
           <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4">
             <Card className="max-w-2xl w-full shadow-2xl">
-              <CardHeader className="bg-blue-600 text-white rounded-t-lg overflow-hidden">
+              <CardHeader className="bg-[#213361] text-white rounded-t-lg overflow-hidden">
                 <CardTitle className="flex items-center gap-3">
                   <CheckCircle className="w-6 h-6" />
                   Submission Confirmation

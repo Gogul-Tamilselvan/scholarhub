@@ -93,7 +93,7 @@ export default function ReviewerLogin() {
       
       <main className="flex-1 bg-background py-12">
         <div className="container mx-auto px-4 max-w-md">
-          <Link href="/" className="inline-flex items-center text-blue-600 hover:text-blue-800 mb-6">
+          <Link href="/" className="inline-flex items-center text-[#213361] hover:text-[#213361]/80 mb-6">
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Home
           </Link>

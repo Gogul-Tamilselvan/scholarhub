@@ -110,9 +110,9 @@ export default function About() {
           className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-16 -mt-24 relative z-10"
         >
           {stats.map((stat, index) => (
-            <Card key={index} className="bg-card border-2 border-blue-200 dark:border-blue-800 text-center">
+            <Card key={index} className="bg-card border-2 border-[#213361]/20 dark:border-[#213361]/40 text-center">
               <CardContent className="p-6">
-                <stat.icon className="h-8 w-8 text-blue-900 dark:text-blue-300 mx-auto mb-3" />
+                <stat.icon className="h-8 w-8 text-[#213361] dark:text-amber-400 mx-auto mb-3" />
                 <div className="text-3xl font-bold text-card-foreground mb-1">{stat.value}</div>
                 <div className="text-sm text-muted-foreground font-medium">{stat.label}</div>
               </CardContent>

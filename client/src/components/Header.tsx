@@ -32,9 +32,6 @@ export default function Header() {
                 className="h-14 w-auto object-contain drop-shadow-md"
               />
               <div className="hidden sm:flex flex-col justify-center gap-0.5">
-                <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-amber-400 leading-none">
-                  Est. 2022
-                </span>
                 <span className="text-[17px] font-serif font-bold text-white leading-tight tracking-wide">
                   Scholar India <span className="text-amber-400">Publishers</span>
                 </span>

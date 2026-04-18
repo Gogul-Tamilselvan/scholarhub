@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { AlertCircle } from 'lucide-react';
+import { supabaseAdmin as supabase } from '@/lib/supabase';
+import { AlertCircle, ExternalLink, FileText } from 'lucide-react';
 
 interface Manuscript {
   id: string;
@@ -7,9 +8,9 @@ interface Manuscript {
   title: string;
   author: string;
   journal: string;
-  submittedDate: string;
+  submitted_at?: string;
   status: string;
-  assignedTo?: string;
+  file_url?: string;
 }
 
 export default function AdminManuscriptsList() {
@@ -24,9 +25,15 @@ export default function AdminManuscriptsList() {
   const loadManuscripts = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/admin/manuscripts');
-      const data = await response.json();
-      setManuscripts(data.manuscripts || []);
+      const { data, error: sbError } = await supabase
+        .from('manuscripts')
+        .select('*')
+        .order('submitted_at', { ascending: false });
+
+      if (sbError) throw new Error(sbError.message);
+      
+      // Map columns if needed
+      setManuscripts(data || []);
     } catch (err: any) {
       setError('Failed to load manuscripts: ' + err.message);
     } finally {
@@ -62,7 +69,7 @@ export default function AdminManuscriptsList() {
               <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Journal</th>
               <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Submitted</th>
               <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Status</th>
-              <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Assigned To</th>
+              <th className="px-4 py-3 text-right text-sm font-semibold text-gray-700 dark:text-gray-300">Document</th>
             </tr>
           </thead>
           <tbody>
@@ -73,29 +80,36 @@ export default function AdminManuscriptsList() {
                   idx % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50 dark:bg-gray-750'
                 }`}
               >
-                <td className="px-4 py-3 text-sm font-mono text-blue-600 dark:text-blue-400">{manuscript.manuscriptId}</td>
-                <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100 max-w-xs truncate">{manuscript.title}</td>
-                <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{manuscript.author}</td>
-                <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{manuscript.journal}</td>
-                <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{manuscript.submittedDate}</td>
+                <td className="px-4 py-3 text-sm font-mono text-blue-600 dark:text-blue-400 font-bold">{manuscript.id}</td>
+                <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100 max-w-xs truncate">{manuscript.manuscript_title || manuscript.title || 'Untitled'}</td>
+                <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{manuscript.author_name || manuscript.author}</td>
+                <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400 max-w-[150px] truncate">{manuscript.journal}</td>
+                <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
+                  {manuscript.submitted_at ? new Date(manuscript.submitted_at).toLocaleDateString() : 'Unknown'}
+                </td>
                 <td className="px-4 py-3 text-sm">
-                  <span className={`px-2 py-1 rounded text-xs font-medium ${
-                    manuscript.status === 'Published'
-                      ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300'
-                      : manuscript.status === 'Rejected'
-                      ? 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300'
-                      : 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300'
+                  <span className={`px-2 py-1 rounded text-xs font-bold uppercase tracking-wider ${
+                    String(manuscript.status).toLowerCase().includes('publish') || String(manuscript.status).toLowerCase().includes('accept')
+                      ? 'bg-green-100 text-green-800'
+                      : String(manuscript.status).toLowerCase().includes('reject')
+                      ? 'bg-red-100 text-red-800'
+                      : 'bg-yellow-100 text-yellow-800'
                   }`}>
-                    {manuscript.status}
+                    {manuscript.status || 'Pending'}
                   </span>
                 </td>
-                <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
-                  {manuscript.assignedTo ? (
-                    <span className="px-2 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300 rounded text-xs">
-                      {manuscript.assignedTo}
-                    </span>
+                <td className="px-4 py-3 text-right">
+                  {manuscript.file_url ? (
+                    <a
+                      href={manuscript.file_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-700 hover:bg-blue-100 hover:text-blue-800 rounded-lg text-xs font-bold transition-colors"
+                    >
+                      <FileText size={14} /> Open S3 Link <ExternalLink size={12} />
+                    </a>
                   ) : (
-                    <span className="text-gray-400 dark:text-gray-500">Not assigned</span>
+                    <span className="text-gray-400 text-xs italic">No S3 Link</span>
                   )}
                 </td>
               </tr>

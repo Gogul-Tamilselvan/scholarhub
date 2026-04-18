@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -105,10 +106,22 @@ export default function ReviewerApplicationForm({ journalTitle, onCancel }: Revi
     }
   };
 
-  const journals = [
-    "Scholar Journal of Commerce and Management",
-    "Scholar Journal of Humanities and Social Sciences"
-  ];
+  const [journals, setJournals] = useState<string[]>([]);
+  
+  useEffect(() => {
+    async function fetchJournals() {
+      const { data, error } = await supabase.from('journals').select('title');
+      if (data && !error && data.length > 0) {
+        setJournals(data.map(j => j.title));
+      } else {
+        setJournals([
+          "Scholar Journal of Commerce and Management",
+          "Scholar Journal of Humanities and Social Sciences"
+        ]);
+      }
+    }
+    fetchJournals();
+  }, []);
 
   const designations = [
     "Professor",
@@ -161,32 +174,7 @@ export default function ReviewerApplicationForm({ journalTitle, onCancel }: Revi
       return;
     }
 
-    // Check if reviewer has already applied for this role
-    try {
-      const checkResponse = await fetch('/api/check-reviewer-exists', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: formData.email,
-          mobile: formData.mobile,
-          role: formData.role,
-          journal: formData.journal
-        })
-      });
-
-      const checkResult = await checkResponse.json();
-      if (checkResult.exists) {
-        toast({
-          title: "Application Limit Reached",
-          description: checkResult.message || `You have already applied for this role. Please review the restrictions and try again.`,
-          variant: "destructive"
-        });
-        return;
-      }
-    } catch (error) {
-      console.error('Error checking reviewer status:', error);
-      // Continue with submission on check error
-    }
+    // Removed API check, handled below by catching unique constraint errors
 
     if (!formData.designation) {
       toast({
@@ -309,77 +297,117 @@ export default function ReviewerApplicationForm({ journalTitle, onCancel }: Revi
     setIsSubmitting(true);
 
     try {
-      // Prepare FormData for submission with file
-      const submissionData = new FormData();
-      submissionData.append("name", formData.name);
-      submissionData.append("email", formData.email);
-      submissionData.append("mobile", formData.mobile);
-      submissionData.append("role", formData.role);
-      submissionData.append("areaOfInterest", formData.areaOfInterest);
-      submissionData.append("journal", formData.journal);
-      submissionData.append("designation", formData.designation);
-      submissionData.append("orcid", formData.orcid);
-      submissionData.append("googleScholar", formData.googleScholar);
-      submissionData.append("institution", formData.institution);
-      submissionData.append("state", formData.state);
-      submissionData.append("district", formData.district);
-      submissionData.append("pinNumber", formData.pinNumber);
-      submissionData.append("nationality", formData.nationality);
-      submissionData.append("messageToEditor", formData.messageToEditor);
-      submissionData.append("institutionalProfilePage", formData.institutionalProfilePage);
-      submissionData.append("submissionType", "reviewer-application");
-      submissionData.append("timestamp", new Date().toISOString());
+      // 1. Generate Smart Custom ID
+      const rolePrefix = formData.role === "Editorial Board Member" ? "EDT" : "REV";
+      const isCommerce = formData.journal.includes("Commerce");
+      const journalCode = isCommerce ? "SJCM" : "SJHSS";
+      const year = new Date().getFullYear().toString().slice(-2);
+      const randomChars = Array.from({ length: 6 }, () => 
+        'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'.charAt(Math.floor(Math.random() * 36))
+      ).join('');
       
-      if (formData.profilePdf) {
-        submissionData.append("profilePdf", formData.profilePdf);
-      }
+      const uniqueId = `${rolePrefix}${journalCode}${year}${randomChars}`;
+      const fileExtension = formData.profilePdf?.name.split('.').pop() || 'pdf';
+      const s3FileName = `reviewers/${uniqueId}.${fileExtension}`;
 
-      // Submit to backend API
-      const response = await fetch('/api/submit-reviewer-application', {
-        method: 'POST',
-        body: submissionData,
+      // 2. Get Pre-signed URL from Edge Function
+      const { data: presignData, error: presignError } = await supabase.functions.invoke('s3-presign', {
+        body: {
+          fileName: s3FileName,
+          fileType: formData.profilePdf.type || 'application/pdf',
+        }
       });
 
-      const result = await response.json();
-
-      if (response.ok) {
-        const { reviewerId: generatedId } = result;
-        setReviewerId(generatedId);
-        setSubmissionSuccess(true);
-        
-        toast({
-          title: "Application submitted successfully!",
-          description: `Your Reviewer ID is: ${generatedId}. Please save this for tracking.`,
-        });
-
-        // Reset form
-        setFormData({
-          name: "",
-          email: "",
-          mobile: "",
-          role: "",
-          areaOfInterest: "",
-          journal: "",
-          designation: "",
-          orcid: "",
-          googleScholar: "",
-          institution: "",
-          state: "",
-          district: "",
-          pinNumber: "",
-          nationality: "",
-          messageToEditor: "",
-          institutionalProfilePage: "",
-          profilePdf: null
-        });
-        
-        // Reset file input
-        const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
-        if (fileInput) fileInput.value = '';
-
-      } else {
-        throw new Error(result.error || 'Application submission failed');
+      if (presignError) {
+        throw new Error("Edge function failed to generate secure URL.");
       }
+
+      const { signedUrl, publicUrl: s3Url } = presignData;
+
+      // 3. Upload actual PDF directly to AWS S3 using the signed URL
+      const arrayBuffer = await formData.profilePdf.arrayBuffer();
+      const uploadResponse = await fetch(signedUrl, {
+        method: "PUT",
+        headers: {
+          "Content-Type": formData.profilePdf.type || 'application/pdf',
+        },
+        body: new Uint8Array(arrayBuffer),
+      });
+
+      if (!uploadResponse.ok) {
+        throw new Error("Failed to upload the document to S3 storage.");
+      }
+
+      // Split name safely
+      const nameParts = formData.name.trim().split(" ");
+      const firstName = nameParts.length > 0 ? nameParts[0] : "";
+      const lastName = nameParts.length > 1 ? nameParts.slice(1).join(" ") : "";
+
+      // 4. Submit to Supabase Database
+      const { data, error } = await supabase
+        .from('reviewers')
+        .insert([{
+          id: uniqueId,
+          first_name: firstName,
+          last_name: lastName,
+          email: formData.email,
+          mobile: formData.mobile,
+          role: formData.role,
+          designation: formData.designation,
+          area_of_interest: formData.areaOfInterest,
+          journal: formData.journal,
+          orcid: formData.orcid,
+          google_scholar: formData.googleScholar,
+          institution: formData.institution,
+          state: formData.state,
+          district: formData.district,
+          pin_number: formData.pinNumber,
+          nationality: formData.nationality,
+          message_to_editor: formData.messageToEditor,
+          profile_pdf_link: s3Url,
+          status: 'pending'
+        }])
+        .select();
+
+      if (error) {
+        if (error.code === '23505') { // Unique constraint violation Code
+          throw new Error("You have already applied using this email address.");
+        }
+        throw new Error(error.message);
+      }
+
+      setReviewerId(uniqueId);
+      setSubmissionSuccess(true);
+      
+      toast({
+        title: "Application submitted successfully!",
+        description: `Your ID is: ${uniqueId}. Please save this for tracking.`,
+      });
+
+      // Reset form
+      setFormData({
+        name: "",
+        email: "",
+        mobile: "",
+        role: "",
+        areaOfInterest: "",
+        journal: "",
+        designation: "",
+        orcid: "",
+        googleScholar: "",
+        institution: "",
+        state: "",
+        district: "",
+        pinNumber: "",
+        nationality: "",
+        messageToEditor: "",
+        institutionalProfilePage: "",
+        profilePdf: null
+      });
+      
+      // Reset file input
+      const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+      if (fileInput) fileInput.value = '';
 
     } catch (error) {
       console.error("Application error:", error);

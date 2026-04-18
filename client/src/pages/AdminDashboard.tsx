@@ -1,3241 +1,2194 @@
 import { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { LogOut, Users, FileText, Send, Send as SendIcon, Zap, CheckCircle, Clock, MessageSquare, ExternalLink, Award, Download, Search, Check, ChevronsUpDown, Loader2, CreditCard, Bell, Trash2, Lock, Mail, Calendar, AlertCircle, CheckCheck, Plus, Edit2, Save } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { 
+  LayoutDashboard, FileText, Users, CheckSquare, 
+  UserPlus, Mail, BookOpen, CreditCard, 
+  LogOut, Bell, RefreshCw,
+  Clock, CheckCircle2,
+  ChevronRight, Laptop, MessageSquare, Plus,
+  Search, Trash2, Loader2, ExternalLink, Filter,
+  MoreVertical, Download, AlertCircle, Calendar,
+  FileCheck, Newspaper, Megaphone, BarChart, History,
+  ListChecks, List, Book, Printer, FileDown, Phone,
+  ChevronsUpDown, Building, Eye, FileSearch,
+  Medal, Ban, GraduationCap, FileWarning, Wallet, Zap,
+  Edit, Check, X, Pause, PlusCircle, Globe, Archive, BookMarked
+} from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { cn } from '@/lib/utils';
+import { supabaseAdmin as supabase } from '@/lib/supabase';
 import SEO from '@/components/SEO';
-import { Textarea } from '@/components/ui/textarea';
-
-// Excel download helper
-const downloadExcel = (data: any[], filename: string) => {
-  const csv = convertToCSV(data);
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-  const link = document.createElement('a');
-  const url = URL.createObjectURL(blob);
-  link.setAttribute('href', url);
-  link.setAttribute('download', filename);
-  link.style.visibility = 'hidden';
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-};
-
-const convertToCSV = (data: any[]) => {
-  if (!data || data.length === 0) return '';
-  const headers = Object.keys(data[0]);
-  const csv = [headers.join(',')];
-  for (const row of data) {
-    const values = headers.map(h => {
-      const v = row[h] || '';
-      return typeof v === 'string' && v.includes(',') ? `"${v}"` : v;
-    });
-    csv.push(values.join(','));
-  }
-  return csv.join('\n');
-};
-
-// Manual Assignment Form Component
-function AdminAssignmentForm({ onAssignmentSuccess }: any) {
-  const { toast } = useToast();
-  const [reviewers, setReviewers] = useState<any[]>([]);
-  const [manuscripts, setManuscripts] = useState<any[]>([]);
-  const [selectedReviewers, setSelectedReviewers] = useState<string[]>([]);
-  const [selectedManuscript, setSelectedManuscript] = useState('');
-  const [notes, setNotes] = useState('');
-  const [dueDate, setDueDate] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [dataLoading, setDataLoading] = useState(true);
-  const [adminEmail, setAdminEmail] = useState('');
-  const [reviewerOpen, setReviewerOpen] = useState(false);
-  const [manuscriptOpen, setManuscriptOpen] = useState(false);
-
-  useEffect(() => {
-    try {
-      const adminSession = localStorage.getItem('adminSession');
-      if (adminSession) {
-        const session = JSON.parse(adminSession);
-        setAdminEmail(session.email);
-      }
-    } catch (err) {
-      console.error('Error reading admin session:', err);
-    }
-    loadFormData();
-  }, []);
-
-  const loadFormData = async () => {
-    try {
-      const [reviewersRes, manuscriptsRes] = await Promise.all([
-        fetch('/api/admin/reviewers-for-assignment', { credentials: 'include' }),
-        fetch('/api/admin/manuscripts-for-assignment', { credentials: 'include' })
-      ]);
-      const reviewersData = await reviewersRes.json();
-      const manuscriptsData = await manuscriptsRes.json();
-      setReviewers(reviewersData.reviewers || []);
-      setManuscripts(manuscriptsData.manuscripts || []);
-    } catch (err) {
-      console.error('Error loading form data:', err);
-      toast({ title: 'Error', description: 'Failed to load reviewers and manuscripts', variant: 'destructive' });
-    } finally {
-      setDataLoading(false);
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (selectedReviewers.length === 0 || !selectedManuscript) {
-      toast({ title: 'Error', description: 'Please select at least one reviewer and a manuscript', variant: 'destructive' });
-      return;
-    }
-
-    if (selectedReviewers.length > 3) {
-      toast({ title: 'Error', description: 'Maximum 3 reviewers can be assigned to a manuscript', variant: 'destructive' });
-      return;
-    }
-
-    if (!dueDate) {
-      toast({ title: 'Error', description: 'Please set a due date for review', variant: 'destructive' });
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const response = await fetch('/api/admin/assign-manuscript', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({
-          reviewerIds: selectedReviewers,
-          manuscriptId: selectedManuscript,
-          notes,
-          dueDate,
-          adminEmail
-        })
-      });
-      const data = await response.json();
-      
-      if (data.success) {
-        toast({ title: 'Success', description: `Manuscript assigned to ${selectedReviewers.length} reviewer(s) successfully!` });
-        setSelectedReviewers([]);
-        setSelectedManuscript('');
-        setNotes('');
-        setDueDate('');
-        onAssignmentSuccess?.();
-        loadFormData();
-      } else {
-        toast({ title: 'Error', description: data.message, variant: 'destructive' });
-      }
-    } catch (err: any) {
-      toast({ title: 'Error', description: err.message, variant: 'destructive' });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  if (dataLoading) return (
-    <div className="text-center py-8">
-      <Loader2 className="w-8 h-8 animate-spin text-blue-600 mx-auto mb-3" />
-      <p className="text-gray-600 dark:text-gray-400">Loading reviewers and manuscripts...</p>
-    </div>
-  );
-
-  const activeReviewers = reviewers.filter((r) => (r.status || r.Status || '').toLowerCase() === 'active');
-  const manuscriptsForAssignment = manuscripts.filter((m) => (m['Status'] || m.status || '').toLowerCase() === 'under review');
-  
-  const selectedManuscriptData = manuscriptsForAssignment.find(m => (m['Manuscript ID'] || m.id) === selectedManuscript);
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Select Reviewers (Max 3)</label>
-        <Popover open={reviewerOpen} onOpenChange={setReviewerOpen}>
-          <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              role="combobox"
-              aria-expanded={reviewerOpen}
-              className="w-full justify-between h-auto min-h-10 py-2"
-              disabled={loading}
-              data-testid="button-select-reviewer"
-            >
-              <div className="flex flex-wrap gap-1">
-                {selectedReviewers.length > 0 ? (
-                  selectedReviewers.map(id => {
-                    const r = activeReviewers.find(rev => (rev.reviewerId || rev['Reviewer ID'] || rev.id) === id);
-                    return (
-                      <Badge key={id} variant="secondary" className="mr-1">
-                        {r?.firstName || r?.['First Name'] || r?.name || id}
-                      </Badge>
-                    );
-                  })
-                ) : (
-                  <span className="text-gray-500">-- Choose Reviewers (2-3 recommended) --</span>
-                )}
-              </div>
-              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-[400px] p-0" align="start">
-            <Command>
-              <CommandInput placeholder="Search reviewer..." data-testid="input-search-reviewer" />
-              <CommandEmpty>No reviewer found.</CommandEmpty>
-              <CommandList>
-                <CommandGroup>
-                  {activeReviewers.map((reviewer) => {
-                    const revId = reviewer.reviewerId || reviewer['Reviewer ID'] || reviewer.id;
-                    const isSelected = selectedReviewers.includes(revId);
-                    return (
-                      <CommandItem
-                        key={revId}
-                        value={revId}
-                        onSelect={() => {
-                          if (isSelected) {
-                            setSelectedReviewers(selectedReviewers.filter(id => id !== revId));
-                          } else if (selectedReviewers.length < 3) {
-                            setSelectedReviewers([...selectedReviewers, revId]);
-                          } else {
-                            toast({ title: "Limit Reached", description: "You can select up to 3 reviewers" });
-                          }
-                        }}
-                        data-testid={`option-reviewer-${revId}`}
-                      >
-                        <Check
-                          className={cn('mr-2 h-4 w-4', isSelected ? 'opacity-100' : 'opacity-0')}
-                        />
-                        <div className="flex flex-col">
-                          <span className="font-medium">{reviewer.firstName || reviewer['First Name'] || reviewer.name} {reviewer.lastName || reviewer['Last Name'] || ''}</span>
-                          <span className="text-xs text-gray-500">{reviewer.email || reviewer['Email']}</span>
-                          {reviewer.institution && <span className="text-[10px] text-gray-400 italic">{reviewer.institution}</span>}
-                        </div>
-                      </CommandItem>
-                    );
-                  })}
-                </CommandGroup>
-              </CommandList>
-            </Command>
-          </PopoverContent>
-        </Popover>
-        {reviewers.length > 0 && activeReviewers.length === 0 && (
-          <p className="text-sm text-red-600 mt-2">No active reviewers available for assignment. Please wait for reviewer applications to be approved.</p>
-        )}
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Select Manuscript</label>
-        <Popover open={manuscriptOpen} onOpenChange={setManuscriptOpen}>
-          <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              role="combobox"
-              aria-expanded={manuscriptOpen}
-              className="w-full justify-between"
-              disabled={loading}
-              data-testid="button-select-manuscript"
-            >
-              {selectedManuscriptData
-                ? `${selectedManuscriptData['Manuscript ID'] || selectedManuscriptData.manuscriptId} - ${selectedManuscriptData['Manuscript Title'] || selectedManuscriptData.title}`
-                : '-- Choose Manuscript --'}
-              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-[400px] p-0" align="start">
-            <Command>
-              <CommandInput placeholder="Search manuscript..." data-testid="input-search-manuscript" />
-              <CommandEmpty>No manuscript found.</CommandEmpty>
-              <CommandList>
-                <CommandGroup>
-                  {manuscriptsForAssignment.map((manuscript) => {
-                    const msId = manuscript['Manuscript ID'] || manuscript.id;
-                    return (
-                    <CommandItem
-                      key={msId}
-                      value={msId}
-                      onSelect={(currentValue) => {
-                        setSelectedManuscript(currentValue === selectedManuscript ? '' : currentValue);
-                        setManuscriptOpen(false);
-                      }}
-                      data-testid={`option-manuscript-${msId}`}
-                    >
-                      <Check
-                        className={cn('mr-2 h-4 w-4', selectedManuscript === msId ? 'opacity-100' : 'opacity-0')}
-                      />
-                      {manuscript['Manuscript ID'] || manuscript.manuscriptId} - {manuscript['Manuscript Title'] || manuscript.title} ({manuscript['Status'] || manuscript.status || 'Unknown'})
-                    </CommandItem>
-                  );
-                  })}
-                </CommandGroup>
-              </CommandList>
-            </Command>
-          </PopoverContent>
-        </Popover>
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Due Date for Review</label>
-        <input
-          type="date"
-          value={dueDate}
-          onChange={(e) => setDueDate(e.target.value)}
-          disabled={loading}
-          data-testid="input-due-date"
-          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-        />
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Notes (Optional)</label>
-        <textarea
-          value={notes}
-          onChange={(e) => setNotes(e.target.value)}
-          disabled={loading}
-          data-testid="input-notes"
-          placeholder="Add any assignment notes..."
-          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 h-24"
-        />
-      </div>
-
-      <Button
-        type="submit"
-        disabled={loading || selectedReviewers.length === 0 || !selectedManuscript || !dueDate}
-        className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-        data-testid="button-assign"
-      >
-        {loading ? 'Assigning...' : `Assign ${selectedReviewers.length > 0 ? selectedReviewers.length : ''} Manuscript`}
-      </Button>
-    </form>
-  );
-}
-
-// Reviewers List Component
-function AdminReviewersList({ roleFilter }: { roleFilter?: string }) {
-  const { toast } = useToast();
-  const [reviewers, setReviewers] = useState<any[]>([]);
-  const [filteredReviewers, setFilteredReviewers] = useState<any[]>([]);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [processingId, setProcessingId] = useState<string | null>(null);
-  const [resetPasswordReviewerId, setResetPasswordReviewerId] = useState<string | null>(null);
-  const [resetPasswordForm, setResetPasswordForm] = useState({ newPassword: '', confirmPassword: '' });
-  const [resetPasswordLoading, setResetPasswordLoading] = useState(false);
-  const [adminEmail, setAdminEmail] = useState('');
-  const [deactivatingId, setDeactivatingId] = useState<string | null>(null);
-
-  useEffect(() => {
-    try {
-      const adminSession = localStorage.getItem('adminSession');
-      if (adminSession) {
-        const session = JSON.parse(adminSession);
-        setAdminEmail(session.email);
-      }
-    } catch (err) {
-      console.error('Error reading admin session:', err);
-    }
-    loadReviewers();
-  }, []);
-
-  useEffect(() => {
-    let filtered = reviewers.filter(r => 
-      r.id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      r.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      `${r.firstName} ${r.lastName}`.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-    
-    // Apply role filter if provided
-    if (roleFilter) {
-      filtered = filtered.filter(r => r.role === roleFilter);
-    }
-    
-    setFilteredReviewers(filtered);
-  }, [searchTerm, reviewers, roleFilter]);
-
-  const loadReviewers = async () => {
-    try {
-      const response = await fetch('/api/admin/reviewers', { credentials: 'include' });
-      const data = await response.json();
-      const normalized = (data.reviewers || []).map((r: any) => ({
-        id: r['Reviewer ID'] || r.reviewerId || r.id,
-        firstName: r['First Name'] || r.firstName,
-        lastName: r['Last Name'] || r.lastName,
-        email: r.Email || r.email,
-        role: r.Role || r.role,
-        journal: r.Journal || r.journal,
-        status: r.Status || r.status,
-        designation: r.Designation || r.designation,
-        institution: r.Institution || r.institution
-      }));
-      setReviewers(normalized);
-    } catch (err) {
-      console.error('Error loading reviewers:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleStatusChange = async (reviewerId: string, newStatus: string) => {
-    setProcessingId(reviewerId);
-    try {
-      const email = adminEmail || localStorage.getItem('adminSession')?.split('"email":"')[1]?.split('"')[0] || 'unknown';
-      const response = await fetch('/api/admin/update-reviewer-status', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ reviewerId, status: newStatus, adminEmail: email })
-      });
-      const data = await response.json();
-
-      if (data.success || response.ok) {
-        toast({ title: 'Success', description: `Reviewer status updated to ${newStatus}` });
-        loadReviewers();
-      } else {
-        toast({ title: 'Error', description: data.error || data.message || 'Failed to update status', variant: 'destructive' });
-      }
-    } catch (err: any) {
-      console.error('Error updating reviewer status:', err);
-      toast({ title: 'Error', description: err.message || 'An error occurred', variant: 'destructive' });
-    } finally {
-      setProcessingId(null);
-    }
-  };
-
-  const handleResetPassword = async () => {
-    if (!resetPasswordForm.newPassword || !resetPasswordForm.confirmPassword) {
-      toast({ title: 'Error', description: 'Please fill in all fields', variant: 'destructive' });
-      return;
-    }
-
-    if (resetPasswordForm.newPassword !== resetPasswordForm.confirmPassword) {
-      toast({ title: 'Error', description: 'Passwords do not match', variant: 'destructive' });
-      return;
-    }
-
-    if (resetPasswordForm.newPassword.length < 8) {
-      toast({ title: 'Error', description: 'Password must be at least 8 characters', variant: 'destructive' });
-      return;
-    }
-
-    setResetPasswordLoading(true);
-    try {
-      // Find the reviewer to get email
-      const reviewer = reviewers.find(r => r.id === resetPasswordReviewerId);
-      if (!reviewer) {
-        toast({ title: 'Error', description: 'Reviewer not found', variant: 'destructive' });
-        return;
-      }
-
-      const response = await fetch('/api/admin/reset-reviewer-password', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ 
-          reviewerId: resetPasswordReviewerId,
-          email: reviewer.email,
-          newPassword: resetPasswordForm.newPassword
-        })
-      });
-      const data = await response.json();
-
-      if (data.success) {
-        toast({ title: 'Success', description: 'Password reset successfully' });
-        setResetPasswordReviewerId(null);
-        setResetPasswordForm({ newPassword: '', confirmPassword: '' });
-        loadReviewers();
-      } else {
-        toast({ title: 'Error', description: data.message || 'Failed to reset password', variant: 'destructive' });
-      }
-    } catch (err: any) {
-      toast({ title: 'Error', description: err.message || 'An error occurred', variant: 'destructive' });
-    } finally {
-      setResetPasswordLoading(false);
-    }
-  };
-
-  const handleDeactivate = async (reviewerId: string) => {
-    if (!confirm('Are you sure you want to deactivate this reviewer? They will no longer be able to access the portal.')) {
-      return;
-    }
-    
-    setDeactivatingId(reviewerId);
-    try {
-      const response = await fetch('/api/admin/deactivate-user', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ reviewerId })
-      });
-      const data = await response.json();
-
-      if (data.success) {
-        toast({ title: 'Success', description: 'Reviewer deactivated successfully' });
-        loadReviewers();
-      } else {
-        toast({ title: 'Error', description: data.message || 'Failed to deactivate reviewer', variant: 'destructive' });
-      }
-    } catch (err: any) {
-      console.error('Error deactivating reviewer:', err);
-      toast({ title: 'Error', description: err.message || 'An error occurred', variant: 'destructive' });
-    } finally {
-      setDeactivatingId(null);
-    }
-  };
-
-  if (loading) return (
-    <div className="text-center py-8">
-      <Loader2 className="w-8 h-8 animate-spin text-blue-600 mx-auto mb-3" />
-      <p className="text-gray-600 dark:text-gray-400">Loading reviewers...</p>
-    </div>
-  );
-  const displayText = roleFilter ? (roleFilter === 'Editor' ? 'editors' : 'editorial board members') : 'reviewers';
-  if (reviewers.length === 0) return (
-    <div className="text-center py-8">
-      <Users className="w-12 h-12 mx-auto text-gray-300 dark:text-gray-600 mb-3" />
-      <p className="text-gray-600 dark:text-gray-400 font-medium">No {displayText} found</p>
-      <p className="text-gray-500 dark:text-gray-500 text-sm mt-1">New applications will appear here automatically</p>
-    </div>
-  );
-  if (filteredReviewers.length === 0) return (
-    <div className="text-center py-8">
-      <Search className="w-10 h-10 mx-auto text-gray-300 dark:text-gray-600 mb-3" />
-      <p className="text-gray-600 dark:text-gray-400 font-medium">No {displayText} matching filters</p>
-      <p className="text-gray-500 dark:text-gray-500 text-sm mt-1">Try adjusting your search or filter criteria</p>
-    </div>
-  );
-
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-2 flex-1">
-        <Search className="w-4 h-4 text-gray-400" />
-        <Input
-          placeholder="Search by ID, email, or name..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          data-testid="input-search-reviewers"
-          className="flex-1"
-        />
-      </div>
-      <div className="overflow-x-auto">
-      <table className="w-full text-xs md:text-sm">
-        <thead className="bg-gray-100 dark:bg-gray-700 border-b border-gray-300 dark:border-gray-600">
-          <tr>
-            <th className="px-2 md:px-4 py-2 md:py-3 text-left text-gray-900 dark:text-gray-100">ID</th>
-            <th className="px-2 md:px-4 py-2 md:py-3 text-left text-gray-900 dark:text-gray-100">Name</th>
-            <th className="px-2 md:px-4 py-2 md:py-3 text-left text-gray-900 dark:text-gray-100">Email</th>
-            <th className="hidden md:table-cell px-2 md:px-4 py-2 md:py-3 text-left text-gray-900 dark:text-gray-100">Role</th>
-            <th className="hidden lg:table-cell px-2 md:px-4 py-2 md:py-3 text-left text-gray-900 dark:text-gray-100">Journal</th>
-            <th className="px-2 md:px-4 py-2 md:py-3 text-left text-gray-900 dark:text-gray-100">Status</th>
-            <th className="px-1 md:px-4 py-2 md:py-3 text-center text-gray-900 dark:text-gray-100">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {filteredReviewers.map((reviewer, idx) => (
-            <tr key={idx} className="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50">
-              <td className="px-2 md:px-4 py-2 md:py-3 text-gray-900 dark:text-gray-100 text-xs md:text-sm" data-testid={`text-reviewer-id-${reviewer.id}`}>{reviewer.id || '-'}</td>
-              <td className="px-2 md:px-4 py-2 md:py-3 text-gray-900 dark:text-gray-100 text-xs md:text-sm" data-testid={`text-reviewer-name-${reviewer.id}`}>{reviewer.firstName} {reviewer.lastName}</td>
-              <td className="px-2 md:px-4 py-2 md:py-3 text-gray-900 dark:text-gray-100 text-xs md:text-sm" data-testid={`text-reviewer-email-${reviewer.id}`}>{reviewer.email}</td>
-              <td className="hidden md:table-cell px-2 md:px-4 py-2 md:py-3 text-gray-900 dark:text-gray-100 text-xs md:text-sm" data-testid={`text-reviewer-role-${reviewer.id}`}>{reviewer.role || '-'}</td>
-              <td className="hidden lg:table-cell px-2 md:px-4 py-2 md:py-3 text-gray-900 dark:text-gray-100 text-xs md:text-sm" data-testid={`text-reviewer-journal-${reviewer.id}`}>{reviewer.journal || '-'}</td>
-              <td className="px-2 md:px-4 py-2 md:py-3">
-                <span className={`px-2 py-1 rounded text-xs font-medium ${
-                  reviewer.status === 'Active' ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300' : 
-                  reviewer.status === 'Hold' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300' :
-                  reviewer.status === 'Rejected' ? 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-300' :
-                  'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
-                }`} data-testid={`badge-status-${reviewer.id}`}>
-                  {reviewer.status || 'Pending'}
-                </span>
-              </td>
-              <td className="px-1 md:px-4 py-2 md:py-3">
-                <div className="flex gap-1 md:gap-2 flex-wrap justify-center items-center">
-                  <Button
-                    size="sm"
-                    variant={reviewer.status === 'Active' ? 'default' : 'outline'}
-                    onClick={() => handleStatusChange(reviewer.id, 'Active')}
-                    disabled={processingId === reviewer.id}
-                    data-testid={`button-status-active-${reviewer.id}`}
-                    className="text-xs px-2 whitespace-nowrap"
-                  >
-                    {processingId === reviewer.id ? '...' : 'Active'}
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant={reviewer.status === 'Hold' ? 'default' : 'outline'}
-                    onClick={() => handleStatusChange(reviewer.id, 'Hold')}
-                    disabled={processingId === reviewer.id}
-                    data-testid={`button-status-hold-${reviewer.id}`}
-                    className="text-xs px-2 border-yellow-300 text-yellow-600 hover:bg-yellow-50 dark:border-yellow-700 dark:text-yellow-400 dark:hover:bg-yellow-900/20 whitespace-nowrap"
-                  >
-                    {processingId === reviewer.id ? '...' : 'Hold'}
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant={reviewer.status === 'Rejected' ? 'default' : 'outline'}
-                    onClick={() => handleStatusChange(reviewer.id, 'Rejected')}
-                    disabled={processingId === reviewer.id}
-                    data-testid={`button-status-rejected-${reviewer.id}`}
-                    className="text-xs px-2 border-red-300 text-red-600 hover:bg-red-50 dark:border-red-700 dark:text-red-400 dark:hover:bg-red-900/20 whitespace-nowrap"
-                  >
-                    {processingId === reviewer.id ? '...' : 'Reject'}
-                  </Button>
-                  {reviewer.status === 'Active' && (
-                    <>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => setResetPasswordReviewerId(reviewer.id)}
-                        data-testid={`button-reset-password-${reviewer.id}`}
-                        className="text-xs border-blue-300 text-blue-600 hover:bg-blue-50 dark:border-blue-700 dark:text-blue-400 dark:hover:bg-blue-900/20 whitespace-nowrap"
-                        title="Reset password manually"
-                      >
-                        <Lock className="w-3 h-3" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleDeactivate(reviewer.id)}
-                        disabled={deactivatingId === reviewer.id}
-                        data-testid={`button-deactivate-${reviewer.id}`}
-                        className="text-xs border-red-300 text-red-600 hover:bg-red-50 dark:border-red-700 dark:text-red-400 dark:hover:bg-red-900/20 whitespace-nowrap"
-                        title="Deactivate reviewer account"
-                      >
-                        {deactivatingId === reviewer.id ? (
-                          <><Loader2 className="w-3 h-3 mr-1 animate-spin" />Deactivating...</>
-                        ) : (
-                          <><Trash2 className="w-3 h-3" /></>
-                        )}
-                      </Button>
-                    </>
-                  )}
-                </div>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-
-      {/* Reset Password Dialog */}
-      <Dialog open={!!resetPasswordReviewerId} onOpenChange={(open) => !open && setResetPasswordReviewerId(null)}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Reset Reviewer Password</DialogTitle>
-            <DialogDescription>Set a new password for this reviewer</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <label className="text-sm font-medium">New Password</label>
-              <Input
-                type="password"
-                placeholder="Enter new password (min 8 chars)"
-                value={resetPasswordForm.newPassword}
-                onChange={(e) => setResetPasswordForm({ ...resetPasswordForm, newPassword: e.target.value })}
-                data-testid="input-reset-password-new"
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium">Confirm Password</label>
-              <Input
-                type="password"
-                placeholder="Confirm password"
-                value={resetPasswordForm.confirmPassword}
-                onChange={(e) => setResetPasswordForm({ ...resetPasswordForm, confirmPassword: e.target.value })}
-                data-testid="input-reset-password-confirm"
-              />
-            </div>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setResetPasswordReviewerId(null);
-                  setResetPasswordForm({ newPassword: '', confirmPassword: '' });
-                }}
-                disabled={resetPasswordLoading}
-                className="flex-1"
-                data-testid="button-reset-password-cancel"
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handleResetPassword}
-                disabled={resetPasswordLoading}
-                className="flex-1"
-                data-testid="button-reset-password-submit"
-              >
-                {resetPasswordLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
-                Reset Password
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-    </div>
-  );
-}
-
-// Assignments Tracking Component
-function AdminAssignmentsList() {
-  const [assignments, setAssignments] = useState<any[]>([]);
-  const [filteredAssignments, setFilteredAssignments] = useState<any[]>([]);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [remindingId, setRemindingId] = useState<string | null>(null);
-  const [revokingId, setRevokingId] = useState<string | null>(null);
-  const { toast } = useToast();
-
-  useEffect(() => {
-    loadAssignments();
-  }, []);
-
-  useEffect(() => {
-    const filtered = assignments.filter(a => 
-      a.reviewerId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      a.manuscriptId?.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-    setFilteredAssignments(filtered);
-  }, [searchTerm, assignments]);
-
-  const loadAssignments = async () => {
-    try {
-      const response = await fetch('/api/admin/assignments', { credentials: 'include' });
-      const data = await response.json();
-      setAssignments(data.assignments || []);
-    } catch (err) {
-      console.error('Error loading assignments:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const sendReminder = async (reviewerId: string, manuscriptId: string, idx: number) => {
-    setRemindingId(`${reviewerId}-${idx}`);
-    try {
-      const response = await fetch('/api/admin/send-task-reminder', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ reviewerId, manuscriptId })
-      });
-      const data = await response.json();
-      if (data.success) {
-        toast({ title: 'Success', description: 'Reminder notification sent to reviewer!' });
-      } else {
-        toast({ title: 'Error', description: data.message || 'Failed to send reminder', variant: 'destructive' });
-      }
-    } catch (error) {
-      console.error('Error sending reminder:', error);
-      toast({ title: 'Error', description: 'Failed to send reminder', variant: 'destructive' });
-    } finally {
-      setRemindingId(null);
-    }
-  };
-
-  const revokeAssignment = async (reviewerId: string, manuscriptId: string, idx: number) => {
-    if (!confirm('Are you sure you want to revoke this assignment?')) return;
-    
-    setRevokingId(`${reviewerId}-${idx}`);
-    try {
-      const response = await fetch('/api/admin/revoke-assignment', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ reviewerId, manuscriptId })
-      });
-      const data = await response.json();
-      if (data.success) {
-        toast({ title: 'Success', description: 'Assignment revoked successfully!' });
-        await loadAssignments();
-      } else {
-        toast({ title: 'Error', description: data.message || 'Failed to revoke assignment', variant: 'destructive' });
-      }
-    } catch (error) {
-      console.error('Error revoking assignment:', error);
-      toast({ title: 'Error', description: 'Failed to revoke assignment', variant: 'destructive' });
-    } finally {
-      setRevokingId(null);
-    }
-  };
-
-  if (loading) return (
-    <div className="text-center py-8">
-      <Loader2 className="w-8 h-8 animate-spin text-blue-600 mx-auto mb-3" />
-      <p className="text-gray-600 dark:text-gray-400">Loading assignments...</p>
-    </div>
-  );
-  if (assignments.length === 0) return (
-    <div className="text-center py-8">
-      <FileText className="w-12 h-12 mx-auto text-gray-300 dark:text-gray-600 mb-3" />
-      <p className="text-gray-600 dark:text-gray-400 font-medium">No assignments found</p>
-      <p className="text-gray-500 dark:text-gray-500 text-sm mt-1">Assignments will appear here after manuscripts are assigned</p>
-    </div>
-  );
-
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-2 flex-1">
-        <Search className="w-4 h-4 text-gray-400" />
-        <Input
-          placeholder="Search by reviewer ID or manuscript ID..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          data-testid="input-search-assignments"
-          className="flex-1"
-        />
-      </div>
-      <div className="overflow-x-auto">
-      <table className="w-full text-sm">
-        <thead className="bg-gray-100 dark:bg-gray-700 border-b border-gray-300 dark:border-gray-600">
-          <tr>
-            <th className="px-4 py-3 text-left text-gray-900 dark:text-gray-100">Reviewer ID</th>
-            <th className="px-4 py-3 text-left text-gray-900 dark:text-gray-100">Manuscript ID</th>
-            <th className="px-4 py-3 text-left text-gray-900 dark:text-gray-100">Assigned Date</th>
-            <th className="px-4 py-3 text-left text-gray-900 dark:text-gray-100">Due Date</th>
-            <th className="px-4 py-3 text-left text-gray-900 dark:text-gray-100">Status</th>
-            <th className="px-4 py-3 text-left text-gray-900 dark:text-gray-100">Marks</th>
-            <th className="px-4 py-3 text-left text-gray-900 dark:text-gray-100">Recommendation</th>
-            <th className="px-4 py-3 text-left text-gray-900 dark:text-gray-100">Notes</th>
-            <th className="px-4 py-3 text-center text-gray-900 dark:text-gray-100">Action</th>
-          </tr>
-        </thead>
-        <tbody>
-          {filteredAssignments.map((assignment, idx) => (
-            <tr key={idx} className="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50">
-              <td className="px-4 py-3 text-gray-900 dark:text-gray-100 font-medium" data-testid={`text-reviewer-id-${idx}`}>{assignment.reviewerId}</td>
-              <td className="px-4 py-3 text-gray-900 dark:text-gray-100" data-testid={`text-ms-id-${idx}`}>{assignment.manuscriptId}</td>
-              <td className="px-4 py-3 text-gray-900 dark:text-gray-100 text-xs" data-testid={`text-assigned-${idx}`}>{assignment.assignedAt}</td>
-              <td className="px-4 py-3 text-gray-900 dark:text-gray-100" data-testid={`text-due-${idx}`}>{assignment.dueDate}</td>
-              <td className="px-4 py-3">
-                <span className={`px-2 py-1 rounded text-xs font-medium flex items-center gap-1 w-fit ${
-                  assignment.status === 'Completed' ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300' : 
-                  'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-300'
-                }`} data-testid={`badge-status-${idx}`}>
-                  {assignment.status === 'Completed' ? <CheckCircle className="w-3 h-3" /> : <Clock className="w-3 h-3" />}
-                  {assignment.status}
-                </span>
-              </td>
-              <td className="px-4 py-3 text-gray-900 dark:text-gray-100" data-testid={`text-marks-${idx}`}>{assignment.overallMarks || '-'}</td>
-              <td className="px-4 py-3 text-gray-900 dark:text-gray-100 text-xs" data-testid={`text-recommendation-${idx}`}>{assignment.recommendation || '-'}</td>
-              <td className="px-4 py-3 text-gray-700 dark:text-gray-300 text-xs max-w-xs truncate" data-testid={`text-notes-${idx}`} title={assignment.notes}>{assignment.notes}</td>
-              <td className="px-4 py-3 text-center">
-                <div className="flex gap-2 justify-center items-center flex-wrap">
-                  {assignment.status !== 'Completed' && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => sendReminder(assignment.reviewerId, assignment.manuscriptId, idx)}
-                      disabled={remindingId === `${assignment.reviewerId}-${idx}`}
-                      className="bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-900/40 whitespace-nowrap"
-                      data-testid={`button-remind-${idx}`}
-                    >
-                      {remindingId === `${assignment.reviewerId}-${idx}` ? (
-                        <><Loader2 className="w-3 h-3 mr-1 animate-spin" />Sending...</>
-                      ) : (
-                        <><Bell className="w-3 h-3 mr-1" />Remind</>
-                      )}
-                    </Button>
-                  )}
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => revokeAssignment(assignment.reviewerId, assignment.manuscriptId, idx)}
-                    disabled={revokingId === `${assignment.reviewerId}-${idx}`}
-                    className="bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/40 whitespace-nowrap"
-                    data-testid={`button-revoke-${idx}`}
-                  >
-                    {revokingId === `${assignment.reviewerId}-${idx}` ? (
-                      <><Loader2 className="w-3 h-3 mr-1 animate-spin" />Revoking...</>
-                    ) : (
-                      <><Trash2 className="w-3 h-3 mr-1" />Revoke</>
-                    )}
-                  </Button>
-                </div>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-    </div>
-  );
-}
-
-// Reviewer Messages Component with Thread View and Reply
-function AdminReviewerMessages() {
-  const { toast } = useToast();
-  const [threads, setThreads] = useState<any[]>([]);
-  const [filteredThreads, setFilteredThreads] = useState<any[]>([]);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [selectedThread, setSelectedThread] = useState<any>(null);
-  const [replyMessage, setReplyMessage] = useState('');
-  const [sendingReply, setSendingReply] = useState(false);
-  const [adminEmail, setAdminEmail] = useState('');
-
-  useEffect(() => {
-    try {
-      const adminSession = localStorage.getItem('adminSession');
-      if (adminSession) {
-        const session = JSON.parse(adminSession);
-        setAdminEmail(session.email);
-      }
-    } catch (err) {
-      console.error('Error reading admin session:', err);
-    }
-    loadThreads();
-  }, []);
-
-  useEffect(() => {
-    // Filter: only unread messages (where latest message is from reviewer) + search term
-    const unreadThreads = threads.filter(t => {
-      const latestMessage = t.messages?.[t.messages.length - 1];
-      return latestMessage?.type === 'reviewer';
-    });
-    
-    const filtered = unreadThreads.filter(t => 
-      t.reviewerId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      t.manuscriptId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      t.reviewerName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      t.messages?.some((m: any) => m.message?.toLowerCase().includes(searchTerm.toLowerCase()))
-    );
-    setFilteredThreads(filtered);
-  }, [searchTerm, threads]);
-
-  const loadThreads = async () => {
-    try {
-      const response = await fetch('/api/admin/message-threads', { credentials: 'include' });
-      const data = await response.json();
-      setThreads(data.threads || []);
-    } catch (err) {
-      console.error('Error loading message threads:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSendReply = async () => {
-    if (!replyMessage.trim() || !selectedThread) return;
-
-    setSendingReply(true);
-    try {
-      const response = await fetch('/api/admin/reply-to-message', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({
-          reviewerId: selectedThread.reviewerId,
-          manuscriptId: selectedThread.manuscriptId,
-          message: replyMessage,
-          adminEmail: adminEmail
-        })
-      });
-
-      const data = await response.json();
-      if (data.success) {
-        toast({ title: 'Reply Sent', description: 'Your reply has been sent to the reviewer.' });
-        setReplyMessage('');
-        await loadThreads();
-        // Refresh selected thread
-        const updatedThread = threads.find(t => 
-          t.reviewerId === selectedThread.reviewerId && t.manuscriptId === selectedThread.manuscriptId
-        );
-        if (updatedThread) {
-          setSelectedThread(updatedThread);
-        }
-      } else {
-        toast({ title: 'Error', description: data.message, variant: 'destructive' });
-      }
-    } catch (err: any) {
-      toast({ title: 'Error', description: 'Failed to send reply', variant: 'destructive' });
-    } finally {
-      setSendingReply(false);
-    }
-  };
-
-  if (loading) return <div className="text-center py-8">Loading message threads...</div>;
-  
-  const unreadThreads = threads.filter(t => {
-    const latestMessage = t.messages?.[t.messages.length - 1];
-    return latestMessage?.type === 'reviewer';
-  });
-  
-  if (unreadThreads.length === 0) return <div className="text-center py-8 text-gray-600">No unread reviewer messages yet</div>;
-
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-2 flex-1">
-        <Search className="w-4 h-4 text-gray-400" />
-        <Input
-          placeholder="Search by reviewer ID, manuscript ID, name, or message..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          data-testid="input-search-messages"
-          className="flex-1"
-        />
-      </div>
-
-      <div className="grid md:grid-cols-2 gap-4">
-        {/* Thread List */}
-        <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
-          <div className="bg-gray-100 dark:bg-gray-800 px-4 py-3 border-b border-gray-200 dark:border-gray-700">
-            <h4 className="font-semibold text-gray-900 dark:text-gray-100">Unread Conversations ({filteredThreads.length})</h4>
-          </div>
-          <div className="max-h-[500px] overflow-y-auto">
-            {filteredThreads.map((thread, idx) => (
-              <button
-                key={`${thread.reviewerId}-${thread.manuscriptId}`}
-                onClick={() => setSelectedThread(thread)}
-                className={`w-full p-4 text-left border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors ${
-                  selectedThread?.reviewerId === thread.reviewerId && selectedThread?.manuscriptId === thread.manuscriptId
-                    ? 'bg-blue-50 dark:bg-blue-900/20 border-l-4 border-l-blue-500'
-                    : ''
-                }`}
-                data-testid={`button-thread-${idx}`}
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-gray-900 dark:text-gray-100 truncate">{thread.reviewerName}</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 font-mono">{thread.reviewerId}</p>
-                    <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">MS: {thread.manuscriptId}</p>
-                  </div>
-                  <div className="text-right flex-shrink-0">
-                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300">
-                      {thread.messages?.length || 0} msgs
-                    </span>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{thread.latestMessage?.split(',')[0]}</p>
-                  </div>
-                </div>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Thread Detail / Conversation */}
-        <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
-          {selectedThread ? (
-            <>
-              <div className="bg-gray-100 dark:bg-gray-800 px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
-                <div>
-                  <h4 className="font-semibold text-gray-900 dark:text-gray-100">{selectedThread.reviewerName}</h4>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    {selectedThread.reviewerId} | MS: {selectedThread.manuscriptId}
-                  </p>
-                </div>
-                {selectedThread.readByBoth && (
-                  <div className="flex items-center gap-1 text-green-600 dark:text-green-400 text-xs font-medium">
-                    <CheckCheck className="w-4 h-4" />
-                    <span>Read</span>
-                  </div>
-                )}
-              </div>
-              <div className="max-h-[350px] overflow-y-auto p-4 space-y-3" onMouseEnter={() => {
-                if (selectedThread && !selectedThread.readByBoth) {
-                  fetch('/api/admin/message-read', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({reviewerId: selectedThread.reviewerId, manuscriptId: selectedThread.manuscriptId})
-                  }).catch(e => console.error('Error marking as read:', e));
-                }
-              }}>
-                {selectedThread.messages?.map((msg: any, idx: number) => (
-                  <div
-                    key={idx}
-                    className={`p-3 rounded-lg max-w-[85%] ${
-                      msg.type === 'admin'
-                        ? 'bg-blue-100 dark:bg-blue-900/30 ml-auto text-right'
-                        : 'bg-gray-100 dark:bg-gray-800'
-                    }`}
-                    data-testid={`message-${idx}`}
-                  >
-                    <div className="flex items-center gap-2 mb-1 justify-between">
-                      <span className={`text-xs font-medium ${
-                        msg.type === 'admin' ? 'text-blue-700 dark:text-blue-300' : 'text-gray-600 dark:text-gray-400'
-                      }`}>
-                        {msg.type === 'admin' ? 'Admin' : msg.sender}
-                      </span>
-                      <span className="text-xs text-gray-500">{msg.submittedAt}</span>
-                    </div>
-                    <p className="text-sm text-gray-800 dark:text-gray-200">{msg.message}</p>
-                  </div>
-                ))}
-              </div>
-              <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="Type your reply..."
-                    value={replyMessage}
-                    onChange={(e) => setReplyMessage(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && !sendingReply && handleSendReply()}
-                    disabled={sendingReply}
-                    data-testid="input-reply-message"
-                    className="flex-1"
-                  />
-                  <Button
-                    onClick={handleSendReply}
-                    disabled={sendingReply || !replyMessage.trim()}
-                    data-testid="button-send-reply"
-                  >
-                    {sendingReply ? <Loader2 className="w-4 h-4 animate-spin" /> : <SendIcon className="w-4 h-4" />}
-                  </Button>
-                </div>
-              </div>
-            </>
-          ) : (
-            <div className="flex items-center justify-center h-[450px] text-gray-500 dark:text-gray-400">
-              <div className="text-center">
-                <MessageSquare className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                <p>Select a conversation to view messages</p>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// Reusable Approval Component
-function ApprovalCard({ items, title, emptyTitle, emptyDesc, onStatusChange, processingId }: any) {
-  const { toast } = useToast();
-  const [loading, setLoading] = useState(true);
-  const [data, setData] = useState(items);
-
-  useEffect(() => {
-    setData(items);
-    setLoading(false);
-  }, [items]);
-
-  const handleStatusChange = async (itemId: string, status: string) => {
-    await onStatusChange(itemId, status);
-  };
-
-  if (loading) return <div className="text-center py-8">Loading {title.toLowerCase()}...</div>;
-  if (data.length === 0) return (
-    <div className="text-center py-12 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
-      <Award className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-      <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-2">{emptyTitle}</h3>
-      <p className="text-gray-500 dark:text-gray-400">{emptyDesc}</p>
-    </div>
-  );
-
-  return (
-    <div className="space-y-4">
-      <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
-        <p className="text-sm text-amber-800 dark:text-amber-200">
-          <strong>{data.length}</strong> {title.toLowerCase()} awaiting approval. Click Approve to activate or use Hold/Reject to change status.
-        </p>
-      </div>
-
-      {data.map((item: any, idx: number) => (
-        <Card key={idx} className="border border-gray-200 dark:border-gray-700">
-          <CardHeader className="pb-3">
-            <div className="flex items-start justify-between gap-4">
-              <div className="flex-1">
-                <CardTitle className="text-lg">{item.name}</CardTitle>
-                <div className="space-y-1 mt-2 text-sm">
-                  <p className="text-gray-600 dark:text-gray-400">ID: <span className="font-mono font-medium">{item.id}</span></p>
-                  <p className="text-gray-600 dark:text-gray-400">Email: <span className="font-medium">{item.email}</span></p>
-                  <p className="text-gray-600 dark:text-gray-400">Institution: <span className="font-medium">{item.institution || '-'}</span></p>
-                  <p className="text-gray-600 dark:text-gray-400">Journal: <span className="font-medium">{item.journal}</span></p>
-                </div>
-              </div>
-              <span className={`px-3 py-1 rounded-full text-sm font-medium whitespace-nowrap ${
-                item.status === 'Active' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' :
-                item.status === 'Hold' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300' :
-                'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300'
-              }`}>
-                {item.status}
-              </span>
-            </div>
-          </CardHeader>
-
-          <CardContent className="space-y-4">
-            {/* ORCID and Google Scholar Links */}
-            <div className="flex flex-wrap gap-3 pb-4 border-b border-gray-200 dark:border-gray-700">
-              {item.orcid && (
-                <a
-                  href={item.orcid}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-3 py-2 rounded-md bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-300 hover:bg-green-100 dark:hover:bg-green-900/40 transition-colors"
-                  data-testid={`link-orcid-${item.id}`}
-                >
-                  <ExternalLink className="w-4 h-4" />
-                  ORCID Profile
-                </a>
-              )}
-              {item.googleScholar && (
-                <a
-                  href={item.googleScholar}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-3 py-2 rounded-md bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors"
-                  data-testid={`link-scholar-${item.id}`}
-                >
-                  <ExternalLink className="w-4 h-4" />
-                  Google Scholar
-                </a>
-              )}
-              {!item.orcid && !item.googleScholar && (
-                <span className="text-xs text-gray-500 dark:text-gray-400">No profile links provided</span>
-              )}
-            </div>
-
-            {/* Status Change Buttons */}
-            <div className="flex flex-wrap gap-3">
-              <Button
-                onClick={() => handleStatusChange(item.id, 'Active')}
-                disabled={processingId === item.id}
-                className="bg-green-600 hover:bg-green-700 text-white flex items-center gap-2"
-                data-testid={`button-approve-${item.id}`}
-              >
-                <CheckCircle className="w-4 h-4" />
-                {processingId === item.id ? 'Processing...' : 'Approve'}
-              </Button>
-              <Button
-                onClick={() => handleStatusChange(item.id, 'Hold')}
-                disabled={processingId === item.id}
-                variant="outline"
-                className="border-yellow-300 text-yellow-600 hover:bg-yellow-50 dark:border-yellow-700 dark:text-yellow-400 dark:hover:bg-yellow-900/20 flex items-center gap-2"
-                data-testid={`button-hold-${item.id}`}
-              >
-                <Clock className="w-4 h-4" />
-                Hold
-              </Button>
-              <Button
-                onClick={() => handleStatusChange(item.id, 'Rejected')}
-                disabled={processingId === item.id}
-                variant="outline"
-                className="border-red-300 text-red-600 hover:bg-red-50 dark:border-red-700 dark:text-red-400 dark:hover:bg-red-900/20 flex items-center gap-2"
-                data-testid={`button-reject-${item.id}`}
-              >
-                <Clock className="w-4 h-4" />
-                Reject
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      ))}
-    </div>
-  );
-}
-
-// Reviewer Approvals Component
-function AdminReviewerApprovals() {
-  const { toast } = useToast();
-  const [reviewers, setReviewers] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [processingId, setProcessingId] = useState<string | null>(null);
-  const [adminEmail, setAdminEmail] = useState('');
-
-  useEffect(() => {
-    try {
-      const adminSession = localStorage.getItem('adminSession');
-      if (adminSession) {
-        const session = JSON.parse(adminSession);
-        setAdminEmail(session.email);
-      }
-    } catch (err) {
-      console.error('Error reading admin session:', err);
-    }
-    loadReviewersForApproval();
-  }, []);
-
-  const loadReviewersForApproval = async () => {
-    try {
-      const response = await fetch('/api/admin/reviewers-for-approval', { credentials: 'include' });
-      const data = await response.json();
-      const normalized = (data.reviewers || []).map((r: any) => ({
-        id: r['Reviewer ID'] || r.reviewerId || r.id,
-        firstName: r['First Name'] || r.firstName,
-        lastName: r['Last Name'] || r.lastName,
-        email: r.Email || r.email,
-        designation: r.Designation || r.designation,
-        institution: r.Institution || r.institution,
-        areaOfInterest: r['Area of Interest'] || r.areaOfInterest
-      }));
-      setReviewers(normalized);
-    } catch (err) {
-      console.error('Error loading reviewers for approval:', err);
-      toast({ title: 'Error', description: 'Failed to load reviewers', variant: 'destructive' });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleStatusChange = async (reviewerId: string, status: string) => {
-    setProcessingId(reviewerId);
-    try {
-      const email = adminEmail || localStorage.getItem('adminSession')?.split('"email":"')[1]?.split('"')[0] || 'unknown';
-      const response = await fetch('/api/admin/update-reviewer-status', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ reviewerId, status, adminEmail: email })
-      });
-      const data = await response.json();
-
-      if (data.success || response.ok) {
-        toast({ title: 'Success', description: `Reviewer status updated to ${status}` });
-        loadReviewersForApproval();
-      } else {
-        toast({ title: 'Error', description: data.error || data.message || 'Failed to update status', variant: 'destructive' });
-      }
-    } catch (err: any) {
-      console.error('Error updating reviewer status:', err);
-      toast({ title: 'Error', description: err.message || 'An error occurred', variant: 'destructive' });
-    } finally {
-      setProcessingId(null);
-    }
-  };
-
-  if (loading) return <div className="text-center py-8">Loading reviewers for approval...</div>;
-  if (reviewers.length === 0) return (
-    <div className="text-center py-12 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
-      <Award className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-      <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-2">No Pending Reviewer Approvals</h3>
-      <p className="text-gray-500 dark:text-gray-400">All reviewer applications have been processed.</p>
-    </div>
-  );
-
-  return <ApprovalCard items={reviewers} title="Reviewer(s)" emptyTitle="No Pending Approvals" emptyDesc="All reviewer applications have been processed." onStatusChange={handleStatusChange} processingId={processingId} />;
-}
-
-// Editorial Board Approvals Component
-function AdminEditorialBoardApprovals() {
-  const { toast } = useToast();
-  const [members, setMembers] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [processingId, setProcessingId] = useState<string | null>(null);
-  const [adminEmail, setAdminEmail] = useState('');
-
-  useEffect(() => {
-    try {
-      const adminSession = localStorage.getItem('adminSession');
-      if (adminSession) {
-        const session = JSON.parse(adminSession);
-        setAdminEmail(session.email);
-      }
-    } catch (err) {
-      console.error('Error reading admin session:', err);
-    }
-    loadEditorialBoardForApproval();
-  }, []);
-
-  const loadEditorialBoardForApproval = async () => {
-    try {
-      const response = await fetch('/api/admin/editorial-board-for-approval', { credentials: 'include' });
-      const data = await response.json();
-      const normalized = (data.members || []).map((m: any) => ({
-        id: m['Reviewer ID'] || m.reviewerId || m.id,
-        firstName: m['First Name'] || m.firstName,
-        lastName: m['Last Name'] || m.lastName,
-        email: m.Email || m.email,
-        designation: m.Designation || m.designation,
-        institution: m.Institution || m.institution,
-        areaOfInterest: m['Area of Interest'] || m.areaOfInterest
-      }));
-      setMembers(normalized);
-    } catch (err) {
-      console.error('Error loading editorial board for approval:', err);
-      toast({ title: 'Error', description: 'Failed to load editorial board members', variant: 'destructive' });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleStatusChange = async (memberId: string, status: string) => {
-    setProcessingId(memberId);
-    try {
-      const email = adminEmail || localStorage.getItem('adminSession')?.split('"email":"')[1]?.split('"')[0] || 'unknown';
-      const response = await fetch('/api/admin/update-reviewer-status', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ reviewerId: memberId, status, adminEmail: email })
-      });
-      const data = await response.json();
-
-      if (data.success || response.ok) {
-        toast({ title: 'Success', description: `Editorial board member status updated to ${status}` });
-        loadEditorialBoardForApproval();
-      } else {
-        toast({ title: 'Error', description: data.error || data.message || 'Failed to update status', variant: 'destructive' });
-      }
-    } catch (err: any) {
-      console.error('Error updating editorial board status:', err);
-      toast({ title: 'Error', description: err.message || 'An error occurred', variant: 'destructive' });
-    } finally {
-      setProcessingId(null);
-    }
-  };
-
-  if (loading) return <div className="text-center py-8">Loading editorial board members for approval...</div>;
-  if (members.length === 0) return (
-    <div className="text-center py-12 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
-      <Award className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-      <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-2">No Pending Editorial Board Approvals</h3>
-      <p className="text-gray-500 dark:text-gray-400">All editorial board applications have been processed.</p>
-    </div>
-  );
-
-  return <ApprovalCard items={members} title="Editorial Board Member(s)" emptyTitle="No Pending Approvals" emptyDesc="All editorial board applications have been processed." onStatusChange={handleStatusChange} processingId={processingId} />;
-}
-
-// Deadline Calendar Component
-function AdminDeadlineCalendar() {
-  const [calendarData, setCalendarData] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [filterStatus, setFilterStatus] = useState('all');
-
-  useEffect(() => {
-    loadCalendarData();
-  }, []);
-
-  const loadCalendarData = async () => {
-    try {
-      const response = await fetch('/api/admin/deadline-calendar', { credentials: 'include' });
-      const data = await response.json();
-      if (data.success) {
-        setCalendarData(data.calendarData || []);
-      }
-    } catch (err) {
-      console.error('Error loading calendar:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const filteredData = calendarData.filter(day => {
-    if (filterStatus === 'overdue') return day.isPast;
-    if (filterStatus === 'upcoming') return !day.isPast;
-    return true;
-  });
-
-  const upcomingCount = calendarData.filter(d => !d.isPast).reduce((sum, d) => sum + d.count, 0);
-  const overdueCount = calendarData.filter(d => d.isPast).reduce((sum, d) => sum + d.count, 0);
-
-  if (loading) return <div className="text-center py-8">Loading calendar...</div>;
-
-  return (
-    <div className="space-y-6">
-      <div className="grid md:grid-cols-3 gap-4">
-        <div className="bg-gradient-to-br from-blue-100 to-blue-50 dark:from-blue-900/30 dark:to-blue-900/10 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-          <p className="text-xs font-semibold text-blue-600 dark:text-blue-400 uppercase mb-1">Total Deadlines</p>
-          <p className="text-3xl font-bold text-blue-900 dark:text-blue-100">{calendarData.reduce((sum, d) => sum + d.count, 0)}</p>
-        </div>
-        <div className="bg-gradient-to-br from-amber-100 to-amber-50 dark:from-amber-900/30 dark:to-amber-900/10 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
-          <p className="text-xs font-semibold text-amber-600 dark:text-amber-400 uppercase mb-1">Overdue</p>
-          <p className="text-3xl font-bold text-amber-900 dark:text-amber-100">{overdueCount}</p>
-        </div>
-        <div className="bg-gradient-to-br from-green-100 to-green-50 dark:from-green-900/30 dark:to-green-900/10 border border-green-200 dark:border-green-800 rounded-lg p-4">
-          <p className="text-xs font-semibold text-green-600 dark:text-green-400 uppercase mb-1">Upcoming</p>
-          <p className="text-3xl font-bold text-green-900 dark:text-green-100">{upcomingCount}</p>
-        </div>
-      </div>
-
-      <div className="flex gap-2 mb-4">
-        <Button
-          variant={filterStatus === 'all' ? 'default' : 'outline'}
-          onClick={() => setFilterStatus('all')}
-          size="sm"
-          data-testid="button-filter-all"
-        >
-          All Deadlines
-        </Button>
-        <Button
-          variant={filterStatus === 'overdue' ? 'default' : 'outline'}
-          onClick={() => setFilterStatus('overdue')}
-          size="sm"
-          data-testid="button-filter-overdue"
-        >
-          Overdue
-        </Button>
-        <Button
-          variant={filterStatus === 'upcoming' ? 'default' : 'outline'}
-          onClick={() => setFilterStatus('upcoming')}
-          size="sm"
-          data-testid="button-filter-upcoming"
-        >
-          Upcoming
-        </Button>
-      </div>
-
-      {filteredData.length === 0 ? (
-        <Card>
-          <CardContent className="text-center py-8 text-gray-600 dark:text-gray-400">
-            No deadlines found
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="space-y-4">
-          {filteredData.map((day, dayIdx) => (
-            <Card key={dayIdx} className={day.isPast ? 'border-amber-300 dark:border-amber-700' : ''} data-testid={`card-deadline-${dayIdx}`}>
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <Calendar className={`w-5 h-5 ${day.isPast ? 'text-amber-600 dark:text-amber-400' : 'text-blue-600 dark:text-blue-400'}`} />
-                    <div>
-                      <CardTitle className="text-lg">
-                        {new Date(day.date).toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-                      </CardTitle>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
-                        {day.isPast && <span className="text-amber-600 dark:text-amber-400">⚠️ Overdue</span>}
-                      </p>
-                    </div>
-                  </div>
-                  <Badge className={day.isPast ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300' : 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300'}>
-                    {day.count} assignment{day.count !== 1 ? 's' : ''}
-                  </Badge>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {day.assignments.map((assignment: any, idx: number) => (
-                  <div key={idx} className="border rounded-lg p-3 bg-gray-50 dark:bg-gray-800/50" data-testid={`item-assignment-${dayIdx}-${idx}`}>
-                    <div className="flex items-start justify-between gap-3 mb-2">
-                      <div className="flex-1">
-                        <p className="font-semibold text-sm">{assignment.manuscript?.title || 'N/A'}</p>
-                        <p className="text-xs text-gray-600 dark:text-gray-400">{assignment.manuscript?.journal}</p>
-                      </div>
-                      <Badge className={
-                        assignment.status === 'Completed' 
-                          ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
-                          : assignment.status === 'Rejected'
-                          ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300'
-                          : 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300'
-                      }>
-                        {assignment.status}
-                      </Badge>
-                    </div>
-                    <div className="space-y-1 text-xs">
-                      <p><span className="font-semibold">Reviewer:</span> {assignment.reviewer?.firstName} {assignment.reviewer?.lastName}</p>
-                      <p><span className="font-semibold">Manuscript ID:</span> {assignment.manuscriptId}</p>
-                      <p><span className="font-semibold">Assigned:</span> {new Date(assignment.assignedAt).toLocaleDateString('en-IN')}</p>
-                      {assignment.notes && <p><span className="font-semibold">Notes:</span> {assignment.notes}</p>}
-                    </div>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// Reviewer Performance Dashboard Component
-function AdminReviewerPerformance() {
-  const [metrics, setMetrics] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    loadMetrics();
-  }, []);
-
-  const loadMetrics = async () => {
-    try {
-      const response = await fetch('/api/admin/reviewer-performance', { credentials: 'include' });
-      const data = await response.json();
-      if (data.success) {
-        setMetrics(data.metrics || []);
-      }
-    } catch (err) {
-      console.error('Error loading performance metrics:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  if (loading) return <div className="text-center py-8">Loading performance metrics...</div>;
-  if (metrics.length === 0) return <div className="text-center py-8 text-gray-600">No reviewer performance data available</div>;
-
-  return (
-    <div className="space-y-6">
-      <div className="grid md:grid-cols-4 gap-4">
-        <div className="bg-gradient-to-br from-blue-100 to-blue-50 dark:from-blue-900/30 dark:to-blue-900/10 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-          <p className="text-xs font-semibold text-blue-600 dark:text-blue-400 uppercase mb-1">Total Reviewers</p>
-          <p className="text-3xl font-bold text-blue-900 dark:text-blue-100">{metrics.length}</p>
-        </div>
-        <div className="bg-gradient-to-br from-green-100 to-green-50 dark:from-green-900/30 dark:to-green-900/10 border border-green-200 dark:border-green-800 rounded-lg p-4">
-          <p className="text-xs font-semibold text-green-600 dark:text-green-400 uppercase mb-1">Avg Completion Rate</p>
-          <p className="text-3xl font-bold text-green-900 dark:text-green-100">{Math.round(metrics.reduce((a, b) => a + b.completionRate, 0) / metrics.length)}%</p>
-        </div>
-        <div className="bg-gradient-to-br from-purple-100 to-purple-50 dark:from-purple-900/30 dark:to-purple-900/10 border border-purple-200 dark:border-purple-800 rounded-lg p-4">
-          <p className="text-xs font-semibold text-purple-600 dark:text-purple-400 uppercase mb-1">Active</p>
-          <p className="text-3xl font-bold text-purple-900 dark:text-purple-100">{metrics.filter(m => m.status === 'Active').length}</p>
-        </div>
-        <div className="bg-gradient-to-br from-amber-100 to-amber-50 dark:from-amber-900/30 dark:to-amber-900/10 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
-          <p className="text-xs font-semibold text-amber-600 dark:text-amber-400 uppercase mb-1">Pending</p>
-          <p className="text-3xl font-bold text-amber-900 dark:text-amber-100">{metrics.filter(m => m.status !== 'Active').length}</p>
-        </div>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Award className="w-5 h-5" />
-            Performance Metrics
-          </CardTitle>
-          <CardDescription>Ranked by completion rate and turnaround time</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b">
-                  <th className="text-left py-3 px-3 font-semibold">Reviewer ID</th>
-                  <th className="text-left py-3 px-3 font-semibold">Name</th>
-                  <th className="text-left py-3 px-3 font-semibold">Status</th>
-                  <th className="text-center py-3 px-3 font-semibold">Assigned</th>
-                  <th className="text-center py-3 px-3 font-semibold">Completed</th>
-                  <th className="text-center py-3 px-3 font-semibold">Completion Rate</th>
-                  <th className="text-center py-3 px-3 font-semibold">Avg Turnaround</th>
-                </tr>
-              </thead>
-              <tbody>
-                {metrics.map((metric, idx) => (
-                  <tr key={idx} className="border-b hover:bg-gray-50 dark:hover:bg-gray-800/50" data-testid={`row-performance-${idx}`}>
-                    <td className="py-3 px-3 font-mono text-xs font-semibold text-blue-700 dark:text-blue-300">{metric.reviewerId}</td>
-                    <td className="py-3 px-3">{metric.firstName} {metric.lastName}</td>
-                    <td className="py-3 px-3">
-                      <Badge className={metric.status === 'Active' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' : 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300'}>
-                        {metric.status}
-                      </Badge>
-                    </td>
-                    <td className="py-3 px-3 text-center font-semibold">{metric.totalAssigned}</td>
-                    <td className="py-3 px-3 text-center font-semibold text-green-700 dark:text-green-300">{metric.completed}</td>
-                    <td className="py-3 px-3">
-                      <div className="flex items-center justify-center gap-2">
-                        <div className="w-20 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                          <div className="bg-blue-600 h-2 rounded-full" style={{width: `${metric.completionRate}%`}}></div>
-                        </div>
-                        <span className="text-xs font-semibold text-blue-700 dark:text-blue-300 w-8 text-right">{metric.completionRate}%</span>
-                      </div>
-                    </td>
-                    <td className="py-3 px-3 text-center text-xs">{metric.avgTurnaroundDays} days</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
-
-// Submitted Reviews Component (for admin review approval)
-function AdminSubmittedReviews() {
-  const { toast } = useToast();
-  const [reviews, setReviews] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [expandedReview, setExpandedReview] = useState<string | null>(null);
-  const [processingId, setProcessingId] = useState<string | null>(null);
-
-  useEffect(() => {
-    loadReviews();
-  }, []);
-
-  const loadReviews = async () => {
-    try {
-      const response = await fetch('/api/admin/submitted-reviews', { credentials: 'include' });
-      const data = await response.json();
-      setReviews(data.reviews || []);
-    } catch (err) {
-      console.error('Error loading submitted reviews:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleAccept = async (reviewerId: string, manuscriptId: string) => {
-    setProcessingId(`${reviewerId}-${manuscriptId}`);
-    try {
-      const response = await fetch('/api/admin/accept-review', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ reviewerId, manuscriptId })
-      });
-      const data = await response.json();
-      if (data.success) {
-        toast({ 
-          title: 'Review Accepted', 
-          description: data.manuscriptAccepted 
-            ? 'Manuscript status updated to Accepted!' 
-            : 'Review marked as completed.'
-        });
-        loadReviews();
-      } else {
-        toast({ title: 'Error', description: data.message, variant: 'destructive' });
-      }
-    } catch (err: any) {
-      toast({ title: 'Error', description: err.message, variant: 'destructive' });
-    } finally {
-      setProcessingId(null);
-    }
-  };
-
-  const handleReject = async (reviewerId: string, manuscriptId: string) => {
-    setProcessingId(`${reviewerId}-${manuscriptId}`);
-    try {
-      const response = await fetch('/api/admin/reject-review', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ reviewerId, manuscriptId })
-      });
-      const data = await response.json();
-      if (data.success) {
-        toast({ title: 'Review Rejected', description: 'Review has been rejected.' });
-        loadReviews();
-      } else {
-        toast({ title: 'Error', description: data.message, variant: 'destructive' });
-      }
-    } catch (err: any) {
-      toast({ title: 'Error', description: err.message, variant: 'destructive' });
-    } finally {
-      setProcessingId(null);
-    }
-  };
-
-  if (loading) return <div className="text-center py-8">Loading submitted reviews...</div>;
-  if (reviews.length === 0) return (
-    <div className="text-center py-12 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
-      <FileText className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-      <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-2">No Pending Reviews</h3>
-      <p className="text-gray-500 dark:text-gray-400">All submitted reviews have been processed.</p>
-    </div>
-  );
-
-  return (
-    <div className="space-y-4">
-      <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-        <p className="text-sm text-blue-800 dark:text-blue-200">
-          <strong>{reviews.length}</strong> review(s) awaiting your approval. Accept 2 reviews for a manuscript to automatically update its status to "Accepted".
-        </p>
-      </div>
-      
-      {reviews.map((review, idx) => {
-        const reviewKey = `${review.reviewerId}-${review.manuscriptId}`;
-        const isExpanded = expandedReview === reviewKey;
-        const isProcessing = processingId === reviewKey;
-        
-        return (
-          <Card key={idx} className="border border-gray-200 dark:border-gray-700">
-            <CardHeader className="pb-2">
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <FileText className="w-5 h-5 text-blue-600" />
-                    {review.manuscriptId}
-                  </CardTitle>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                    Reviewed by: <span className="font-medium">{review.reviewerId}</span> | 
-                    Submitted: <span className="font-medium">{review.submissionDate}</span>
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                    parseInt(review.overallMarks) >= 8 ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' :
-                    parseInt(review.overallMarks) >= 5 ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300' :
-                    'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300'
-                  }`}>
-                    Marks: {review.overallMarks}/10
-                  </span>
-                  <span className="px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
-                    {review.recommendation}
-                  </span>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={() => setExpandedReview(isExpanded ? null : reviewKey)}
-                className="mb-4"
-                data-testid={`button-expand-${idx}`}
-              >
-                {isExpanded ? 'Hide Details' : 'Show Full Review Comments'}
-              </Button>
-              
-              {isExpanded && (
-                <div className="space-y-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4 mb-4">
-                  <div>
-                    <h4 className="font-semibold text-gray-800 dark:text-gray-200 mb-1">Importance of Manuscript</h4>
-                    <p className="text-gray-600 dark:text-gray-400 text-sm">{review.importance || 'Not provided'}</p>
-                  </div>
-                  <div>
-                    <h4 className="font-semibold text-gray-800 dark:text-gray-200 mb-1">Title Feedback</h4>
-                    <p className="text-gray-600 dark:text-gray-400 text-sm">{review.titleFeedback || 'Not provided'}</p>
-                  </div>
-                  <div>
-                    <h4 className="font-semibold text-gray-800 dark:text-gray-200 mb-1">Abstract Feedback</h4>
-                    <p className="text-gray-600 dark:text-gray-400 text-sm">{review.abstractFeedback || 'Not provided'}</p>
-                  </div>
-                  <div>
-                    <h4 className="font-semibold text-gray-800 dark:text-gray-200 mb-1">Scientific Correctness</h4>
-                    <p className="text-gray-600 dark:text-gray-400 text-sm">{review.scientificCorrectness || 'Not provided'}</p>
-                  </div>
-                  <div>
-                    <h4 className="font-semibold text-gray-800 dark:text-gray-200 mb-1">References Feedback</h4>
-                    <p className="text-gray-600 dark:text-gray-400 text-sm">{review.referencesFeedback || 'Not provided'}</p>
-                  </div>
-                  <div>
-                    <h4 className="font-semibold text-gray-800 dark:text-gray-200 mb-1">Language Quality</h4>
-                    <p className="text-gray-600 dark:text-gray-400 text-sm">{review.languageQuality || 'Not provided'}</p>
-                  </div>
-                  <div>
-                    <h4 className="font-semibold text-gray-800 dark:text-gray-200 mb-1">General Comments</h4>
-                    <p className="text-gray-600 dark:text-gray-400 text-sm">{review.generalComments || 'Not provided'}</p>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <h4 className="font-semibold text-gray-800 dark:text-gray-200 mb-1">Ethical Issues</h4>
-                      <p className="text-gray-600 dark:text-gray-400 text-sm">{review.ethicalIssues || 'No'}</p>
-                      {review.ethicalDetails && (
-                        <p className="text-gray-500 dark:text-gray-500 text-xs mt-1">{review.ethicalDetails}</p>
-                      )}
-                    </div>
-                    <div>
-                      <h4 className="font-semibold text-gray-800 dark:text-gray-200 mb-1">Plagiarism Suspected</h4>
-                      <p className="text-gray-600 dark:text-gray-400 text-sm">{review.plagiarismSuspected || 'None reported'}</p>
-                    </div>
-                  </div>
-                </div>
-              )}
-              
-              <div className="flex gap-3">
-                <Button 
-                  onClick={() => handleAccept(review.reviewerId, review.manuscriptId)}
-                  disabled={isProcessing}
-                  className="bg-green-600 hover:bg-green-700 text-white flex items-center gap-2"
-                  data-testid={`button-accept-${idx}`}
-                >
-                  <CheckCircle className="w-4 h-4" />
-                  {isProcessing ? 'Processing...' : 'Accept Review'}
-                </Button>
-                <Button 
-                  variant="outline"
-                  onClick={() => handleReject(review.reviewerId, review.manuscriptId)}
-                  disabled={isProcessing}
-                  className="border-red-300 text-red-600 hover:bg-red-50 dark:border-red-700 dark:text-red-400 dark:hover:bg-red-900/20 flex items-center gap-2"
-                  data-testid={`button-reject-${idx}`}
-                >
-                  <Clock className="w-4 h-4" />
-                  {isProcessing ? 'Processing...' : 'Reject Review'}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        );
-      })}
-    </div>
-  );
-}
-
-// Payments List Component
-function AdminPaymentsList() {
-  const [payments, setPayments] = useState<any[]>([]);
-  const [filteredPayments, setFilteredPayments] = useState<any[]>([]);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [approvingEmail, setApprovingEmail] = useState<string | null>(null);
-  const { toast } = useToast();
-
-  useEffect(() => {
-    loadPayments();
-  }, []);
-
-  useEffect(() => {
-    const filtered = payments.filter(p => 
-      p.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      p.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      p.manuscriptTitle?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      p.transactionNumber?.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-    setFilteredPayments(filtered);
-  }, [searchTerm, payments]);
-
-  const loadPayments = async () => {
-    try {
-      const response = await fetch('/api/admin/payments', { credentials: 'include' });
-      const data = await response.json();
-      setPayments(data.payments || []);
-    } catch (err) {
-      console.error('Error loading payments:', err);
-      toast({ title: 'Error', description: 'Failed to load payments', variant: 'destructive' });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleApprovePayment = async (payment: any) => {
-    setApprovingEmail(payment.email);
-    try {
-      const response = await fetch('/api/admin/approve-payment', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({
-          email: payment.email,
-          transactionNumber: payment.transactionNumber,
-          manuscriptTitle: payment.manuscriptTitle
-        })
-      });
-      const result = await response.json();
-      if (response.ok && result.success) {
-        toast({ title: 'Success', description: 'Payment approved! Manuscript status updated to Published.' });
-        loadPayments();
-      } else {
-        toast({ title: 'Error', description: result.message || 'Failed to approve payment', variant: 'destructive' });
-      }
-    } catch (err) {
-      console.error('Error approving payment:', err);
-      toast({ title: 'Error', description: 'Failed to approve payment', variant: 'destructive' });
-    } finally {
-      setApprovingEmail(null);
-    }
-  };
-
-  if (loading) return (
-    <div className="text-center py-8">
-      <Loader2 className="w-8 h-8 animate-spin text-blue-600 mx-auto mb-3" />
-      <p className="text-gray-600 dark:text-gray-400">Loading payments...</p>
-    </div>
-  );
-  if (payments.length === 0) return (
-    <div className="text-center py-8">
-      <CreditCard className="w-12 h-12 mx-auto text-gray-300 dark:text-gray-600 mb-3" />
-      <p className="text-gray-600 dark:text-gray-400 font-medium">No payments found</p>
-      <p className="text-gray-500 dark:text-gray-500 text-sm mt-1">Payment records will appear here after submissions</p>
-    </div>
-  );
-
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-2 flex-1">
-        <Search className="w-4 h-4 text-gray-400" />
-        <Input
-          placeholder="Search by name, email, title, or transaction ID..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          data-testid="input-search-payments"
-          className="flex-1"
-        />
-      </div>
-      <div className="overflow-x-auto">
-      <table className="w-full text-sm">
-        <thead className="bg-gray-100 dark:bg-gray-700 border-b border-gray-300 dark:border-gray-600">
-          <tr>
-            <th className="px-4 py-3 text-left text-gray-900 dark:text-gray-100">Author Name</th>
-            <th className="px-4 py-3 text-left text-gray-900 dark:text-gray-100">Email</th>
-            <th className="px-4 py-3 text-left text-gray-900 dark:text-gray-100">Manuscript Title</th>
-            <th className="px-4 py-3 text-left text-gray-900 dark:text-gray-100">Author Type</th>
-            <th className="px-4 py-3 text-left text-gray-900 dark:text-gray-100">Amount</th>
-            <th className="px-4 py-3 text-left text-gray-900 dark:text-gray-100">Mode</th>
-            <th className="px-4 py-3 text-left text-gray-900 dark:text-gray-100">Transaction ID</th>
-            <th className="px-4 py-3 text-left text-gray-900 dark:text-gray-100">Date</th>
-            <th className="px-4 py-3 text-left text-gray-900 dark:text-gray-100">Proof</th>
-            <th className="px-4 py-3 text-center text-gray-900 dark:text-gray-100">Action</th>
-          </tr>
-        </thead>
-        <tbody>
-          {filteredPayments.map((payment, idx) => (
-            <tr key={idx} className="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50">
-              <td className="px-4 py-3 text-gray-900 dark:text-gray-100 font-medium" data-testid={`text-author-${idx}`}>{payment.firstName}</td>
-              <td className="px-4 py-3 text-gray-900 dark:text-gray-100 text-xs" data-testid={`text-email-${idx}`}>{payment.email}</td>
-              <td className="px-4 py-3 text-gray-900 dark:text-gray-100 max-w-xs truncate" data-testid={`text-title-${idx}`}>{payment.manuscriptTitle}</td>
-              <td className="px-4 py-3 text-gray-900 dark:text-gray-100 text-xs" data-testid={`text-author-type-${idx}`}>{payment.authorType === 'indian' ? 'Indian' : 'International'}</td>
-              <td className="px-4 py-3 text-gray-900 dark:text-gray-100 font-semibold" data-testid={`text-amount-${idx}`}>{payment.currency} {payment.amountPaid || payment.calculatedAmount}</td>
-              <td className="px-4 py-3 text-gray-900 dark:text-gray-100 text-xs" data-testid={`text-mode-${idx}`}>{payment.modeOfPayment}</td>
-              <td className="px-4 py-3 text-gray-900 dark:text-gray-100 font-mono text-xs" data-testid={`text-txn-${idx}`}>{payment.transactionNumber}</td>
-              <td className="px-4 py-3 text-gray-900 dark:text-gray-100 text-xs" data-testid={`text-date-${idx}`}>{payment.dateOfPayment}</td>
-              <td className="px-4 py-3 text-center">
-                {payment.paymentProofUrl && (
-                  <a 
-                    href={payment.paymentProofUrl} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
-                    data-testid={`link-proof-${idx}`}
-                  >
-                    <Download className="w-4 h-4 inline" />
-                  </a>
-                )}
-              </td>
-              <td className="px-4 py-3 text-center">
-                <Button
-                  size="sm"
-                  onClick={() => handleApprovePayment(payment)}
-                  disabled={approvingEmail === payment.email}
-                  className="bg-green-600 hover:bg-green-700 text-white"
-                  data-testid={`button-approve-payment-${idx}`}
-                >
-                  {approvingEmail === payment.email ? (
-                    <>
-                      <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-                      Approving...
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle className="w-3 h-3 mr-1" />
-                      Approve
-                    </>
-                  )}
-                </Button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      </div>
-    </div>
-  );
-}
-
-// Helper component for manuscript detail rows
-function MsDetailRow({ label, value, isMono, isFull, isStatus }: { label: string; value: string; isMono?: boolean; isFull?: boolean; isStatus?: boolean }) {
-  return (
-    <div className={cn("space-y-1", isFull && "col-span-2")}>
-      <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">{label}</p>
-      <div className={cn(
-        "text-sm font-medium text-gray-800 dark:text-gray-200",
-        isMono && "font-mono font-bold text-[#213361] dark:text-blue-300",
-        isStatus && "text-blue-600 font-bold"
-      )}>
-        {value || '—'}
-      </div>
-    </div>
-  );
-}
-
-// Manuscripts List Component
-function AdminManuscriptsList() {
-  const [manuscripts, setManuscripts] = useState<any[]>([]);
-  const [filteredManuscripts, setFilteredManuscripts] = useState<any[]>([]);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [loading, setLoading] = useState(true);
-  const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
-  const [selectedManuscript, setSelectedManuscript] = useState<any | null>(null);
-  const [assignments, setAssignments] = useState<any[]>([]);
-  const { toast } = useToast();
-
-  useEffect(() => {
-    loadManuscripts();
-    loadAssignments();
-  }, []);
-
-  useEffect(() => {
-    let filtered = manuscripts.filter(m => {
-      const id = (m['Manuscript ID'] || m.manuscriptId || '').toLowerCase();
-      const title = (m['Manuscript Title'] || m.title || '').toLowerCase();
-      const author = (m['First Author Name'] || m.author || '').toLowerCase();
-      return id.includes(searchTerm.toLowerCase()) ||
-             title.includes(searchTerm.toLowerCase()) ||
-             author.includes(searchTerm.toLowerCase());
-    });
-    if (statusFilter !== 'all') {
-      filtered = filtered.filter(m => (m['Status'] || m.status || '').toLowerCase() === statusFilter.toLowerCase());
-    }
-    setFilteredManuscripts(filtered);
-  }, [searchTerm, statusFilter, manuscripts]);
-
-  const loadManuscripts = async () => {
-    try {
-      const response = await fetch('/api/admin/manuscripts', { credentials: 'include' });
-      const data = await response.json();
-      setManuscripts(data.manuscripts || []);
-    } catch (err) {
-      console.error('Error loading manuscripts:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const loadAssignments = async () => {
-    try {
-      const response = await fetch('/api/admin/assignments', { credentials: 'include' });
-      const data = await response.json();
-      setAssignments(data.assignments || []);
-    } catch (err) {
-      console.error('Error loading assignments:', err);
-    }
-  };
-
-  const getAssignmentStatus = (manuscriptId: string) => {
-    const assignment = assignments.find(a => a.manuscriptId === manuscriptId);
-    if (!assignment) return 'Unassigned';
-    return assignment.status || 'Pending';
-  };
-
-  const handleStatusChange = async (manuscriptId: string, newStatus: string) => {
-    setUpdatingStatus(manuscriptId);
-    try {
-      const response = await fetch('/api/admin/update-manuscript-status', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ manuscriptId, newStatus })
-      });
-      const data = await response.json();
-      if (data.success) {
-        setManuscripts(prev => prev.map(m => {
-          const msId = m['Manuscript ID'] || m.manuscriptId;
-          return msId === manuscriptId ? { ...m, ['Status']: newStatus, status: newStatus } : m;
-        }));
-        toast({ title: 'Success', description: `Status updated to "${newStatus}"` });
-      } else {
-        toast({ title: 'Error', description: data.message || 'Failed to update status', variant: 'destructive' });
-      }
-    } catch (err) {
-      console.error('Error updating status:', err);
-      toast({ title: 'Error', description: 'Failed to update status', variant: 'destructive' });
-    } finally {
-      setUpdatingStatus(null);
-    }
-  };
-
-  if (loading) return (
-    <div className="text-center py-8">
-      <Loader2 className="w-8 h-8 animate-spin text-blue-600 mx-auto mb-3" />
-      <p className="text-gray-600 dark:text-gray-400">Loading manuscripts...</p>
-    </div>
-  );
-
-  const statusCounts = {
-    all: manuscripts.length,
-    'under review': manuscripts.filter(m => (m['Status'] || '').toLowerCase() === 'under review').length,
-    accepted: manuscripts.filter(m => (m['Status'] || '').toLowerCase() === 'accepted').length,
-    published: manuscripts.filter(m => (m['Status'] || '').toLowerCase() === 'published').length,
-    rejected: manuscripts.filter(m => (m['Status'] || '').toLowerCase() === 'rejected').length,
-  };
-
-  return (
-    <div className="space-y-4">
-      {/* Filter tabs */}
-      <div className="flex flex-wrap gap-2">
-        {[
-          { key: 'all', label: 'All', count: statusCounts.all, color: 'bg-gray-100 text-gray-700' },
-          { key: 'under review', label: 'Under Review', count: statusCounts['under review'], color: 'bg-amber-100 text-amber-700' },
-          { key: 'accepted', label: 'Accepted', count: statusCounts.accepted, color: 'bg-green-100 text-green-700' },
-          { key: 'published', label: 'Published', count: statusCounts.published, color: 'bg-blue-100 text-blue-700' },
-          { key: 'rejected', label: 'Rejected', count: statusCounts.rejected, color: 'bg-red-100 text-red-700' },
-        ].map(tab => (
-          <button
-            key={tab.key}
-            onClick={() => setStatusFilter(tab.key)}
-            className={`px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 transition-all ${
-              statusFilter === tab.key ? tab.color + ' ring-2 ring-offset-1 ring-current' : 'bg-gray-50 text-gray-500 hover:bg-gray-100'
-            }`}
-          >
-            {tab.label}
-            <span className={`rounded-full px-1.5 text-[10px] font-black ${statusFilter === tab.key ? 'bg-white/60' : 'bg-gray-200'}`}>
-              {tab.count}
-            </span>
-          </button>
-        ))}
-      </div>
-
-      {/* Search bar */}
-      <div className="flex items-center gap-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2">
-        <Search className="w-4 h-4 text-gray-400 shrink-0" />
-        <input
-          type="text"
-          placeholder="Search by ID, title, or author..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          data-testid="input-search-manuscripts"
-          className="flex-1 bg-transparent text-sm outline-none text-gray-800 dark:text-gray-200 placeholder-gray-400"
-        />
-      </div>
-
-      {/* Table */}
-      {filteredManuscripts.length === 0 ? (
-        <div className="text-center py-16 bg-white dark:bg-gray-800 rounded-lg">
-          <FileText className="w-12 h-12 mx-auto text-gray-300 dark:text-gray-600 mb-3" />
-          <p className="text-gray-600 dark:text-gray-400 font-medium">No manuscripts found</p>
-          <p className="text-gray-400 text-sm mt-1">Try adjusting your search or filter</p>
-        </div>
-      ) : (
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="bg-[#213361] text-white">
-                  <th className="px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest">Manuscript ID</th>
-                  <th className="px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest">Date</th>
-                  <th className="px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest">Title / Author</th>
-                  <th className="px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest">Journal</th>
-                  <th className="px-4 py-3 text-center text-[10px] font-black uppercase tracking-widest">Status</th>
-                  <th className="px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest">Contact</th>
-                  <th className="px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest">Assigned</th>
-                  <th className="px-4 py-3 text-center text-[10px] font-black uppercase tracking-widest">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
-                {filteredManuscripts.map((manuscript, idx) => {
-                  const id = manuscript['Manuscript ID'] || manuscript.manuscriptId;
-                  const rawStatus = (manuscript['Status'] || manuscript.status || 'Under Review').toLowerCase();
-                  const assignStatus = getAssignmentStatus(id);
-                  return (
-                    <tr key={idx} className="hover:bg-gray-50/50 dark:hover:bg-gray-700/30 transition-colors">
-                      <td className="px-4 py-3 font-mono font-bold text-[#213361] dark:text-blue-300 text-xs">{id}</td>
-                      <td className="px-4 py-3 text-xs text-gray-500">{manuscript['Submitted At'] || manuscript.submittedDate || 'N/A'}</td>
-                      <td className="px-4 py-3 max-w-[200px]">
-                        <p
-                          className="text-xs font-bold text-gray-800 dark:text-gray-200 line-clamp-2 cursor-pointer hover:underline"
-                          onClick={() => setSelectedManuscript(manuscript)}
-                          data-testid={`text-ms-title-${idx}`}
-                        >
-                          {manuscript['Manuscript Title'] || manuscript.title}
-                        </p>
-                        <p className="text-[10px] text-gray-500 mt-0.5">{manuscript['First Author Name'] || manuscript.author}</p>
-                      </td>
-                      <td className="px-4 py-3 text-xs text-gray-600 dark:text-gray-400 max-w-[120px]">{manuscript['Journal Type'] || manuscript.journal}</td>
-                      <td className="px-4 py-3 text-center">
-                        <span className={`px-2 py-1 rounded text-[10px] font-black uppercase ${
-                          rawStatus === 'published' ? 'bg-blue-100 text-blue-700' :
-                          rawStatus === 'accepted' ? 'bg-green-100 text-green-700' :
-                          rawStatus === 'rejected' ? 'bg-red-100 text-red-700' :
-                          'bg-amber-100 text-amber-700'
-                        }`} data-testid={`text-ms-status-${idx}`}>
-                          {manuscript['Status'] || manuscript.status || 'Under Review'}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-[10px] text-gray-600 dark:text-gray-400">
-                        <p className="font-bold truncate max-w-[120px]">{manuscript['Email'] || 'N/A'}</p>
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className={`px-2 py-1 rounded text-[10px] font-bold ${
-                          assignStatus !== 'Unassigned'
-                            ? 'bg-purple-100 text-purple-700'
-                            : 'bg-orange-100 text-orange-700'
-                        }`} data-testid={`badge-ms-assigned-${idx}`}>
-                          {assignStatus}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-center">
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <Button variant="ghost" size="sm" className="h-8 px-2 text-xs font-bold text-gray-600">
-                              Actions ▾
-                            </Button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-44 p-1" align="end">
-                            <div className="flex flex-col">
-                              <button
-                                className="flex items-center gap-2 px-3 py-2 text-xs hover:bg-gray-100 rounded text-left text-gray-700"
-                                onClick={() => setSelectedManuscript(manuscript)}
-                              >
-                                <Search className="w-3 h-3 text-blue-600" /> View Details
-                              </button>
-                              <div className="h-px bg-gray-100 my-1" />
-                              {updatingStatus === id ? (
-                                <div className="flex items-center justify-center py-2">
-                                  <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
-                                </div>
-                              ) : (
-                                <>
-                                  <button className="flex items-center gap-2 px-3 py-2 text-xs hover:bg-gray-100 rounded text-left text-green-700" onClick={() => handleStatusChange(id, 'Accepted')}>
-                                    <CheckCircle className="w-3 h-3" /> Accept
-                                  </button>
-                                  <button className="flex items-center gap-2 px-3 py-2 text-xs hover:bg-gray-100 rounded text-left text-amber-700" onClick={() => handleStatusChange(id, 'Under Review')}>
-                                    <Clock className="w-3 h-3" /> Under Review
-                                  </button>
-                                  <button className="flex items-center gap-2 px-3 py-2 text-xs hover:bg-gray-100 rounded text-left text-blue-700" onClick={() => handleStatusChange(id, 'Published')}>
-                                    <ExternalLink className="w-3 h-3" /> Publish
-                                  </button>
-                                  <button className="flex items-center gap-2 px-3 py-2 text-xs hover:bg-gray-100 rounded text-left text-red-700" onClick={() => handleStatusChange(id, 'Rejected')}>
-                                    <AlertCircle className="w-3 h-3" /> Reject
-                                  </button>
-                                  {manuscript['File URL'] && typeof manuscript['File URL'] === 'string' && manuscript['File URL'].startsWith('http') && (
-                                    <>
-                                      <div className="h-px bg-gray-100 my-1" />
-                                      <a
-                                        href={manuscript['File URL']}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="flex items-center gap-2 px-3 py-2 text-xs hover:bg-gray-100 rounded text-left text-gray-700"
-                                        data-testid={`link-download-${idx}`}
-                                      >
-                                        <Download className="w-3 h-3" /> Download
-                                      </a>
-                                    </>
-                                  )}
-                                </>
-                              )}
-                            </div>
-                          </PopoverContent>
-                        </Popover>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
-      {/* Detail Dialog */}
-      <Dialog open={selectedManuscript !== null} onOpenChange={(open) => !open && setSelectedManuscript(null)}>
-        <DialogContent className="max-w-3xl p-0 overflow-hidden border-none shadow-2xl">
-          <div className="bg-[#213361] px-8 py-6 text-white">
-            <DialogTitle className="text-2xl font-bold text-white mb-1">Manuscript Details</DialogTitle>
-            <DialogDescription className="text-blue-200 text-sm">
-              ID: {selectedManuscript?.['Manuscript ID'] || selectedManuscript?.manuscriptId}
-            </DialogDescription>
-          </div>
-          <div className="p-8 max-h-[75vh] overflow-y-auto bg-white dark:bg-gray-900">
-            {selectedManuscript && (
-              <div className="grid grid-cols-2 gap-x-12 gap-y-6">
-                <MsDetailRow label="Manuscript ID" value={selectedManuscript['Manuscript ID'] || selectedManuscript.manuscriptId} isMono />
-                <MsDetailRow label="Submitted Date" value={selectedManuscript['Submitted At'] || 'N/A'} />
-                <MsDetailRow label="First Author" value={selectedManuscript['First Author Name'] || 'N/A'} />
-                <MsDetailRow label="Email" value={selectedManuscript['Email'] || 'N/A'} />
-                <MsDetailRow label="Mobile Number" value={selectedManuscript['Mobile Number'] || 'N/A'} />
-                <MsDetailRow label="Journal" value={selectedManuscript['Journal Type'] || 'N/A'} />
-                <MsDetailRow label="Status" value={selectedManuscript['Status'] || 'N/A'} isStatus isFull />
-                <MsDetailRow label="Manuscript Title" value={selectedManuscript['Manuscript Title'] || 'N/A'} isFull />
-                <MsDetailRow label="Research Field" value={selectedManuscript['Research Field'] || 'N/A'} />
-                <MsDetailRow label="Number of Authors" value={selectedManuscript['Number of Authors'] || 'N/A'} />
-                <MsDetailRow label="Designation" value={selectedManuscript['Designation'] || 'N/A'} />
-                <MsDetailRow label="Department" value={selectedManuscript['Department'] || 'N/A'} />
-                <MsDetailRow label="Organisation" value={selectedManuscript['Organisation'] || 'N/A'} />
-                <MsDetailRow label="DOI" value={selectedManuscript['DOI'] || 'N/A'} />
-
-                <div className="col-span-2 pt-4 border-t border-gray-100 flex items-center gap-3">
-                  {selectedManuscript['File URL'] && typeof selectedManuscript['File URL'] === 'string' && selectedManuscript['File URL'].startsWith('http') && (
-                    <Button asChild className="bg-[#213361] hover:bg-[#2a4078]">
-                      <a href={selectedManuscript['File URL']} target="_blank" rel="noopener noreferrer" data-testid="link-download-manuscript">
-                        <Download className="w-4 h-4 mr-2" /> Download Paper
-                      </a>
-                    </Button>
-                  )}
-                  <Button variant="outline" onClick={() => setSelectedManuscript(null)}>Close</Button>
-                </div>
-              </div>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
-    </div>
-  );
-}
+import { ReviewApprovals } from '@/components/ReviewApprovals';
+import { SubmissionComparison } from '@/components/SubmissionComparison';
+import { AdminPayments } from '@/components/AdminPayments';
+import { AdminBooks } from '@/components/AdminBooks';
+import { AdminContacts } from '@/components/AdminContacts';
+import { AdminNewsletter } from '@/components/AdminNewsletter';
+import { AdminDeadlines } from '@/components/AdminDeadlines';
+import { AdminPerformance } from '@/components/AdminPerformance';
+import { AdminLogs } from '@/components/AdminLogs';
+import { AdminUsers } from '@/components/AdminUsers';
+import { AdminJournals } from '@/components/AdminJournals';
+import { AdminArchives } from '@/components/AdminArchives';
+import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from '@/components/ui/select';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 export default function AdminDashboard() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [activeTab, setActiveTab] = useState('dashboard');
   const [adminEmail, setAdminEmail] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [autoAssigning, setAutoAssigning] = useState(false);
-  const [currentMenu, setCurrentMenu] = useState('reviewer-approval');
-  const [stats, setStats] = useState({
-    reviewersCount: 0,
-    editorialCount: 0,
-    manuscriptsCount: 0,
-    assignmentsCount: 0,
-    pendingReviewsCount: 0
+  const [loading, setLoading] = useState(false);
+  const [selectedManuscript, setSelectedManuscript] = useState<any>(null);
+  const [selectedReviewer, setSelectedReviewer] = useState<any>(null);
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+  const [isReviewerDetailsModalOpen, setIsReviewerDetailsModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editForm, setEditForm] = useState({ id: '', title: '', journal: '', author: '', email: '', doi: '', plagiarism: '' });
+  const [submittingEdit, setSubmittingEdit] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterJournal, setFilterJournal] = useState('All');
+  const [filterStatus, setFilterStatus] = useState('All');
+  const [showPublished, setShowPublished] = useState(true);
+  const [showRejected, setShowRejected] = useState(true);
+
+  const exportManuscriptsCSV = () => {
+    if (allManuscripts.length === 0) return;
+    const headers = ['ID', 'Title', 'Author', 'Email', 'Phone', 'Date', 'Journal', 'Status'];
+    const csvData = allManuscripts.map(m => [
+      m.id,
+      `"${(m.title || '').replace(/"/g, '""')}"`,
+      `"${(m.author || '').replace(/"/g, '""')}"`,
+      m.email,
+      m.phone,
+      m.date,
+      `"${(m.journal || '').replace(/"/g, '""')}"`,
+      m.status
+    ].join(','));
+    const csvContent = [headers.join(','), ...csvData].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.setAttribute('download', 'scholar_india_manuscripts.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const exportReviewersCSV = () => {
+    if (allReviewers.length === 0) return;
+    const headers = ['ID', 'Name', 'Email', 'Phone', 'Role', 'Journal', 'Institution', 'Applied', 'Status'];
+    const csvData = allReviewers.map(r => [
+      r.id,
+      `"${(r.first_name + ' ' + (r.last_name || '')).replace(/"/g, '""')}"`,
+      r.email,
+      r.mobile || r.phone || '',
+      r.role,
+      `"${(r.journal || '').replace(/"/g, '""')}"`,
+      `"${(r.institution || '').replace(/"/g, '""')}"`,
+      r.submitted_at ? new Date(r.submitted_at).toLocaleDateString('en-GB') : '',
+      r.status
+    ].join(','));
+    const csvContent = [headers.join(','), ...csvData].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.setAttribute('download', 'scholar_india_reviewers.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  // DASHBOARD DATA STATE
+  const [dashboardData, setDashboardData] = useState({
+    stats: {
+      manuscripts: 0,
+      underReview: 0,
+      reviewers: 0,
+      assignments: 0,
+      payments: 0,
+      unread: 0,
+      books: 0,
+      leads: 0,
+      sjcm: 0,
+      sjhss: 0,
+      accepted: 0,
+      rejected: 0
+    },
+    recentManuscripts: [] as any[],
+    pendingAssignments: [] as any[],
+    pendingReviewerApprovals: [] as any[]
   });
-  const [unreadMessageCount, setUnreadMessageCount] = useState(0);
-  const [showPasswordDialog, setShowPasswordDialog] = useState(false);
-  const [passwordForm, setPasswordForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
-  const [passwordErrors, setPasswordErrors] = useState<string[]>([]);
-  const [changingPassword, setChangingPassword] = useState(false);
-  const [settingPopup, setSettingPopup] = useState(false);
-  const [loginActivities, setLoginActivities] = useState<any[]>([]);
-  const [selectedReviewerId, setSelectedReviewerId] = useState<string | null>(null);
-  const [popupTitle, setPopupTitle] = useState('');
-  const [popupContent, setPopupContent] = useState('');
-  const [popupRole, setPopupRole] = useState('Editor');
-  const [popupExpiry, setPopupExpiry] = useState('');
-  const [newsletterSubscribers, setNewsletterSubscribers] = useState<any[]>([]);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
-  const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const downloadTabData = async (endpoint: string, filename: string) => {
-    try {
-      const res = await fetch(endpoint);
-      const result = await res.json();
-      if (result.success && result.data) {
-        downloadExcel(result.data, filename);
-        toast({ title: 'Success', description: 'Data downloaded as CSV' });
-      } else {
-        toast({ title: 'Error', description: 'Failed to download data', variant: 'destructive' });
-      }
-    } catch (err) {
-      toast({ title: 'Error', description: 'Error downloading data', variant: 'destructive' });
+  const CACHE_TTL = 5 * 60 * 1000;
+  const [allManuscripts, setAllManuscripts] = useState<any[]>([]);
+  const [manuscriptsLimit, setManuscriptsLimit] = useState(10);
+  const [loadingManuscripts, setLoadingManuscripts] = useState(false);
+
+  const [allReviewers, setAllReviewers] = useState<any[]>([]);
+  const [reviewersLimit, setReviewersLimit] = useState(10);
+  const [loadingReviewers, setLoadingReviewers] = useState(false);
+  const [reviewerSearchTerm, setReviewerSearchTerm] = useState('');
+  const [filterReviewerRole, setFilterReviewerRole] = useState('All Roles');
+  const [filterReviewerStatus, setFilterReviewerStatus] = useState('All Statuses');
+  const [filterReviewerJournal, setFilterReviewerJournal] = useState('All Journals');
+  const [reviewerSubTab, setReviewerSubTab] = useState('All Applications');
+
+  const [allReviews, setAllReviews] = useState<any[]>([]);
+  const [reviewsLimit, setReviewsLimit] = useState(10);
+  const [loadingReviews, setLoadingReviews] = useState(false);
+  const [reviewsSearchTerm, setReviewsSearchTerm] = useState('');
+  const [selectedReview, setSelectedReview] = useState<any>(null);
+  const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
+  const [adminNote, setAdminNote] = useState('');
+  const [submittingReview, setSubmittingReview] = useState(false);
+
+  // Assign Work State
+  const [assignSearchTerm, setAssignSearchTerm] = useState('');
+  const [selectedManuscriptForAssign, setSelectedManuscriptForAssign] = useState<any>(null);
+  const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
+  const [assigningReviewer, setAssigningReviewer] = useState(false);
+  const [matchingReviewers, setMatchingReviewers] = useState<any[]>([]);
+  const [loadingMatches, setLoadingMatches] = useState(false);
+
+  // All Assignments State
+  const [assignmentsSearchTerm, setAssignmentsSearchTerm] = useState('');
+  const [assignmentsFilterStatus, setAssignmentsFilterStatus] = useState('All Statuses');
+  const [showRevoked, setShowRevoked] = useState(false);
+
+  const fetchManuscripts = async (forceRefetch = false) => {
+    if (!forceRefetch) {
+       const cached = sessionStorage.getItem('adminManuscriptsCache');
+       if (cached) {
+          try {
+            const { data, timestamp } = JSON.parse(cached);
+            if (Date.now() - timestamp < CACHE_TTL) {
+              setAllManuscripts(data);
+              return;
+            }
+          } catch(e) {}
+       }
     }
+
+    setLoadingManuscripts(true);
+    try {
+      const { data, error } = await supabase.from('manuscripts').select('*').order('submitted_at', { ascending: false }).limit(manuscriptsLimit);
+      if (!error && data) {
+         const formatted = data.map(m => ({
+            id: m.id || "UNKNOWN",
+            title: m.manuscript_title || m.title || "Untitled",
+            author: m.author_name || "Unknown",
+            email: m.email || "No Email",
+            phone: m.mobile || "-",
+            journal: m.journal || "Not Specified",
+            status: m.status || "Submitted",
+            date: m.submitted_at ? new Date(m.submitted_at).toLocaleDateString('en-GB') : "-",
+            isNew: false,
+            raw: m
+         }));
+         setAllManuscripts(formatted);
+         sessionStorage.setItem('adminManuscriptsCache', JSON.stringify({ data: formatted, timestamp: Date.now() }));
+      }
+     } catch(err) { console.error(err); }
+    finally { setLoadingManuscripts(false); }
   };
 
-  const fetchLoginActivities = async () => {
-    try {
-      const res = await fetch('/api/admin/login-activities', { credentials: 'include' });
-      const data = await res.json();
-      if (data.success) {
-        setLoginActivities(data.activities);
-      }
-    } catch (error) {
-      console.error('Error fetching login activities:', error);
+  const fetchReviewers = async (forceRefetch = false) => {
+    if (!forceRefetch) {
+       const cached = sessionStorage.getItem('adminReviewersCache');
+       if (cached) {
+          try {
+            const { data, timestamp } = JSON.parse(cached);
+            if (Date.now() - timestamp < CACHE_TTL) {
+              setAllReviewers(data);
+              return;
+            }
+          } catch(e) {}
+       }
     }
+
+    setLoadingReviewers(true);
+    try {
+      const { data, error } = await supabase.from('reviewers').select('*').order('submitted_at', { ascending: false }).limit(reviewersLimit);
+      if (!error && data) {
+         setAllReviewers(data);
+         sessionStorage.setItem('adminReviewersCache', JSON.stringify({ data, timestamp: Date.now() }));
+      }
+    } catch(err) { console.error(err); }
+    finally { setLoadingReviewers(false); }
   };
 
-  const fetchNewsletterSubscribers = async () => {
-    try {
-      const res = await fetch('/api/admin/newsletter-subscribers', { credentials: 'include' });
-      const data = await res.json();
-      if (data.success) {
-        setNewsletterSubscribers(data.subscribers || []);
-      }
-    } catch (error) {
-      console.error('Error fetching newsletter subscribers:', error);
+  const fetchReviews = async (forceRefetch = false) => {
+    if (!forceRefetch) {
+       const cached = sessionStorage.getItem('adminReviewsCache');
+       if (cached) {
+          try {
+            const { data, timestamp } = JSON.parse(cached);
+            if (Date.now() - timestamp < CACHE_TTL) {
+              setAllReviews(data);
+              return;
+            }
+          } catch(e) {}
+       }
     }
+
+    setLoadingReviews(true);
+    try {
+      const { data, error } = await supabase
+        .from('assignments')
+        .select('id, assigned_at, manuscript_id, manuscript_title, reviewer_id, reviewer_full_name, reviewer_email, recommendation, overall_marks, submission_date, status, importance, title_feedback, abstract_feedback, scientific_correctness, references_feedback, language_quality, general_comments, ethical_issues, ethical_details, competing_interests, plagiarism_suspected, notes')
+        .order('assigned_at', { ascending: false })
+        .limit(reviewsLimit);
+        
+      if (error) {
+        console.error('fetchReviews error:', error);
+      }
+      if (!error && data) {
+         setAllReviews(data);
+         sessionStorage.setItem('adminReviewsCache', JSON.stringify({ data, timestamp: Date.now() }));
+      }
+    } catch(err) { console.error(err); }
+    finally { setLoadingReviews(false); }
   };
 
-  useEffect(() => {
-    // Check admin session
-    const adminSession = localStorage.getItem('adminSession');
-    if (!adminSession) {
-      setLocation('/admin/login');
-      return;
-    }
-
+  const handleEditSubmit = async () => {
+    setSubmittingEdit(true);
     try {
-      const session = JSON.parse(adminSession);
-      setAdminEmail(session.email);
-      setIsAuthenticated(true);
-      
-      // Load statistics
-      loadStats();
-      // Load message count
-      loadMessageCount();
-      // Load login activities
-      fetchLoginActivities();
-      // Load newsletter subscribers
-      fetchNewsletterSubscribers();
+        const { error } = await supabase.from('manuscripts').update({
+            manuscript_title: editForm.title,
+            journal: editForm.journal,
+            author_name: editForm.author,
+            email: editForm.email,
+            doi: editForm.doi,
+            plagiarism_report: editForm.plagiarism
+        }).eq('id', editForm.id);
 
-      // Poll for updated stats every 5 seconds for live login activity tracking
-      const pollInterval = setInterval(() => {
-        loadStats();
-        loadMessageCount();
-        fetchLoginActivities();
-        if (currentMenu === 'newsletter') {
-          fetchNewsletterSubscribers();
+        if (error) throw error;
+
+        toast({ title: "Manuscript updated successfully.", variant: 'default' });
+        setIsEditModalOpen(false);
+        fetchManuscripts(true);
+        if (selectedManuscript && selectedManuscript.id === editForm.id) {
+           setSelectedManuscript({ ...selectedManuscript, title: editForm.title, journal: editForm.journal, author: editForm.author, email: editForm.email, raw: { ...selectedManuscript.raw, doi: editForm.doi } });
         }
-      }, 5000);
+    } catch(err) {
+        console.error(err);
+        toast({ title: "Failed to update manuscript", variant: "destructive" });
+    } finally {
+        setSubmittingEdit(false);
+    }
+  };
 
-      return () => clearInterval(pollInterval);
+  const updateManuscriptStatus = async (id: string, newStatus: string) => {
+    try {
+      const { error } = await supabase.from('manuscripts').update({ status: newStatus }).eq('id', id);
+      if (error) throw error;
+      
+      toast({ title: `Manuscript marked as ${newStatus}`, variant: 'default' });
+      setAllManuscripts(prev => prev.map(m => m.id === id ? { ...m, status: newStatus } : m));
+      // Refresh the Dashboard counters if needed, but not necessarily mandatory for the list view update
+      fetchDashboardData(true);
+    } catch (error) {
+      console.error(error);
+      toast({ title: 'Failed to update status', variant: 'destructive' });
+    }
+  };
+
+  const fetchDashboardData = async (forceRefetch = false) => {
+    if (!forceRefetch) {
+       const cached = sessionStorage.getItem('adminDashboardCache');
+       if (cached) {
+          try {
+            const { data, timestamp } = JSON.parse(cached);
+            if (Date.now() - timestamp < CACHE_TTL) {
+               setDashboardData(data);
+               return;
+            }
+          } catch(e) {}
+       }
+    }
+
+    setLoading(true);
+    try {
+      // Fetch stats and preview data in parallel
+      const [
+        { count: manuscriptsCount },
+        { count: underReviewCount },
+        { count: reviewersCount },
+        { count: assignmentsCount },
+        { count: paymentsCount },
+        { count: sjcmCount },
+        { count: sjhssCount },
+        { count: acceptedCount },
+        { count: rejectedCount },
+        { count: booksCount },
+        { data: reviewers },
+        { data: manuscripts },
+        { data: assignments }
+      ] = await Promise.all([
+        supabase.from('manuscripts').select('*', { count: 'exact', head: true }),
+        supabase.from('manuscripts').select('*', { count: 'exact', head: true }).in('status', ['Under Process', 'Under Review']),
+        supabase.from('reviewers').select('*', { count: 'exact', head: true }),
+        supabase.from('assignments').select('*', { count: 'exact', head: true }),
+        supabase.from('payments').select('*', { count: 'exact', head: true }),
+        supabase.from('manuscripts').select('*', { count: 'exact', head: true }).ilike('journal', '%Commerce%'),
+        supabase.from('manuscripts').select('*', { count: 'exact', head: true }).ilike('journal', '%Humanities%'),
+        supabase.from('manuscripts').select('*', { count: 'exact', head: true }).ilike('status', 'Accepted'),
+        supabase.from('manuscripts').select('*', { count: 'exact', head: true }).ilike('status', 'Rejected'),
+        // Books count from books table
+        supabase.from('books').select('*', { count: 'exact', head: true }),
+        // Reviewers: only pending status (case-insensitive), latest 5
+        supabase.from('reviewers').select('id, first_name, last_name, email, role, status, submitted_at').or('status.eq.Pending,status.eq.pending,status.eq.PENDING').order('id', { ascending: false }).limit(5),
+        // Manuscripts latest 5
+        supabase.from('manuscripts').select('id, manuscript_title, author_name, status').order('submitted_at', { ascending: false }).limit(5),
+        // Assignments: direct columns, pending only
+        supabase.from('assignments').select('id, status, due_date, manuscript_title, reviewer_full_name, reviewer_email').or('status.eq.Pending,status.eq.pending').order('assigned_at', { ascending: false }).limit(5)
+      ]);
+
+      const parseDateString = (dateVal: string | number | null | undefined): string => {
+        if (!dateVal) return '—';
+        const strVal = String(dateVal);
+        const parsedNum = Number(strVal);
+        if (!isNaN(parsedNum) && parsedNum > 10000) {
+          // Handle Excel serial date format (eg: 45993)
+          const date = new Date(Math.round((parsedNum - 25569) * 86400 * 1000));
+          return date.toLocaleDateString('en-GB');
+        }
+        // Handle standard ISO date string fallback
+        const parsedDate = new Date(strVal);
+        return !isNaN(parsedDate.getTime()) ? parsedDate.toLocaleDateString('en-GB') : strVal;
+      };
+
+      const newData = {
+        stats: {
+          manuscripts: manuscriptsCount || 0,
+          underReview: underReviewCount || 0,
+          reviewers: reviewersCount || 0,
+          assignments: assignmentsCount || 0,
+          payments: paymentsCount || 0,
+          unread: 0, // Not in schema, keeping 0
+          books: booksCount || 0,
+          leads: 0,
+          sjcm: sjcmCount || 0,
+          sjhss: sjhssCount || 0,
+          accepted: acceptedCount || 0,
+          rejected: rejectedCount || 0
+        },
+        recentManuscripts: manuscripts?.map(m => ({
+          title: m.manuscript_title || 'Untitled',
+          author: m.author_name || 'Unknown',
+          status: m.status || 'Submitted',
+          color: m.status === 'Accepted' || m.status?.toLowerCase() === 'published' ? 'bg-emerald-50 text-emerald-600 border-emerald-200' : m.status === 'Rejected' ? 'bg-rose-50 text-rose-600 border-rose-200' : 'bg-blue-50 text-blue-600 border-blue-200'
+        })) || [],
+        pendingAssignments: assignments?.map(a => ({
+          manuscript: a.manuscript_title || 'Unknown',
+          reviewer: a.reviewer_full_name || a.reviewer_email || 'Unknown',
+          due: parseDateString(a.due_date)
+        })) || [],
+        pendingReviewerApprovals: reviewers?.map(r => {
+          const dateStr = parseDateString(r.submitted_at);
+          return {
+            name: `${r.first_name || ''} ${r.last_name || ''}`.trim() || 'Unknown',
+            email: r.email || '',
+            role: r.role || 'Reviewer',
+            applied: dateStr !== '—' ? dateStr : (r.id ? `#${r.id}` : '—')
+          };
+        }) || []
+      };
+
+      setDashboardData(newData);
+      sessionStorage.setItem('adminDashboardCache', JSON.stringify({ data: newData, timestamp: Date.now() }));
     } catch (err) {
-      localStorage.removeItem('adminSession');
-      setLocation('/admin/login');
+      console.error(err);
+      toast({ title: 'Error fetching data from Supabase', variant: 'destructive' });
     } finally {
       setLoading(false);
     }
-  }, [setLocation]);
-
-  const loadMessageCount = async () => {
-    try {
-      const response = await fetch('/api/admin/message-threads', { credentials: 'include' });
-      const data = await response.json();
-      // Count only unread messages (threads where latest message is from reviewer)
-      const unreadCount = data.threads?.filter((thread: any) => {
-        const latestMessage = thread.messages?.[thread.messages.length - 1];
-        return latestMessage?.type === 'reviewer';
-      })?.length || 0;
-      setUnreadMessageCount(unreadCount);
-    } catch (err) {
-      console.error('Error loading message count:', err);
-    }
   };
 
   useEffect(() => {
-    // 5-minute inactivity auto-logout
-    const INACTIVITY_TIMEOUT = 5 * 60 * 1000; // 5 minutes in milliseconds
-    let inactivityTimer: NodeJS.Timeout;
-
-    const resetInactivityTimer = () => {
-      clearTimeout(inactivityTimer);
-      inactivityTimer = setTimeout(() => {
-        localStorage.removeItem('adminSession');
-        toast({
-          title: 'Session Expired',
-          description: 'You have been logged out due to inactivity.',
-          variant: 'destructive'
-        });
-        setLocation('/admin/login');
-      }, INACTIVITY_TIMEOUT);
-    };
-
-    // Track user activity
-    const events = ['mousedown', 'keydown', 'scroll', 'touchstart', 'click'];
-    events.forEach(event => {
-      document.addEventListener(event, resetInactivityTimer);
-    });
-
-    // Initialize timer on component mount
-    resetInactivityTimer();
-
-    // Cleanup
-    return () => {
-      clearTimeout(inactivityTimer);
-      events.forEach(event => {
-        document.removeEventListener(event, resetInactivityTimer);
-      });
-    };
-  }, [setLocation, toast]);
-
-  const loadStats = async () => {
-    setIsRefreshing(true);
-    try {
-      const response = await fetch('/api/admin/stats', { credentials: 'include' });
-      const data = await response.json();
-      if (response.ok) {
-        setStats(data);
-        setLastUpdated(new Date());
-      }
-    } catch (err) {
-      console.error('Error loading stats:', err);
-    } finally {
-      setIsRefreshing(false);
+    const session = localStorage.getItem('adminSession');
+    if (!session) {
+      setLocation('/admin/login');
+      return;
     }
-  };
+    const sessionData = JSON.parse(session);
+    setAdminEmail(sessionData.email);
+    
+    // Clear any stale cache from before the RLS fix, then fetch fresh
+    sessionStorage.removeItem('adminDashboardCache');
+    sessionStorage.removeItem('adminManuscriptsCache');
+    sessionStorage.removeItem('adminReviewersCache');
+    sessionStorage.removeItem('adminReviewsCache');
+    fetchDashboardData(true);
+  }, []);
+
+  // Fetch manuscripts whenever the limit changes (server-side limits)
+  useEffect(() => {
+    if (localStorage.getItem('adminSession')) {
+       fetchManuscripts(true);
+    }
+  }, [manuscriptsLimit]);
+
+  // Fetch reviewers whenever the limit changes
+  useEffect(() => {
+    if (localStorage.getItem('adminSession')) {
+       fetchReviewers(true);
+    }
+  }, [reviewersLimit]);
+
+  // Fetch reviews when tab is active or limit changes
+  useEffect(() => {
+    if (localStorage.getItem('adminSession') && (activeTab === 'reviews' || activeTab === 'assignments')) {
+       fetchReviews(true);
+    }
+  }, [reviewsLimit, activeTab]);
 
   const handleLogout = () => {
     localStorage.removeItem('adminSession');
     setLocation('/admin/login');
   };
 
-  const handleChangePassword = async () => {
-    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      setPasswordErrors(['Passwords do not match']);
-      return;
-    }
-    setChangingPassword(true);
+  // RESTORED DYNAMIC DATA FOR MANUSCRIPTS
+
+  const NavItem = ({ icon: Icon, label, id }: any) => (
+    <button
+      onClick={() => setActiveTab(id)}
+      className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg transition-all duration-200 ${
+        activeTab === id 
+          ? 'bg-blue-600 text-white shadow-md' 
+          : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-100'
+      }`}
+    >
+      <Icon size={16} />
+      <span className="text-[13px] font-medium whitespace-nowrap overflow-hidden text-ellipsis">{label}</span>
+      {activeTab === id && <ChevronRight size={12} className="ml-auto flex-shrink-0" />}
+    </button>
+  );
+
+  const StatCard = ({ label, value, icon: Icon, gradient }: any) => (
+    <Card className={`border-none shadow ${gradient} overflow-hidden p-4 group relative cursor-pointer`}>
+      <div className="relative z-10 flex items-start justify-between">
+         <div>
+            <h3 className="text-3xl font-black text-white tracking-tighter leading-none mb-1">{loading ? <Loader2 className="animate-spin h-7 w-7" /> : value}</h3>
+            <p className="text-white/80 text-[10px] font-black uppercase tracking-widest">{label}</p>
+         </div>
+         <div className={`p-2 rounded-xl bg-white/20 text-white`}>
+            <Icon size={20} />
+         </div>
+      </div>
+    </Card>
+  );
+
+  const updateReviewerStatus = async (id: string, newStatus: string) => {
     try {
-      const response = await fetch('/api/admin/change-password', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ currentPassword: passwordForm.currentPassword, newPassword: passwordForm.newPassword })
-      });
-      const data = await response.json();
-      if (data.success) {
-        toast({ title: 'Success', description: 'Password changed successfully!' });
-        setShowPasswordDialog(false);
-        setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
-        setPasswordErrors([]);
-      } else {
-        setPasswordErrors(data.errors || [data.message]);
-      }
-    } catch (error: any) {
-      setPasswordErrors(['Failed to change password']);
-    } finally {
-      setChangingPassword(false);
-    }
+      const { error } = await supabase.from('reviewers').update({ status: newStatus }).eq('id', id);
+      if (!error) {
+         toast({ title: `Status changed to ${newStatus}` });
+         fetchReviewers(true);
+      } else { throw error; }
+    } catch(e) { toast({ title: "Failed to update status", variant: "destructive" }); }
   };
 
-  const handleSetPopupMessage = async () => {
-    if (!popupTitle.trim() || !popupContent.trim()) {
-      toast({ title: 'Error', description: 'Title and message are required', variant: 'destructive' });
-      return;
-    }
-    setSettingPopup(true);
-    try {
-      const response = await fetch('/api/admin/set-popup-message', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({
-          title: popupTitle,
-          content: popupContent,
-          targetRole: popupRole,
-          expiresAt: popupExpiry || null
-        })
-      });
-      const data = await response.json();
-      if (data.success) {
-        toast({ title: 'Success', description: 'Broadcast message sent successfully!' });
-        setPopupTitle('');
-        setPopupContent('');
-        setPopupRole('Editor');
-        setPopupExpiry('');
-      } else {
-        toast({ title: 'Error', description: data.message, variant: 'destructive' });
-      }
-    } catch (error) {
-      toast({ title: 'Error', description: 'Failed to set message', variant: 'destructive' });
-    } finally {
-      setSettingPopup(false);
-    }
+  const renderReviewers = () => {
+     const subTabs = ['All Applications', 'Reviewers', 'Editorial Board', 'Pending Only', 'Active Records'];
+     
+     const filteredReviewers = allReviewers.filter(r => {
+        if (reviewerSubTab === 'Reviewers' && r.role !== 'Reviewer') return false;
+        if (reviewerSubTab === 'Editorial Board' && r.role !== 'Editorial Board Member') return false;
+        if (reviewerSubTab === 'Pending Only' && r.status?.toLowerCase() !== 'submitted' && r.status?.toLowerCase() !== 'pending') return false;
+        if (reviewerSubTab === 'Active Records' && r.status?.toLowerCase() !== 'active' && r.status?.toLowerCase() !== 'accepted') return false;
+
+        if (filterReviewerRole !== 'All Roles' && r.role !== filterReviewerRole) return false;
+        if (filterReviewerJournal !== 'All Journals' && filterReviewerJournal !== 'All' && r.journal !== filterReviewerJournal) return false;
+        if (filterReviewerStatus !== 'All Statuses' && filterReviewerStatus !== 'All' && r.status !== filterReviewerStatus) return false;
+
+        if (reviewerSearchTerm) {
+          const s = reviewerSearchTerm.toLowerCase();
+          const n = (r.first_name + ' ' + (r.last_name || '')).toLowerCase();
+          const e = (r.email || '').toLowerCase();
+          const j = (r.journal || '').toLowerCase();
+          const id = (r.id || '').toLowerCase();
+          if (!n.includes(s) && !e.includes(s) && !j.includes(s) && !id.includes(s)) return false;
+        }
+        return true;
+     });
+
+     return (
+        <div className="space-y-6 text-left pb-16">
+           <div className="flex flex-col md:flex-row justify-between gap-4 py-2 print:hidden">
+              <div className="pl-2 w-full">
+                 <h2 className="text-xl font-bold font-sans text-slate-800 tracking-tight">Review applications and update status.</h2>
+                 <div className="flex items-center gap-6 mt-6 border-b border-slate-200 overflow-x-auto custom-scrollbar flex-nowrap w-full">
+                    {subTabs.map(tab => (
+                       <button 
+                          key={tab} 
+                          onClick={() => setReviewerSubTab(tab)}
+                          className={`pb-2.5 text-[13px] whitespace-nowrap font-bold transition-all border-b-2 ${reviewerSubTab === tab ? 'border-current text-blue-700' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
+                       >{tab}</button>
+                    ))}
+                 </div>
+              </div>
+              <div className="flex items-center gap-3 pr-2 mt-4 md:mt-0 flex-shrink-0">
+                 <Button onClick={() => fetchReviewers(true)} disabled={loadingReviewers} variant="outline" size="sm" className="bg-white gap-2 font-bold text-[11px] h-9 px-4 border-slate-200 rounded-md shadow-sm"><RefreshCw size={14} className={loadingReviewers ? "animate-spin" : ""} /> Refresh</Button>
+                 <Button onClick={exportReviewersCSV} className="bg-indigo-700 hover:bg-indigo-800 gap-2 font-bold text-[11px] h-9 px-5 text-white shadow-md rounded-md"><FileDown size={14} /> Export CSV</Button>
+              </div>
+           </div>
+
+           <div className="rounded-xl border border-slate-200 bg-white overflow-hidden shadow-sm">
+              {/* FILTER ROW */}
+              <div className="flex flex-col md:flex-row items-center justify-between gap-4 py-2 border-b border-slate-100 px-6 bg-white print:hidden">
+                 <div className="relative w-full max-w-sm">
+                    <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <Input 
+                       value={reviewerSearchTerm}
+                       onChange={(e) => setReviewerSearchTerm(e.target.value)}
+                       placeholder="Search by name, email, journal..." 
+                       className="pl-9 h-9 text-xs border-slate-200 focus-visible:ring-blue-500 rounded-md shadow-sm w-full bg-slate-50/50"
+                    />
+                 </div>
+                 <div className="flex items-center gap-3 w-full md:w-auto overflow-x-auto pb-1 md:pb-0">
+                    <Select value={filterReviewerRole} onValueChange={setFilterReviewerRole}>
+                       <SelectTrigger className="w-[140px] h-9 text-xs font-semibold border-slate-200 shadow-sm rounded-md"><SelectValue placeholder="All Roles" /></SelectTrigger>
+                       <SelectContent><SelectItem value="All Roles">All Roles</SelectItem><SelectItem value="Editorial Board Member">Editorial Board</SelectItem><SelectItem value="Reviewer">Reviewer</SelectItem></SelectContent>
+                    </Select>
+                    <Select value={filterReviewerStatus} onValueChange={setFilterReviewerStatus}>
+                       <SelectTrigger className="w-[140px] h-9 text-xs font-semibold border-slate-200 shadow-sm rounded-md"><SelectValue placeholder="All Statuses" /></SelectTrigger>
+                       <SelectContent><SelectItem value="All Statuses">All Statuses</SelectItem><SelectItem value="Submitted">Submitted</SelectItem><SelectItem value="Active">Active</SelectItem><SelectItem value="Rejected">Rejected</SelectItem></SelectContent>
+                    </Select>
+                    <Select value={filterReviewerJournal} onValueChange={setFilterReviewerJournal}>
+                       <SelectTrigger className="w-[200px] h-9 text-xs font-semibold border-slate-200 shadow-sm rounded-md"><SelectValue placeholder="All Journals" /></SelectTrigger>
+                       <SelectContent><SelectItem value="All Journals">All Journals</SelectItem><SelectItem value="Scholar Journal of Commerce and Management">SJCM</SelectItem><SelectItem value="Scholar Journal of Humanities and Social Sciences">SJHSS</SelectItem></SelectContent>
+                    </Select>
+                    <Button onClick={() => window.print()} variant="outline" size="sm" className="bg-white gap-2 font-bold text-[11px] h-9 px-4 border-slate-200 rounded-md shadow-sm"><Printer size={14} /> Print</Button>
+                    <div className="text-[11px] font-bold text-slate-400 whitespace-nowrap pl-2">{filteredReviewers.length} record(s)</div>
+                 </div>
+              </div>
+
+              {/* TABLE HEADER */}
+              <div className="grid grid-cols-12 gap-x-4 px-6 py-3.5 bg-slate-50/80 border-b border-slate-100 items-center">
+                 <div className="col-span-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-1">REVIEWER DETAILS <ChevronsUpDown size={12} className="opacity-50" /></div>
+                 <div className="col-span-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-1">ROLE <ChevronsUpDown size={12} className="opacity-50" /></div>
+                 <div className="col-span-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-1">JOURNAL <ChevronsUpDown size={12} className="opacity-50" /></div>
+                 <div className="col-span-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-1">INSTITUTION <ChevronsUpDown size={12} className="opacity-50" /></div>
+                 <div className="col-span-1 text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-1">APPLIED <ChevronsUpDown size={12} className="opacity-50" /></div>
+                 <div className="col-span-1 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-right flex justify-end gap-3">STATUS <span className="opacity-0">___</span> ACTIONS</div>
+              </div>
+
+              {/* TABLE BODY */}
+              <div className="divide-y divide-slate-100 bg-[#FFFFF9]">
+                 {loadingReviewers && allReviewers.length === 0 ? (
+                    <div className="p-12 text-center text-slate-400 font-medium flex justify-center"><Loader2 className="animate-spin h-6 w-6" /></div>
+                 ) : filteredReviewers.length === 0 ? (
+                    <div className="p-12 text-center text-slate-400 font-medium text-sm">No reviewers found matching filters.</div>
+                 ) : (
+                    filteredReviewers.map((r, i) => (
+                       <div key={i} className="grid grid-cols-12 gap-x-4 px-6 py-4 hover:bg-slate-50 items-center">
+                          <div className="col-span-3 space-y-1.5">
+                             <div className="text-[9px] font-black text-slate-500 tracking-wider uppercase">{r.id || 'N/A'}</div>
+                             <h4 className="text-[13px] font-bold text-slate-800 leading-snug">{r.first_name} {r.last_name || ''}</h4>
+                             <div className="flex flex-col gap-y-0.5 mt-1 text-[10px]">
+                                <span className="flex items-center gap-2 text-blue-600 font-bold"><Mail size={12} className="text-slate-600" /> {r.email}</span>
+                                <span className="flex items-center gap-2 text-emerald-600 font-bold"><Phone size={12} className="text-slate-600" /> {r.mobile || r.phone || '-'}</span>
+                             </div>
+                          </div>
+                          <div className="col-span-2">
+                             <Badge variant="outline" className={`border text-[9px] font-black tracking-wide rounded border-none shadow-sm ${r.role === 'Editorial Board Member' ? 'bg-purple-50 text-purple-700' : 'bg-blue-50 text-blue-700'}`}>
+                                {r.role || 'Reviewer'}
+                             </Badge>
+                          </div>
+                          <div className="col-span-3 text-[10px] font-medium text-slate-600 leading-tight pr-4">
+                             {r.journal || '-'}
+                          </div>
+                          <div className="col-span-2 text-[10px] font-medium text-slate-600 leading-tight pr-2">
+                             {r.institution || '-'}
+                          </div>
+                          <div className="col-span-1 text-[10px] font-medium text-slate-600">
+                             {r.submitted_at ? new Date(r.submitted_at).toLocaleDateString('en-GB') : '-'}
+                          </div>
+                          <div className="col-span-1 flex items-center justify-end gap-3 print:justify-start">
+                             <Badge variant="outline" className={`border text-[9px] font-black tracking-wide rounded px-2.5 py-0.5 shadow-sm border-none ${r.status?.toLowerCase() === 'active' || r.status?.toLowerCase() === 'accepted' ? 'bg-emerald-100 text-emerald-600' : r.status?.toLowerCase() === 'rejected' ? 'bg-rose-100 text-rose-600' : 'bg-slate-100 text-slate-600'}`}>
+                                {r.status || 'Active'}
+                             </Badge>
+                             <div className="print:hidden">
+                                <DropdownMenu>
+                                   <DropdownMenuTrigger asChild>
+                                      <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-slate-700 bg-white border border-slate-100 rounded-full transition-colors"><MoreVertical size={14} /></Button>
+                                   </DropdownMenuTrigger>
+                                   <DropdownMenuContent align="end" className="w-40 bg-white border-slate-100 shadow-xl rounded-xl p-1.5 font-medium text-slate-600">
+                                      <DropdownMenuItem onClick={() => { setSelectedReviewer(r); setIsReviewerDetailsModalOpen(true); }} className="focus:bg-slate-50 cursor-pointer text-xs rounded-lg py-2">
+                                         <Eye className="mr-2 h-4 w-4 text-blue-700" /> View Details
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem onClick={() => updateReviewerStatus(r.id, 'Active')} className="focus:bg-emerald-50 cursor-pointer text-xs rounded-lg py-2 focus:text-emerald-700">
+                                         <Check className="mr-2 h-4 w-4 text-emerald-600" /> Mark Active
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem onClick={() => updateReviewerStatus(r.id, 'Rejected')} className="focus:bg-rose-50 cursor-pointer text-xs rounded-lg py-2 focus:text-rose-700">
+                                         <X className="mr-2 h-4 w-4 text-rose-600" /> Reject
+                                      </DropdownMenuItem>
+                                   </DropdownMenuContent>
+                                </DropdownMenu>
+                             </div>
+                          </div>
+                       </div>
+                    ))
+                 )}
+              </div>
+              {allReviewers.length >= reviewersLimit && (
+                 <div className="p-4 bg-white border-t border-slate-100 flex justify-center print:hidden">
+                    <Button onClick={() => setReviewersLimit(prev => prev + 10)} disabled={loadingReviewers} variant="outline" className="text-xs font-bold text-slate-600 border-slate-200 bg-white hover:bg-slate-50 rounded-lg h-9 px-6 shadow-sm">
+                       Load More Reviewers
+                    </Button>
+                 </div>
+              )}
+           </div>
+        </div>
+     );
   };
 
-  const handleAutoAssign = async () => {
-    setAutoAssigning(true);
-    try {
-      const response = await fetch('/api/admin/auto-assign-under-review', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
-      });
-      const data = await response.json();
-      
-      if (data.success) {
-        toast({
-          title: 'Auto-Assignment Complete',
-          description: `${data.assigned} manuscript(s) assigned to reviewers successfully!`,
-        });
-        loadStats();
-      } else {
-        toast({
-          title: 'Auto-Assignment Result',
-          description: data.message || 'No manuscripts to assign',
-          variant: 'destructive',
-        });
-      }
-    } catch (error) {
-      console.error('Error:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to auto-assign manuscripts',
-        variant: 'destructive',
-      });
-    } finally {
-      setAutoAssigning(false);
-    }
-  };
+  const renderDashboard = () => (
+    <div className="space-y-6">
+      {/* HEADER SECTION */}
+      <header className="flex items-center justify-between mb-4 bg-white p-5 rounded-xl shadow-sm border border-slate-100">
+         <div className="text-left">
+            <h1 className="text-xl font-bold text-slate-800 tracking-tight">Overview Dashboard</h1>
+            <div className="flex items-center gap-2 mt-1">
+               <p className="text-xs text-slate-500 font-medium">Welcome back, {adminEmail || 'Administrator'}</p>
+               <div className="flex items-center gap-1.5 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">
+                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
+                  <span className="text-[10px] text-emerald-700 font-bold uppercase tracking-wider">Live</span>
+               </div>
+            </div>
+         </div>
+         <div className="flex items-center gap-4">
+            <Button onClick={() => fetchDashboardData(true)} disabled={loading} variant="outline" className="gap-2 text-[11px] font-bold h-9 border-blue-200 text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg">
+               <RefreshCw size={13} className={loading ? "animate-spin" : ""} /> Refresh
+            </Button>
+            <div className="flex items-center gap-3 pl-4 border-l border-slate-200">
+               <div className="text-right">
+                  <p className="text-sm font-bold text-slate-800 leading-none">Global Editor</p>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase mt-0.5 tracking-widest">Administrator</p>
+               </div>
+               <div className="w-9 h-9 bg-gradient-to-br from-blue-700 to-indigo-900 rounded-full flex items-center justify-center text-white text-sm font-bold ring-2 ring-white shadow">GE</div>
+            </div>
+         </div>
+      </header>
 
-  if (loading) {
+      {/* STATS ROW WITH VIBRANT GRADIENTS */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard label="Manuscripts" value={dashboardData.stats.manuscripts} icon={FileText} gradient="bg-gradient-to-br from-blue-500 to-blue-700" />
+        <StatCard label="Under Review" value={dashboardData.stats.underReview} icon={Clock} gradient="bg-gradient-to-br from-amber-400 to-orange-500" />
+        <StatCard label="Reviewers" value={dashboardData.stats.reviewers} icon={Users} gradient="bg-gradient-to-br from-emerald-400 to-emerald-600" />
+        <StatCard label="Assignments" value={dashboardData.stats.assignments} icon={Laptop} gradient="bg-gradient-to-br from-purple-500 to-purple-700" />
+        <StatCard label="Payments" value={dashboardData.stats.payments} icon={CreditCard} gradient="bg-gradient-to-br from-cyan-500 to-blue-600" />
+        <StatCard label="Messages" value={dashboardData.stats.unread} icon={Mail} gradient="bg-gradient-to-br from-rose-400 to-rose-600" />
+        <StatCard label="Books" value={dashboardData.stats.books} icon={Book} gradient="bg-gradient-to-br from-indigo-500 to-indigo-700" />
+        <StatCard label="Leads" value={dashboardData.stats.leads} icon={MessageSquare} gradient="bg-gradient-to-br from-slate-700 to-slate-900" />
+      </div>
+
+      {/* JOURNAL SUMMARY BAR */}
+      <div className="flex items-center gap-8 bg-white p-4 rounded-2xl shadow-sm border border-slate-100 mb-6">
+        <div className="flex items-center gap-2.5 text-[11px] font-black text-slate-400 tracking-[2px] border-r border-slate-100 pr-8">
+           <BarChart size={14} className="text-blue-600" /> BY JOURNAL
+        </div>
+        <div className="flex items-center gap-6 text-[11px] font-bold">
+           <div className="flex items-center gap-2 px-3 py-1 bg-white border border-slate-100 rounded-full shadow-sm"><div className="w-2 h-2 rounded-full bg-blue-600"></div><span className="text-slate-800">SJCM:</span><span className="text-slate-500">{loading ? '...' : dashboardData.stats.sjcm}</span></div>
+           <div className="flex items-center gap-2 px-3 py-1 bg-white border border-slate-100 rounded-full shadow-sm"><div className="w-2 h-2 rounded-full bg-purple-600"></div><span className="text-slate-800">SJHSS:</span><span className="text-slate-500">{loading ? '...' : dashboardData.stats.sjhss}</span></div>
+        </div>
+        <div className="ml-auto flex gap-3">
+           <div className="bg-amber-50/50 text-emerald-600 border border-amber-100 inline-flex px-4 py-1.5 rounded-full items-center gap-2 text-[10px] font-black">
+              <CheckCircle2 size={12} className="text-emerald-500" /> Accepted: {loading ? '...' : dashboardData.stats.accepted}
+           </div>
+           <div className="bg-rose-50/50 text-rose-600 border border-rose-100 inline-flex px-4 py-1.5 rounded-full items-center gap-2 text-[10px] font-black">
+              <AlertCircle size={12} className="text-rose-500" /> Rejected: {loading ? '...' : dashboardData.stats.rejected}
+           </div>
+        </div>
+      </div>
+
+      {/* QUICK ACTIONS SECTION */}
+      <div className="bg-white rounded-xl border border-slate-100 overflow-hidden shadow-sm">
+         <div className="px-6 py-4 border-b border-slate-50 bg-slate-50/50 flex items-center gap-2">
+            <Zap size={16} className="text-amber-500 fill-amber-300" />
+            <h3 className="text-xs font-black text-slate-800 tracking-widest uppercase">Quick Actions</h3>
+         </div>
+         <div className="p-6 flex flex-wrap gap-4">
+            <Button className="text-xs font-bold bg-white text-slate-700 border-slate-200 shadow-sm hover:bg-slate-50 h-10 px-6 rounded-xl gap-2 hover:border-blue-300 hover:text-blue-700 transition-all" variant="outline" onClick={() => setActiveTab('reviewers')}><UserPlus size={16} className="text-blue-600" /> Approve Reviewers</Button>
+            <Button className="text-xs font-bold bg-white text-slate-700 border-slate-200 shadow-sm hover:bg-slate-50 h-10 px-6 rounded-xl gap-2 hover:border-blue-300 hover:text-blue-700 transition-all" variant="outline" onClick={() => setActiveTab('assign')}><ListChecks size={16} className="text-blue-600" /> Assign Work</Button>
+            <Button className="text-xs font-bold bg-white text-slate-700 border-slate-200 shadow-sm hover:bg-slate-50 h-10 px-6 rounded-xl gap-2 hover:border-blue-300 hover:text-blue-700 transition-all" variant="outline" onClick={() => setActiveTab('manuscripts')}><FileText size={16} className="text-blue-600" /> Manuscripts</Button>
+            <Button className="text-xs font-bold bg-white text-slate-700 border-slate-200 shadow-sm hover:bg-slate-50 h-10 px-6 rounded-xl gap-2 hover:border-blue-300 hover:text-blue-700 transition-all" variant="outline" onClick={() => setActiveTab('messages')}><MessageSquare size={16} className="text-blue-600" /> Messages</Button>
+         </div>
+      </div>
+
+      {/* MIDDLE SECTION (TWO COLUMNS) */}
+      <div className="grid grid-cols-12 gap-6">
+         {/* RECENT MANUSCRIPTS */}
+         <Card className="col-span-12 lg:col-span-6 border border-slate-100 shadow-sm overflow-hidden bg-white rounded-xl">
+            <div className="px-6 py-5 border-b border-slate-50 flex items-center justify-between bg-slate-50/50">
+               <div className="flex items-center gap-2">
+                 <FileText size={18} className="text-blue-600" />
+                 <h3 className="text-sm font-bold text-slate-800 uppercase tracking-widest">Recent Manuscripts</h3>
+               </div>
+               <Button variant="secondary" size="sm" onClick={() => setActiveTab('manuscripts')} className="h-8 text-[11px] font-bold uppercase text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg px-4 border-none transition-colors">View All</Button>
+            </div>
+            <div className="overflow-x-auto min-h-[300px]">
+               {loading ? (
+                 <div className="flex items-center justify-center h-[300px] text-slate-400"><Loader2 className="animate-spin h-8 w-8" /></div>
+               ) : (
+               <table className="w-full text-left bg-white">
+                  <thead className="border-b border-slate-100">
+                     <tr className="uppercase text-xs font-semibold text-slate-500 bg-slate-50/50">
+                        <th className="px-5 py-4">Title</th>
+                        <th className="px-5 py-4">Author</th>
+                        <th className="px-5 py-4">Applied</th>
+                     </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-50">
+                     {dashboardData.recentManuscripts.map((item, i) => (
+                        <tr key={i} className="hover:bg-slate-50 border-b border-slate-50">
+                           <td className="px-5 py-3.5 text-sm font-semibold text-slate-800 max-w-[250px] truncate">{item.title}</td>
+                           <td className="px-5 py-3.5 text-xs font-bold text-slate-500 uppercase">{item.author}</td>
+                           <td className="px-5 py-3.5">
+                              <Badge variant="outline" className={`border text-[10px] font-bold uppercase px-2.5 py-1 rounded-full ${item.color}`}>
+                                 {item.status}
+                              </Badge>
+                           </td>
+                        </tr>
+                     ))}
+                     {dashboardData.recentManuscripts.length === 0 && (
+                        <tr><td colSpan={3} className="px-5 py-8 text-center text-base font-medium text-slate-400">No recent manuscripts</td></tr>
+                     )}
+                  </tbody>
+               </table>
+               )}
+            </div>
+         </Card>
+
+         {/* PENDING ASSIGNMENTS */}
+         <Card className="col-span-12 lg:col-span-6 border border-slate-100 shadow-sm overflow-hidden bg-white rounded-xl">
+            <div className="px-6 py-5 border-b border-slate-50 flex items-center justify-between bg-slate-50/50">
+               <div className="flex items-center gap-2">
+                 <Laptop size={18} className="text-purple-600" />
+                 <h3 className="text-sm font-bold text-slate-800 uppercase tracking-widest">Pending Assignments</h3>
+               </div>
+               <Button variant="secondary" size="sm" onClick={() => setActiveTab('assignments')} className="h-8 text-[11px] font-bold uppercase text-purple-600 bg-purple-50 hover:bg-purple-100 rounded-lg px-4 border-none transition-colors">View All</Button>
+            </div>
+            <div className="overflow-x-auto min-h-[300px]">
+               {loading ? (
+                 <div className="flex items-center justify-center h-[300px] text-slate-400"><Loader2 className="animate-spin h-8 w-8" /></div>
+               ) : (
+               <table className="w-full text-left">
+                  <thead className="border-b border-slate-100 bg-slate-50/50">
+                     <tr className="uppercase text-xs font-semibold text-slate-500 tracking-wider">
+                        <th className="px-5 py-4">Manuscript</th>
+                        <th className="px-5 py-4">Reviewer</th>
+                        <th className="px-5 py-4">Due</th>
+                     </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-50">
+                     {dashboardData.pendingAssignments.map((item, i) => (
+                        <tr key={i} className="hover:bg-slate-50 border-b border-slate-50">
+                           <td className="px-5 py-3.5 text-sm font-semibold text-slate-800 max-w-[250px] truncate">{item.manuscript}</td>
+                           <td className="px-5 py-3.5 text-sm font-medium text-slate-600 flex items-center gap-3">
+                             <div className="w-8 h-8 rounded-full bg-purple-100 text-purple-700 flex items-center justify-center text-xs font-bold shadow-sm">
+                               {item.reviewer.charAt(0)}
+                             </div>
+                             {item.reviewer}
+                           </td>
+                           <td className="px-5 py-3.5">
+                             <span className="text-xs font-bold text-rose-600 bg-rose-50 rounded-md inline-flex items-center px-2.5 py-1 border border-rose-100"><Calendar size={12} className="mr-1" /> {item.due}</span>
+                           </td>
+                        </tr>
+                     ))}
+                     {dashboardData.pendingAssignments.length === 0 && (
+                        <tr><td colSpan={3} className="px-5 py-8 text-center text-base font-medium text-slate-400">No pending assignments</td></tr>
+                     )}
+                  </tbody>
+               </table>
+               )}
+            </div>
+         </Card>
+      </div>
+
+      {/* BOTTOM SECTION: REVIEWER APPROVALS */}
+      <Card className="border border-slate-100 shadow-sm overflow-hidden bg-white rounded-xl">
+         <div className="px-6 py-5 border-b border-slate-50 flex items-center justify-between bg-slate-50/50">
+            <div className="flex items-center gap-2">
+               <Users size={18} className="text-emerald-500" />
+               <h3 className="text-sm font-bold text-slate-800 uppercase tracking-widest">Pending Reviewer Approvals</h3>
+            </div>
+            <Button variant="secondary" size="sm" onClick={() => setActiveTab('reviewers')} className="h-8 text-[11px] font-bold uppercase text-emerald-600 bg-emerald-50 hover:bg-emerald-100 rounded-lg px-4 border-none transition-colors">Manage All</Button>
+         </div>
+         <div className="overflow-x-auto min-h-[200px]">
+            {loading ? (
+              <div className="flex items-center justify-center h-[200px] text-slate-400"><Loader2 className="animate-spin h-8 w-8" /></div>
+            ) : (
+            <table className="w-full text-left">
+               <thead className="border-b border-slate-100 bg-slate-50/50">
+                  <tr className="uppercase text-xs font-semibold text-slate-500">
+                     <th className="px-5 py-4">Name</th>
+                     <th className="px-5 py-4">Email</th>
+                     <th className="px-5 py-4">Role</th>
+                     <th className="px-5 py-4">Applied</th>
+                     <th className="px-5 py-4 text-center">Action</th>
+                  </tr>
+               </thead>
+               <tbody className="divide-y divide-slate-50">
+                  {dashboardData.pendingReviewerApprovals.map((r, i) => (
+                     <tr key={i} className="hover:bg-slate-50 border-b border-slate-50">
+                        <td className="px-5 py-3.5 flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-sm font-bold flex-shrink-0">
+                            {r.name.charAt(0)}
+                          </div>
+                          <span className="text-sm font-semibold text-slate-800">{r.name}</span>
+                        </td>
+                        <td className="px-5 py-3.5 text-sm text-slate-500">{r.email}</td>
+                        <td className="px-5 py-3.5">
+                           <Badge variant="outline" className="bg-purple-50 text-purple-600 border-purple-200 text-[10px] font-bold px-2.5 py-1 rounded-full">{r.role || 'Reviewer'}</Badge>
+                        </td>
+                        <td className="px-5 py-3.5 text-sm text-slate-500 font-medium">{r.applied}</td>
+                        <td className="px-5 py-3.5 text-center">
+                           <Button className="h-8 bg-slate-800 hover:bg-blue-600 text-[11px] font-bold uppercase px-5 rounded-lg text-white shadow-sm">Review</Button>
+                        </td>
+                     </tr>
+                  ))}
+                  {dashboardData.pendingReviewerApprovals.length === 0 && (
+                     <tr><td colSpan={5} className="px-5 py-8 text-center text-base font-medium text-slate-400">No pending reviewer approvals</td></tr>
+                  )}
+               </tbody>
+            </table>
+            )}
+         </div>
+      </Card>
+    </div>
+  );
+
+  const renderManuscripts = () => {
+    const filteredManuscripts = allManuscripts.filter(m => {
+       if (searchTerm) {
+         const term = searchTerm.toLowerCase();
+         if (!`${m.title || ''} ${m.author || ''} ${m.journal || ''} ${m.id || ''}`.toLowerCase().includes(term)) return false;
+       }
+       if (filterJournal !== 'All' && filterJournal !== m.journal) return false;
+       if (filterStatus !== 'All' && filterStatus.toLowerCase() !== m.status.toLowerCase()) return false;
+       
+       const isPub = m.status?.toLowerCase() === 'published';
+       const isRej = m.status?.toLowerCase() === 'rejected';
+       if (!showPublished && isPub) return false;
+       if (!showRejected && isRej) return false;
+       
+       return true;
+    });
+
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-        <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-          <p className="mt-4 text-gray-600 dark:text-gray-400">Loading Admin Dashboard...</p>
-          <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">Please wait while we fetch your data</p>
+    <div className="space-y-6 text-left pb-16">
+       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 py-2 print:hidden">
+          <div className="pl-2">
+             <h2 className="text-xl font-bold font-sans text-slate-800 tracking-tight">All Manuscripts</h2>
+             <p className="text-xs font-medium text-slate-500 mt-0.5 max-w-2xl">Manage submissions. By default, the list shows Under Review, Under Process, Accepted, and Complement manuscripts.</p>
+          </div>
+          <div className="flex items-center gap-3 pr-2">
+             <div className="flex items-center gap-2 mr-2">
+                <Checkbox id="showPublished" checked={showPublished} onCheckedChange={(c) => setShowPublished(!!c)} />
+                <label htmlFor="showPublished" className="text-xs font-bold text-slate-600 cursor-pointer">Show Published</label>
+             </div>
+             <div className="flex items-center gap-2 mr-4">
+                <Checkbox id="showRejected" checked={showRejected} onCheckedChange={(c) => setShowRejected(!!c)} />
+                <label htmlFor="showRejected" className="text-xs font-bold text-slate-600 cursor-pointer">Show Rejected</label>
+             </div>
+             <Button onClick={() => fetchManuscripts(true)} disabled={loadingManuscripts} variant="outline" size="sm" className="bg-white gap-2 font-bold text-[11px] h-9 px-4 border-slate-200 rounded-md shadow-sm"><RefreshCw size={14} className={loadingManuscripts ? "animate-spin" : ""} /> Refresh</Button>
+             <Button onClick={() => window.print()} variant="outline" size="sm" className="bg-white gap-2 font-bold text-[11px] h-9 px-4 border-slate-200 rounded-md shadow-sm"><Printer size={14} /> Print</Button>
+             <Button onClick={exportManuscriptsCSV} className="bg-indigo-700 hover:bg-indigo-800 gap-2 font-bold text-[11px] h-9 px-5 text-white shadow-md rounded-md"><FileDown size={14} /> Export CSV</Button>
+          </div>
+       </div>
+
+       <div className="rounded-xl border border-slate-200 bg-white overflow-hidden shadow-sm">
+          {/* FILTER ROW */}
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4 py-2 border-b border-slate-100 px-6 bg-white print:hidden">
+             <div className="relative w-full max-w-sm">
+                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <Input 
+                   value={searchTerm}
+                   onChange={(e) => setSearchTerm(e.target.value)}
+                   placeholder="Search by title, author, journal..." 
+                   className="pl-9 h-9 text-xs border-slate-200 focus-visible:ring-blue-500 rounded-md shadow-sm w-full bg-slate-50/50"
+                />
+             </div>
+             <div className="flex items-center gap-4">
+                <Select value={filterJournal} onValueChange={setFilterJournal}>
+                   <SelectTrigger className="w-[200px] h-9 text-xs font-semibold border-slate-200 shadow-sm rounded-md">
+                      <SelectValue placeholder="All Journals" />
+                   </SelectTrigger>
+                   <SelectContent>
+                      <SelectItem value="All">All Journals</SelectItem>
+                      <SelectItem value="Scholar Journal of Commerce and Management">SJCM</SelectItem>
+                      <SelectItem value="Scholar Journal of Humanities and Social Sciences">SJHSS</SelectItem>
+                   </SelectContent>
+                </Select>
+
+                <Select value={filterStatus} onValueChange={setFilterStatus}>
+                   <SelectTrigger className="w-[160px] h-9 text-xs font-semibold border-slate-200 shadow-sm rounded-md">
+                      <SelectValue placeholder="All Statuses" />
+                   </SelectTrigger>
+                   <SelectContent>
+                      <SelectItem value="All">All Statuses</SelectItem>
+                      <SelectItem value="Submitted">Submitted</SelectItem>
+                      <SelectItem value="Under Review">Under Review</SelectItem>
+                      <SelectItem value="Accepted">Accepted</SelectItem>
+                      <SelectItem value="Rejected">Rejected</SelectItem>
+                      <SelectItem value="Published">Published</SelectItem>
+                      <SelectItem value="Under Process">Under Process</SelectItem>
+                      <SelectItem value="Complement">Complement</SelectItem>
+                      <SelectItem value="Hold">Hold</SelectItem>
+                   </SelectContent>
+                </Select>
+                
+                <div className="text-xs font-bold text-slate-500 whitespace-nowrap min-w-[70px] text-right">{filteredManuscripts.length} record(s)</div>
+             </div>
+          </div>
+
+          <div className="grid grid-cols-12 gap-x-4 px-6 py-4 bg-slate-50/80 border-b border-slate-100">
+             <div className="col-span-6 text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-1">MANUSCRIPT DETAILS <ChevronsUpDown size={10}/></div>
+             <div className="col-span-1 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-center flex items-center justify-center gap-1">DATE <ChevronsUpDown size={10}/></div>
+             <div className="col-span-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-1">JOURNAL <ChevronsUpDown size={10}/></div>
+             <div className="col-span-1 text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-1">STATUS <ChevronsUpDown size={10}/></div>
+             <div className="col-span-1 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-right">ACTIONS</div>
+          </div>
+          
+          <div className="divide-y divide-slate-100 bg-[#FFFFF9]">
+             {loadingManuscripts && allManuscripts.length === 0 ? (
+                <div className="p-12 text-center text-slate-400 font-medium flex justify-center"><Loader2 className="animate-spin h-6 w-6" /></div>
+             ) : filteredManuscripts.length === 0 ? (
+                <div className="p-12 text-center text-slate-400 font-medium text-sm">No manuscripts found matching filters.</div>
+             ) : (
+                filteredManuscripts.slice(0, manuscriptsLimit).map((m, i) => (
+                   <div key={i} className="grid grid-cols-12 gap-x-4 px-6 py-5 hover:bg-slate-50 items-center">
+                      <div className="col-span-6 space-y-1.5">
+                         <div className="flex items-center gap-2"><span className="text-[11px] font-black text-slate-600 tracking-wider uppercase">{m.id}</span>{m.isNew && <span className="text-rose-600 text-[9px] font-bold uppercase py-0.5 rounded leading-none italic">NEW</span>}</div>
+                         <h4 className="text-[13px] font-bold text-slate-800 leading-snug pr-4">{m.title}</h4>
+                         <div className="flex flex-col gap-y-0.5 mt-1.5 text-[10px]">
+                            <span className="flex items-center gap-2 text-slate-500 font-bold uppercase"><Users size={12} className="text-slate-600" /> {m.author}</span>
+                            <span className="flex items-center gap-2 text-blue-600 font-bold"><Mail size={12} className="text-slate-600" /> {m.email}</span>
+                            <span className="flex items-center gap-2 text-emerald-600 font-bold"><Phone size={12} className="text-slate-600" /> {m.phone}</span>
+                         </div>
+                      </div>
+                      <div className="col-span-1 flex items-center justify-center text-[11px] text-slate-600 font-medium">{m.date}</div>
+                      <div className="col-span-3 flex items-center text-[10px] font-medium text-slate-600 leading-tight pr-4">{m.journal}</div>
+                      <div className="col-span-1 flex items-center"><Badge variant="outline" className={`border text-[9px] font-black tracking-wide rounded-full px-2.5 py-0.5 shadow-sm bg-opacity-50 ${m.status?.toLowerCase() === 'accepted' || m.status?.toLowerCase() === 'published' ? 'bg-emerald-100 text-emerald-600 border-none' : m.status?.toLowerCase() === 'rejected' ? 'bg-rose-100 text-rose-600 border-none' : 'bg-blue-100 text-blue-600 border-none'}`}>{m.status}</Badge></div>
+                      <div className="col-span-1 flex items-center justify-end print:hidden">
+                         <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                               <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-slate-700 bg-white border border-slate-100 rounded-md transition-colors"><MoreVertical size={14} /></Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-48 bg-white border-slate-100 shadow-xl rounded-xl p-1.5 font-medium text-slate-600">
+                               <DropdownMenuItem onClick={() => { setSelectedManuscript(m); setIsDetailsModalOpen(true); }} className="focus:bg-slate-50 cursor-pointer text-xs rounded-lg py-2">
+                                  <Eye className="mr-2 h-4 w-4 text-blue-700" /> View Details
+                               </DropdownMenuItem>
+                               <DropdownMenuItem onClick={() => { 
+                                  const rawM = m.raw || {};
+                                  setEditForm({
+                                     id: m.id,
+                                     title: rawM.manuscript_title || m.title || '',
+                                     journal: rawM.journal || m.journal || '',
+                                     author: rawM.author_name || m.author || '',
+                                     email: rawM.email || m.email || '',
+                                     doi: rawM.doi || '',
+                                     plagiarism: rawM.plagiarism_report || ''
+                                  });
+                                  setIsEditModalOpen(true);
+                               }} className="focus:bg-slate-50 cursor-pointer text-xs rounded-lg py-2">
+                                  <Edit className="mr-2 h-4 w-4 text-purple-600" /> Edit Manuscript
+                               </DropdownMenuItem>
+                               <DropdownMenuItem onClick={() => { if (m.raw?.file_url) window.open(m.raw.file_url, '_blank'); else toast({title: "No document attached", variant: "destructive"}); }} className="focus:bg-slate-50 cursor-pointer text-xs rounded-lg py-2">
+                                  <FileText className="mr-2 h-4 w-4 text-rose-600" /> View Document
+                               </DropdownMenuItem>
+                               
+                               <DropdownMenuSeparator className="bg-slate-100 my-1" />
+                               
+                               <DropdownMenuItem onClick={() => updateManuscriptStatus(m.id, 'Under Review')} className="focus:bg-orange-50 cursor-pointer text-xs rounded-lg py-2 focus:text-orange-700">
+                                  <Clock className="mr-2 h-4 w-4 text-orange-600" /> Under Review
+                               </DropdownMenuItem>
+                               <DropdownMenuItem onClick={() => updateManuscriptStatus(m.id, 'Accepted')} className="focus:bg-emerald-50 cursor-pointer text-xs rounded-lg py-2 focus:text-emerald-700">
+                                  <Check className="mr-2 h-4 w-4 text-emerald-600" /> Accept
+                               </DropdownMenuItem>
+                               <DropdownMenuItem onClick={() => updateManuscriptStatus(m.id, 'Rejected')} className="focus:bg-rose-50 cursor-pointer text-xs rounded-lg py-2 focus:text-rose-700">
+                                  <X className="mr-2 h-4 w-4 text-rose-600" /> Reject
+                               </DropdownMenuItem>
+                               <DropdownMenuItem onClick={() => updateManuscriptStatus(m.id, 'Hold')} className="focus:bg-slate-100 cursor-pointer text-xs rounded-lg py-2">
+                                  <Pause className="mr-2 h-4 w-4 text-slate-500" /> Hold
+                               </DropdownMenuItem>
+                               <DropdownMenuItem onClick={() => updateManuscriptStatus(m.id, 'Complement')} className="focus:bg-blue-50 cursor-pointer text-xs rounded-lg py-2 focus:text-blue-700">
+                                  <PlusCircle className="mr-2 h-4 w-4 text-slate-800" /> Complement
+                               </DropdownMenuItem>
+                               <DropdownMenuItem onClick={() => updateManuscriptStatus(m.id, 'Published')} className="focus:bg-purple-50 cursor-pointer text-xs rounded-lg py-2 focus:text-purple-700">
+                                  <Globe className="mr-2 h-4 w-4 text-purple-600" /> Mark Published
+                               </DropdownMenuItem>
+                            </DropdownMenuContent>
+                         </DropdownMenu>
+                      </div>
+                   </div>
+                ))
+             )}
+          </div>
+          {allManuscripts.length >= manuscriptsLimit && (
+             <div className="p-4 bg-white border-t border-slate-100 flex justify-center print:hidden">
+                <Button onClick={() => setManuscriptsLimit(prev => prev + 10)} disabled={loadingManuscripts} variant="outline" className="text-xs font-bold text-slate-600 border-slate-200 bg-white hover:bg-slate-50 rounded-lg h-9 px-6 shadow-sm">
+                   Load More Manuscripts
+                </Button>
+             </div>
+          )}
+       </div>
+    </div>
+  );
+  };
+
+  const updateReviewStatus = async (id: string, newStatus: string) => {
+    try {
+      const { error } = await supabase.from('assignments').update({ status: newStatus }).eq('id', id);
+      if (!error) {
+        toast({ title: `Review marked as ${newStatus}` });
+        setAllReviews(prev => prev.map(r => r.id === id ? { ...r, status: newStatus } : r));
+      } else { throw error; }
+    } catch(e) { toast({ title: 'Failed to update review status', variant: 'destructive' }); }
+  };
+
+  const exportAssignmentsCSV = () => {
+    if (allReviews.length === 0) return;
+    const filtered = allReviews.filter(r => showRevoked || r.status?.toLowerCase() !== 'revoked');
+    const headers = ['ID', 'Manuscript Title', 'Reviewer', 'Email', 'Assigned At', 'Due Date', 'Status', 'Marks', 'Recommendation'];
+    const csvData = filtered.map(r => [
+      r.id,
+      `"${(r.manuscript_title || '').replace(/"/g, '""')}"`,
+      `"${(r.reviewer_full_name || '').replace(/"/g, '""')}"`,
+      r.reviewer_email || '',
+      r.assigned_at ? new Date(r.assigned_at).toLocaleDateString('en-GB') : '',
+      r.due_date || '',
+      r.status || 'Pending',
+      r.overall_marks || '',
+      `"${(r.recommendation || '').replace(/"/g, '""')}"`
+    ].join(','));
+    const csvContent = [headers.join(','), ...csvData].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.setAttribute('download', 'scholar_india_assignments.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleSendReminder = (email: string) => {
+    toast({ title: `Reminder sent to ${email}` });
+  };
+
+  const renderAssignments = () => {
+    const total = allReviews.length;
+    const pending = allReviews.filter(r => r.status?.toLowerCase() === 'pending').length;
+    const completed = allReviews.filter(r => r.status?.toLowerCase() === 'completed' || r.status?.toLowerCase() === 'approved' || r.status?.toLowerCase() === 'rejected').length;
+    const revoked = allReviews.filter(r => r.status?.toLowerCase() === 'revoked').length;
+
+    let filtered = allReviews;
+    if (!showRevoked) filtered = filtered.filter(r => r.status?.toLowerCase() !== 'revoked');
+    if (assignmentsFilterStatus !== 'All Statuses') {
+      filtered = filtered.filter(r => {
+        if (assignmentsFilterStatus === 'Pending') return r.status?.toLowerCase() === 'pending';
+        if (assignmentsFilterStatus === 'Completed') return r.status?.toLowerCase() === 'completed' || r.status?.toLowerCase() === 'approved' || r.status?.toLowerCase() === 'rejected';
+        return true;
+      });
+    }
+    if (assignmentsSearchTerm) {
+      const term = assignmentsSearchTerm.toLowerCase();
+      filtered = filtered.filter(r => 
+        (r.manuscript_title && r.manuscript_title.toLowerCase().includes(term)) ||
+        (r.reviewer_full_name && r.reviewer_full_name.toLowerCase().includes(term)) ||
+        (r.manuscript_id && r.manuscript_id.toLowerCase().includes(term))
+      );
+    }
+
+    return (
+      <div className="space-y-6 text-left pb-16">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 py-2">
+          <div className="pl-2">
+            <h2 className="text-xl font-bold text-slate-800 tracking-tight">All Assignments</h2>
+            <p className="text-xs font-medium text-slate-500 mt-0.5">Track reviewer assignments with status, ranking, and performance indicators.</p>
+          </div>
+          <div className="flex items-center gap-3 pr-2">
+            <label className="flex items-center gap-2 text-xs font-bold text-slate-600 bg-white border border-slate-200 px-3 py-2 rounded-lg cursor-pointer hover:bg-slate-50 shadow-sm transition-colors">
+              <input type="checkbox" checked={showRevoked} onChange={(e) => setShowRevoked(e.target.checked)} className="rounded border-slate-300 text-blue-600 focus:ring-blue-500" />
+              Show Revoked
+            </label>
+            <Button onClick={() => fetchReviews(true)} disabled={loadingReviews} variant="outline" className="bg-white gap-2 font-bold text-xs h-9 px-4 border-slate-200 rounded-lg shadow-sm">
+              <RefreshCw size={14} className={loadingReviews ? 'animate-spin' : ''} /> Refresh
+            </Button>
+            <Button onClick={() => window.print()} variant="outline" className="bg-white gap-2 font-bold text-xs h-9 px-4 border-slate-200 rounded-lg shadow-sm">
+              <Printer size={14} /> Print
+            </Button>
+            <Button onClick={exportAssignmentsCSV} className="bg-[#1e3a8a] hover:bg-blue-900 text-white gap-2 font-bold text-xs h-9 px-4 rounded-lg shadow-sm border-none">
+              <Download size={14} /> Export CSV
+            </Button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 px-2">
+          {/* Summary Cards */}
+          <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm flex items-center gap-4">
+             <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center text-blue-500"><ListChecks size={20} /></div>
+             <div><p className="text-2xl font-black text-slate-800 leading-none">{total}</p><p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">Total</p></div>
+          </div>
+          <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm flex items-center gap-4">
+             <div className="w-12 h-12 rounded-xl bg-amber-50 flex items-center justify-center text-amber-500"><Clock size={20} /></div>
+             <div><p className="text-2xl font-black text-slate-800 leading-none">{pending}</p><p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">Pending</p></div>
+          </div>
+          <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm flex items-center gap-4">
+             <div className="w-12 h-12 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-500"><CheckCircle2 size={20} /></div>
+             <div><p className="text-2xl font-black text-slate-800 leading-none">{completed}</p><p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">Completed</p></div>
+          </div>
+          <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm flex items-center gap-4">
+             <div className="w-12 h-12 rounded-xl bg-rose-50 flex items-center justify-center text-rose-500"><Ban size={20} /></div>
+             <div><p className="text-2xl font-black text-slate-800 leading-none">{revoked}</p><p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">Revoked</p></div>
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-slate-200 bg-white overflow-hidden shadow-sm mx-2">
+          {/* Header Action Bar */}
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4 p-4 border-b border-slate-100 bg-white relative z-10">
+            <div className="relative w-full max-w-sm">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
+              <Input
+                placeholder="Search by manuscript, reviewer..."
+                className="pl-10 h-10 w-full rounded-xl bg-slate-50/50 border-slate-200 text-sm focus-visible:ring-1 focus-visible:ring-indigo-500 shadow-sm"
+                value={assignmentsSearchTerm}
+                onChange={(e) => setAssignmentsSearchTerm(e.target.value)}
+              />
+            </div>
+            
+            <div className="flex items-center gap-3 w-full md:w-auto">
+               <select
+                 value={assignmentsFilterStatus}
+                 onChange={e => setAssignmentsFilterStatus(e.target.value)}
+                 className="h-10 px-4 rounded-xl border border-slate-200 bg-white text-xs font-bold text-slate-600 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 shadow-sm"
+               >
+                 <option>All Statuses</option>
+                 <option>Pending</option>
+                 <option>Completed</option>
+               </select>
+               <div className="text-xs font-bold text-slate-400 whitespace-nowrap pl-2 border-l border-slate-200">{filtered.length} record(s)</div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-12 gap-x-4 px-6 py-3.5 bg-slate-50/80 border-b border-slate-100 items-center">
+            <div className="col-span-4 lg:col-span-3 text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-1 hover:text-slate-700 cursor-pointer transition-colors">ASSIGNMENT / MANUSCRIPT DETAILS <ChevronsUpDown size={12} className="opacity-50" /></div>
+            <div className="col-span-3 lg:col-span-3 text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-1 hover:text-slate-700 cursor-pointer transition-colors">REVIEWER <ChevronsUpDown size={12} className="opacity-50" /></div>
+            <div className="col-span-2 text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-1 hover:text-slate-700 cursor-pointer transition-colors">ASSIGNED <ChevronsUpDown size={12} className="opacity-50" /></div>
+            <div className="col-span-1 text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-1 hover:text-slate-700 cursor-pointer transition-colors">DUE DATE <ChevronsUpDown size={12} className="opacity-50" /></div>
+            <div className="col-span-1 text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-1 hover:text-slate-700 cursor-pointer transition-colors">STATUS <ChevronsUpDown size={12} className="opacity-50" /></div>
+            <div className="col-span-1 border-l border-slate-200 pl-4 text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-1 hover:text-slate-700 cursor-pointer transition-colors">RANK <ChevronsUpDown size={12} className="opacity-50" /></div>
+          </div>
+          
+          <div className="divide-y divide-slate-100 bg-[#FFFFF9]">
+            {loadingReviews && allReviews.length === 0 ? (
+               <div className="p-12 text-center text-slate-400 font-medium flex justify-center"><Loader2 className="animate-spin h-6 w-6" /></div>
+            ) : filtered.length === 0 ? (
+               <div className="p-12 text-center text-slate-400 font-medium text-sm">No assignments found.</div>
+            ) : (
+               filtered.map((r, index) => {
+                 const isOverdue = r.due_date && new Date(r.due_date.split('/').reverse().join('-')) < new Date() && r.status !== 'Completed' && r.status !== 'Approved' && r.status !== 'Rejected';
+                 return (
+                   <div key={r.id || index} className="grid grid-cols-12 gap-x-4 px-6 py-4 hover:bg-slate-50 items-center transition-colors">
+                     <div className="col-span-4 lg:col-span-3 space-y-1.5 pr-2">
+                        <p className="text-[10px] font-bold text-slate-500">{r.assigned_at ? new Date(r.assigned_at).toLocaleString() : '—'}</p>
+                        <p className="text-[11px] font-bold text-slate-800 line-clamp-2 leading-snug">{r.manuscript_title || 'Untitled Manuscript'}</p>
+                        <p className="text-[10px] font-bold text-slate-400 mt-0.5">MS ID: {r.manuscript_id || '—'}</p>
+                     </div>
+                     <div className="col-span-3 lg:col-span-3 space-y-1">
+                        <p className="text-[11px] font-bold text-slate-800">{r.reviewer_full_name || '—'}</p>
+                        <p className="text-[10px] font-semibold text-slate-500 flex items-center gap-1.5 truncate"><Mail size={12} className="text-slate-400"/> {r.reviewer_email || '—'}</p>
+                        <p className="text-[10px] font-semibold text-slate-500 flex items-center gap-1.5"><Phone size={12} className="text-slate-400"/> —</p>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-1">{r.reviewer_id || '—'}</p>
+                     </div>
+                     <div className="col-span-2 text-[10px] font-bold text-slate-600">
+                        {r.assigned_at ? new Date(r.assigned_at).toLocaleString('en-GB') : '—'}
+                     </div>
+                     <div className={`col-span-1 text-[10px] font-bold flex items-center gap-1 ${isOverdue ? 'text-rose-600' : 'text-slate-600'}`}>
+                        {r.due_date || '—'}
+                        {isOverdue && <AlertCircle size={12} className="text-amber-500" />}
+                     </div>
+                     <div className="col-span-1">
+                        <Badge variant="outline" className={`border-none tracking-wide text-[9px] font-bold px-2 py-0.5 ${r.status?.toLowerCase() === 'pending' ? 'bg-blue-50 text-blue-600' : r.status?.toLowerCase() === 'revoked' ? 'bg-rose-50 text-rose-600' : 'bg-emerald-50 text-emerald-600'}`}>
+                           {r.status || 'Pending'}
+                        </Badge>
+                     </div>
+                     <div className="col-span-1 border-l border-slate-100 pl-4 flex items-center justify-between gap-1.5 text-[10px] font-bold text-slate-700">
+                        <div className="flex flex-col gap-1 flex-1 pr-1">
+                           {(() => {
+                              let calculatedRank = '—';
+                              if (r.overall_marks !== null && r.overall_marks !== undefined) {
+                                 const mark = Number(r.overall_marks);
+                                 if (!isNaN(mark)) {
+                                    if (mark >= 10) calculatedRank = 'Great';
+                                    else if (mark >= 8) calculatedRank = 'Good';
+                                    else calculatedRank = 'Not Good';
+                                 }
+                              }
+                              return calculatedRank !== '—' ? (
+                                <span className="flex items-center gap-1.5 whitespace-nowrap">
+                                  <Medal size={12} className={calculatedRank === 'Great' ? 'text-emerald-500' : calculatedRank === 'Good' ? 'text-blue-500' : 'text-amber-600'}/>
+                                  {calculatedRank}
+                                </span>
+                              ) : r.recommendation ? (
+                                <span className="flex items-center gap-1.5 whitespace-nowrap overflow-hidden text-ellipsis line-clamp-2" title={r.recommendation}>
+                                  <Medal size={12} className="text-slate-400 shrink-0"/>
+                                  <span className="truncate">{r.recommendation}</span>
+                                </span>
+                              ) : '—';
+                           })()}
+                        </div>
+                        <DropdownMenu>
+                           <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-7 w-7 text-slate-400 hover:text-slate-700 border border-slate-200 shrink-0">
+                                 <MoreVertical size={14} />
+                              </Button>
+                           </DropdownMenuTrigger>
+                           <DropdownMenuContent align="end" className="w-44 bg-white border-slate-100 shadow-xl rounded-xl p-1.5 font-medium text-slate-600">
+                              <DropdownMenuItem onClick={() => handleSendReminder(r.reviewer_email || '')} className="focus:bg-amber-50 cursor-pointer text-xs rounded-lg py-2 focus:text-amber-700">
+                                 <Bell className="mr-2 h-4 w-4 text-amber-600" /> Send Reminder
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => updateReviewStatus(r.id, 'Revoked')} className="focus:bg-rose-50 cursor-pointer text-xs rounded-lg py-2 focus:text-rose-700">
+                                 <Ban className="mr-2 h-4 w-4 text-rose-600" /> Revoke
+                              </DropdownMenuItem>
+                           </DropdownMenuContent>
+                        </DropdownMenu>
+                     </div>
+                   </div>
+                 );
+               })
+            )}
+            
+            {filtered.length >= reviewsLimit && (
+              <div className="p-4 bg-white border-t border-slate-100 flex justify-center">
+                <Button onClick={() => setReviewsLimit(prev => prev + 10)} disabled={loadingReviews} variant="outline" className="text-xs font-bold text-slate-600 border-slate-200 bg-white hover:bg-slate-50 rounded-lg h-9 px-6 shadow-sm">
+                  Load More
+                </Button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     );
-  }
+  };
 
-  if (!isAuthenticated) {
-    return null;
-  }
+  const handleReviewAction = async (action: 'Approved' | 'Rejected') => {
+    if (!selectedReview) return;
+    setSubmittingReview(true);
+    try {
+      const updateData: any = { status: action };
+      if (adminNote) updateData.notes = adminNote;
+      const { error } = await supabase
+        .from('assignments')
+        .update(updateData)
+        .eq('id', selectedReview.id);
+      if (error) throw error;
+      toast({ title: `Review ${action.toLowerCase()} successfully.` });
+      setAllReviews(prev => prev.map(r => r.id === selectedReview.id ? { ...r, status: action } : r));
+      setIsReviewModalOpen(false);
+      setAdminNote('');
+    } catch (e) {
+      toast({ title: 'Failed to update review', variant: 'destructive' });
+    } finally {
+      setSubmittingReview(false);
+    }
+  };
 
-  return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <SEO
-        title="Admin Dashboard - Scholar India Publishers"
-        description="Administrator panel for managing reviewers and manuscript assignments."
-      />
+  const renderReviews = () => {
+    const filtered = allReviews.filter(r => {
+      if (!reviewsSearchTerm) return true;
+      const s = reviewsSearchTerm.toLowerCase();
+      return (r.manuscript_title || '').toLowerCase().includes(s)
+          || (r.reviewer_full_name || '').toLowerCase().includes(s)
+          || (r.reviewer_email || '').toLowerCase().includes(s)
+          || (r.manuscript_id || '').toLowerCase().includes(s)
+          || (r.reviewer_id || '').toLowerCase().includes(s);
+    });
 
-      {/* Header */}
-      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400"
-              data-testid="button-mobile-menu-toggle"
-            >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={mobileMenuOpen ? "M6 18L18 6M6 6l12 12" : "M4 6h16M4 12h16M4 18h16"} />
-              </svg>
-            </button>
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-xl md:text-2xl font-bold text-blue-900 dark:text-blue-300">Admin Dashboard</h1>
-                <span className="flex items-center gap-1 px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-[10px] font-semibold rounded-full">
-                  <span className={`w-2 h-2 rounded-full bg-green-500 ${isRefreshing ? 'animate-ping' : 'animate-pulse'}`}></span>
-                  LIVE
-                </span>
-              </div>
-              <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400">Logged in as: {adminEmail} | Updated: {lastUpdated.toLocaleTimeString()}</p>
-            </div>
+    const pendingCount = allReviews.filter(r => {
+      const s = (r.status || '').toLowerCase();
+      return s !== 'approved' && s !== 'rejected';
+    }).length;
+
+    return (
+      <div className="space-y-6 text-left pb-16">
+        <div className="flex flex-col md:flex-row justify-between gap-4 py-2">
+          <div className="pl-2">
+            <h2 className="text-xl font-bold text-slate-800 tracking-tight">Approve Reviews</h2>
+            <p className="text-xs font-medium text-slate-500 mt-0.5">Review completed assignments and approve or reject reviewer submissions.</p>
           </div>
-          <div className="flex gap-1 md:gap-2 flex-wrap justify-end">
-            <Button
-              variant="outline"
-              onClick={() => setCurrentMenu('popup-messages')}
-              data-testid="button-set-popup"
-              size="sm"
-              className="flex items-center gap-1 md:gap-2 text-purple-600 text-xs md:text-sm"
-            >
-              <Bell className="w-4 h-4" />
-              <span className="hidden sm:inline">Popup</span>
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => setShowPasswordDialog(true)}
-              data-testid="button-change-admin-password"
-              size="sm"
-              className="flex items-center gap-1 md:gap-2 text-blue-600 text-xs md:text-sm"
-            >
-              <Lock className="w-4 h-4" />
-              <span className="hidden sm:inline">Password</span>
-            </Button>
-            <Button
-              variant="outline"
-              onClick={handleLogout}
-              data-testid="button-logout"
-              size="sm"
-              className="flex items-center gap-1 md:gap-2 text-xs md:text-sm"
-            >
-              <LogOut className="w-4 h-4" />
-              <span className="hidden sm:inline">Logout</span>
+          <div className="flex items-center gap-3 pr-2">
+            {pendingCount > 0 && (
+              <span className="text-xs font-bold text-amber-700 bg-amber-50 border border-amber-200 px-3 py-1 rounded-full">
+                {pendingCount} pending review(s)
+              </span>
+            )}
+            <Button onClick={() => fetchReviews(true)} disabled={loadingReviews} variant="outline" size="sm" className="bg-white gap-2 font-bold text-[11px] h-9 px-4 border-slate-200 rounded-md shadow-sm">
+              <RefreshCw size={14} className={loadingReviews ? 'animate-spin' : ''} /> Refresh
             </Button>
           </div>
         </div>
 
-        <Dialog open={showPasswordDialog} onOpenChange={setShowPasswordDialog}>
-          <DialogContent data-testid="dialog-admin-change-password">
-            <DialogHeader>
-              <DialogTitle>Change Admin Password</DialogTitle>
-              <DialogDescription>Create a strong password with at least 8 characters, uppercase, lowercase, number, and special character</DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4">
-              {passwordErrors.length > 0 && (
-                <div className="bg-red-50 border border-red-200 rounded p-3">
-                  {passwordErrors.map((err, idx) => (
-                    <p key={idx} className="text-sm text-red-600">{err}</p>
-                  ))}
-                </div>
-              )}
+        <div className="rounded-xl border border-slate-200 bg-white overflow-hidden shadow-sm">
+          {/* Filter Row */}
+          <div className="flex items-center gap-4 py-3 border-b border-slate-100 px-6 bg-white">
+            <div className="relative w-full max-w-sm">
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
               <Input
-                type="password"
-                placeholder="Current Password"
-                value={passwordForm.currentPassword}
-                onChange={(e) => setPasswordForm({...passwordForm, currentPassword: e.target.value})}
-                data-testid="input-current-password"
+                value={reviewsSearchTerm}
+                onChange={(e) => setReviewsSearchTerm(e.target.value)}
+                placeholder="Search by manuscript or reviewer..."
+                className="pl-9 h-9 text-xs border-slate-200 focus-visible:ring-blue-500 rounded-md shadow-sm w-full bg-slate-50/50"
               />
-              <Input
-                type="password"
-                placeholder="New Password"
-                value={passwordForm.newPassword}
-                onChange={(e) => setPasswordForm({...passwordForm, newPassword: e.target.value})}
-                data-testid="input-admin-new-password"
-              />
-              <Input
-                type="password"
-                placeholder="Confirm Password"
-                value={passwordForm.confirmPassword}
-                onChange={(e) => setPasswordForm({...passwordForm, confirmPassword: e.target.value})}
-                data-testid="input-admin-confirm-password"
-              />
-              <Button
-                onClick={handleChangePassword}
-                disabled={changingPassword || !passwordForm.currentPassword || !passwordForm.newPassword}
-                className="w-full"
-                data-testid="button-submit-admin-password"
-              >
-                {changingPassword ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
-                Change Password
-              </Button>
             </div>
-          </DialogContent>
-        </Dialog>
-      </div>
-
-      {/* Main Content */}
-      <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
-        {/* Statistics Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8 max-w-7xl mx-auto">
-          <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/30 dark:to-blue-900/20">
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-gray-600 dark:text-gray-400 text-sm">Total Reviewers</p>
-                  <p className="text-3xl font-bold text-blue-900 dark:text-blue-300 mt-1">{stats.reviewersCount}</p>
-                </div>
-                <Users className="w-12 h-12 text-blue-600 dark:text-blue-400 opacity-20" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-gradient-to-br from-indigo-50 to-indigo-100 dark:from-indigo-950/30 dark:to-indigo-900/20">
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-gray-600 dark:text-gray-400 text-sm">Editorial Members</p>
-                  <p className="text-3xl font-bold text-indigo-900 dark:text-indigo-300 mt-1">{stats.editorialCount}</p>
-                </div>
-                <Award className="w-12 h-12 text-indigo-600 dark:text-indigo-400 opacity-20" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950/30 dark:to-green-900/20">
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-gray-600 dark:text-gray-400 text-sm">Total Papers</p>
-                  <p className="text-3xl font-bold text-green-900 dark:text-green-300 mt-1">{stats.manuscriptsCount}</p>
-                </div>
-                <FileText className="w-12 h-12 text-green-600 dark:text-green-400 opacity-20" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-950/30 dark:to-orange-900/20">
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-gray-600 dark:text-gray-400 text-sm">Pending Reviews</p>
-                  <p className="text-3xl font-bold text-orange-900 dark:text-orange-300 mt-1">{stats.pendingReviewsCount}</p>
-                </div>
-                <Clock className="w-12 h-12 text-orange-600 dark:text-orange-400 opacity-20" />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Menu - Sidebar + Content */}
-        <div className="flex flex-col md:flex-row gap-4 md:gap-6 max-w-full">
-          {/* Sidebar Menu */}
-          <div className={`${mobileMenuOpen ? 'block' : 'hidden md:block'} w-full md:w-72 flex-shrink-0 bg-gradient-to-br from-blue-950 via-blue-900 to-slate-900 dark:from-blue-950 dark:via-blue-900 dark:to-slate-900 rounded-xl border-2 border-blue-700 dark:border-blue-600 shadow-2xl overflow-y-auto max-h-[calc(100vh-200px)] md:max-h-[calc(100vh-180px)]`}>
-            {/* Header Section with Logo */}
-            <div className="px-6 py-5 bg-gradient-to-r from-blue-900 to-blue-800 border-b-2 border-yellow-400">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-yellow-400 flex items-center justify-center shadow-lg">
-                  <span className="text-blue-900 font-bold text-lg">SIP</span>
-                </div>
-                <div>
-                  <p className="text-white font-bold text-sm">Admin Portal</p>
-                  <p className="text-blue-200 text-xs">Scholar India Publishers</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Section 1 - Approvals & Workflow */}
-            <div className="px-6 py-3 bg-gradient-to-r from-blue-800/50 to-blue-700/30 border-b border-blue-600">
-              <p className="text-xs font-bold text-yellow-300 uppercase tracking-widest">✓ Approvals & Workflow</p>
-            </div>
-            <div className="space-y-2 px-4 py-4">
-              {[
-                { id: 'reviewer-approval', label: 'Approve Reviewers', icon: Award, color: 'amber', bgColor: 'from-amber-500/20' },
-                { id: 'editorial-approval', label: 'Approve Board', icon: Award, color: 'purple', bgColor: 'from-purple-500/20' },
-                { id: 'assign', label: 'Assign Work', icon: Zap, color: 'yellow', bgColor: 'from-yellow-400/20' },
-                { id: 'review-approval', label: 'Approve Reviews', icon: CheckCircle, color: 'green', bgColor: 'from-green-500/20' }
-              ].map(item => {
-                const Icon = item.icon;
-                return (
-                  <button
-                    key={item.id}
-                    onClick={() => {
-                      setCurrentMenu(item.id);
-                      setMobileMenuOpen(false);
-                    }}
-                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold transition-all text-left border-l-4 ${
-                      currentMenu === item.id
-                        ? `bg-gradient-to-r ${item.bgColor} to-transparent border-l-yellow-400 text-white shadow-lg`
-                        : 'border-l-blue-700 text-blue-100 hover:text-white hover:bg-blue-800/30'
-                    }`}
-                    data-testid={`menu-${item.id}`}
-                  >
-                    <Icon className="w-5 h-5 flex-shrink-0" />
-                    <span className="flex-1">{item.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Section 2 - Tracking & Management */}
-            <div className="px-6 py-3 bg-gradient-to-r from-blue-800/50 to-blue-700/30 border-b border-blue-600">
-              <p className="text-xs font-bold text-yellow-300 uppercase tracking-widest">📊 Tracking & Management</p>
-            </div>
-            <div className="space-y-2 px-4 py-4">
-              {[
-                { id: 'assignments', label: 'Assignments', icon: FileText, color: 'indigo', bgColor: 'from-indigo-500/20' },
-                { id: 'reviewers', label: 'Reviewers', icon: Users, color: 'cyan', bgColor: 'from-cyan-500/20' },
-                { id: 'board', label: 'Board Members', icon: Award, color: 'pink', bgColor: 'from-pink-500/20' },
-                { id: 'manuscripts', label: 'Manuscripts', icon: FileText, color: 'rose', bgColor: 'from-rose-500/20' },
-                { id: 'messages', label: `Messages${unreadMessageCount > 0 ? ` (${unreadMessageCount})` : ''}`, icon: MessageSquare, color: 'lime', bgColor: 'from-lime-500/20' },
-                { id: 'payments', label: 'Payments', icon: CreditCard, color: 'violet', bgColor: 'from-violet-500/20' },
-                { id: 'newsletter', label: 'Newsletter', icon: Mail, color: 'blue', bgColor: 'from-blue-400/20' }
-              ].map(item => {
-                const Icon = item.icon;
-                return (
-                  <button
-                    key={item.id}
-                    onClick={() => {
-                      setCurrentMenu(item.id);
-                      setMobileMenuOpen(false);
-                    }}
-                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold transition-all text-left border-l-4 ${
-                      currentMenu === item.id
-                        ? `bg-gradient-to-r ${item.bgColor} to-transparent border-l-yellow-400 text-white shadow-lg`
-                        : 'border-l-blue-700 text-blue-100 hover:text-white hover:bg-blue-800/30'
-                    }`}
-                    data-testid={`menu-${item.id}`}
-                  >
-                    <Icon className="w-5 h-5 flex-shrink-0" />
-                    <span className="flex-1">{item.label}</span>
-                    {item.id === 'messages' && unreadMessageCount > 0 && (
-                      <span className="bg-red-500 text-white text-xs font-bold rounded-full px-2 py-0.5 ml-2">{unreadMessageCount}</span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Section 3 - Activity & Audit */}
-            <div className="px-6 py-3 bg-gradient-to-r from-blue-800/50 to-blue-700/30 border-b border-blue-600">
-              <p className="text-xs font-bold text-yellow-300 uppercase tracking-widest">📋 Activity & Audit</p>
-            </div>
-            <div className="space-y-2 px-4 py-4">
-              {[
-                { id: 'login-activity', label: 'Login Activity', icon: LogOut, color: 'orange', bgColor: 'from-orange-500/20' },
-                { id: 'popup-messages', label: 'Popup Messages', icon: Bell, color: 'cyan', bgColor: 'from-cyan-500/20' },
-                { id: 'performance', label: 'Performance', icon: Award, color: 'emerald', bgColor: 'from-emerald-500/20' },
-                { id: 'deadlines', label: 'Deadline Calendar', icon: Calendar, color: 'indigo', bgColor: 'from-indigo-500/20' }
-              ].map(item => {
-                const Icon = item.icon;
-                return (
-                  <button
-                    key={item.id}
-                    onClick={() => {
-                      setCurrentMenu(item.id);
-                      setMobileMenuOpen(false);
-                    }}
-                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold transition-all text-left border-l-4 ${
-                      currentMenu === item.id
-                        ? `bg-gradient-to-r ${item.bgColor} to-transparent border-l-yellow-400 text-white shadow-lg`
-                        : 'border-l-blue-700 text-blue-100 hover:text-white hover:bg-blue-800/30'
-                    }`}
-                    data-testid={`menu-${item.id}`}
-                  >
-                    <Icon className="w-5 h-5 flex-shrink-0" />
-                    <span>{item.label}</span>
-                  </button>
-                );
-              })}
-            </div>
+            <div className="ml-auto text-xs font-bold text-blue-600">{filtered.length} pending review(s)</div>
           </div>
 
-          {/* Main Content Area */}
-          <div className="flex-1 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 rounded-xl border-2 border-blue-200 dark:border-blue-900 shadow-lg p-4 md:p-6 overflow-y-auto max-h-[calc(100vh-200px)] md:max-h-[calc(100vh-180px)]">
-            {currentMenu === 'assign' && (
-            <div className="space-y-6">
-              <Card className="bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-950/30 dark:to-amber-900/20 border border-amber-200 dark:border-amber-800">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Zap className="w-5 h-5 text-amber-600 dark:text-amber-400" />
-                    Auto-Assign Under Review Manuscripts
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-gray-700 dark:text-gray-300 mb-4">
-                    Automatically assign all manuscripts marked as "Under Review" to available reviewers using round-robin distribution.
-                  </p>
-                  <Button
-                    onClick={handleAutoAssign}
-                    disabled={autoAssigning}
-                    className="bg-amber-600 hover:bg-amber-700 text-white"
-                    data-testid="button-auto-assign"
-                  >
-                    {autoAssigning ? 'Assigning...' : 'Auto-Assign Now'}
-                  </Button>
-                </CardContent>
-              </Card>
-              
-              <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Manual Assignment</h3>
-                <AdminAssignmentForm onAssignmentSuccess={() => loadStats()} />
-              </div>
-            </div>
-            )}
-            {currentMenu === 'reviewer-approval' && (
-            <div className="space-y-4">
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
-                  <Award className="w-5 h-5 text-amber-600" />
-                  Reviewer Approvals
-                </h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                  Review and approve pending reviewer applications. Approved reviewers (status: Active) become available for manuscript assignments.
-                </p>
-              </div>
-              <AdminReviewerApprovals />
-            </div>
-            )}
-            {currentMenu === 'editorial-approval' && (
-            <div className="space-y-4">
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
-                  <Award className="w-5 h-5 text-purple-600" />
-                  Editorial Board Approvals
-                </h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                  Review and approve pending editorial board member applications. Approved members (status: Active) become visible on journal pages.
-                </p>
-              </div>
-              <AdminEditorialBoardApprovals />
-            </div>
-            )}
-            {currentMenu === 'review-approval' && (
-            <div className="space-y-4">
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
-                  <CheckCircle className="w-5 h-5 text-green-600" />
-                  Review Approval
-                </h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                  Review submitted peer reviews from reviewers. Accept or reject each review. 
-                  When you accept 2 reviews for the same manuscript, the manuscript status will automatically update to "Accepted".
-                </p>
-              </div>
-              <AdminSubmittedReviews />
-            </div>
-            )}
-            {currentMenu === 'assignments' && (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Assignment Tracking</h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">Monitor all manuscript assignments, reviewer completion status, and marks</p>
-                </div>
-                <Button size="sm" variant="outline" onClick={() => downloadTabData('/api/admin/export/assignments', 'assignments.csv')} data-testid="button-download-assignments">
-                  <Download className="w-4 h-4 mr-2" /> Download as CSV
-                </Button>
-              </div>
-              <AdminAssignmentsList />
-            </div>
-            )}
-            {currentMenu === 'reviewers' && (
-            <div className="space-y-4">
-              <div className="flex justify-end mb-4">
-                <Button size="sm" variant="outline" onClick={() => downloadTabData('/api/admin/export/reviewers', 'reviewers.csv')} data-testid="button-download-reviewers">
-                  <Download className="w-4 h-4 mr-2" /> Download as CSV
-                </Button>
-              </div>
-              <AdminReviewersList roleFilter="Reviewer" />
-            </div>
-            )}
-            {currentMenu === 'board' && (
-            <div className="space-y-4">
-              <div className="flex justify-end mb-4">
-                <Button size="sm" variant="outline" onClick={() => downloadTabData('/api/admin/export/board', 'board.csv')} data-testid="button-download-board">
-                  <Download className="w-4 h-4 mr-2" /> Download as CSV
-                </Button>
-              </div>
-              <AdminReviewersList roleFilter="Editorial Board Member" />
-            </div>
-            )}
-            {currentMenu === 'messages' && (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
-                    <MessageSquare className="w-5 h-5" />
-                    Reviewer Messages
-                  </h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">View all messages sent by reviewers about their assigned manuscripts</p>
-                </div>
-                <Button size="sm" variant="outline" onClick={() => downloadTabData('/api/admin/export/messages', 'messages.csv')} data-testid="button-download-messages">
-                  <Download className="w-4 h-4 mr-2" /> Download as CSV
-                </Button>
-              </div>
-              <AdminReviewerMessages />
-            </div>
-            )}
-            {currentMenu === 'manuscripts' && (
-            <div className="space-y-4">
-              <div className="flex justify-end mb-4">
-                <Button size="sm" variant="outline" onClick={() => downloadTabData('/api/admin/export/manuscripts', 'manuscripts.csv')} data-testid="button-download-manuscripts">
-                  <Download className="w-4 h-4 mr-2" /> Download as CSV
-                </Button>
-              </div>
-              <AdminManuscriptsList />
-            </div>
-            )}
-            {currentMenu === 'payments' && (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
-                    <CreditCard className="w-5 h-5 text-violet-600" />
-                    Payment Records
-                  </h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">Track all author payment submissions with proof and transaction details</p>
-                </div>
-                <Button size="sm" variant="outline" onClick={() => downloadTabData('/api/admin/export/payments', 'payments.csv')} data-testid="button-download-payments">
-                  <Download className="w-4 h-4 mr-2" /> Download as CSV
-                </Button>
-              </div>
-              <AdminPaymentsList />
-            </div>
-            )}
-            {currentMenu === 'popup-messages' && (
-            <div className="space-y-6">
-              <Card className="bg-gradient-to-br from-cyan-50 to-blue-50 dark:from-cyan-950/30 dark:to-blue-950/30 border border-cyan-200 dark:border-cyan-700">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Bell className="w-5 h-5 text-cyan-600" />
-                    Broadcast Message to Editors
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Message Title</label>
-                    <input type="text" placeholder="Enter title" value={popupTitle} onChange={(e) => setPopupTitle(e.target.value)} className="w-full px-3 py-2 border border-cyan-300 rounded-lg focus:ring-2 focus:ring-cyan-500 dark:bg-gray-800 dark:border-cyan-700" data-testid="input-popup-title" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Message Content</label>
-                    <textarea placeholder="Enter message content" value={popupContent} onChange={(e) => setPopupContent(e.target.value)} className="w-full px-3 py-2 border border-cyan-300 rounded-lg focus:ring-2 focus:ring-cyan-500 dark:bg-gray-800 dark:border-cyan-700 resize-none h-24" data-testid="textarea-popup-content" />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Target Role</label>
-                      <select value={popupRole} onChange={(e) => setPopupRole(e.target.value)} className="w-full px-3 py-2 border border-cyan-300 rounded-lg focus:ring-2 focus:ring-cyan-500 dark:bg-gray-800 dark:border-cyan-700" data-testid="select-popup-role">
-                        <option value="Editor">Editor</option>
-                        <option value="Reviewer">Reviewer</option>
-                        <option value="Editorial Board Member">Editorial Board Member</option>
-                        <option value="All">All Roles</option>
-                      </select>
+          {/* Table Header */}
+          <div className="grid grid-cols-12 gap-x-3 px-6 py-3.5 bg-slate-50/80 border-b border-slate-100 items-center">
+            <div className="col-span-1 text-[10px] font-bold text-slate-500 uppercase tracking-widest">ASSIGNED AT</div>
+            <div className="col-span-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest">MANUSCRIPT</div>
+            <div className="col-span-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest">REVIEWER</div>
+            <div className="col-span-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest">RECOMMENDATION</div>
+            <div className="col-span-1 text-[10px] font-bold text-slate-500 uppercase tracking-widest">MARKS</div>
+            <div className="col-span-1 text-[10px] font-bold text-slate-500 uppercase tracking-widest">SUBMITTED</div>
+            <div className="col-span-1 text-[10px] font-bold text-slate-500 uppercase tracking-widest">STATUS</div>
+            <div className="col-span-1 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-right">ACTIONS</div>
+          </div>
+
+          {/* Table Body */}
+          <div className="divide-y divide-slate-100 bg-[#FFFFF9]">
+            {loadingReviews && allReviews.length === 0 ? (
+              <div className="p-12 text-center text-slate-400 font-medium flex justify-center"><Loader2 className="animate-spin h-6 w-6" /></div>
+            ) : filtered.length === 0 ? (
+              <div className="p-12 text-center text-slate-400 font-medium text-sm">No assignments found.</div>
+            ) : (
+              filtered.slice(0, reviewsLimit).map((r, i) => {
+                const rawStatus = (r.status || '').toLowerCase();
+                const reviewStatus = (r.review_status || '').toLowerCase();
+
+                // Status badge based on assignment status column
+                const statusLabel = r.status || 'Pending';
+                const statusStyle =
+                  rawStatus === 'completed' ? 'bg-emerald-100 text-emerald-700' :
+                  rawStatus === 'rejected' ? 'bg-rose-100 text-rose-700' :
+                  rawStatus === 'approved' ? 'bg-blue-100 text-blue-700' :
+                  'bg-slate-100 text-slate-600';
+
+                // Format assigned_at
+                let assignedDisplay = r.assigned_at || '—';
+                if (r.assigned_at) {
+                  try {
+                    const d = new Date(r.assigned_at);
+                    if (!isNaN(d.getTime())) {
+                      assignedDisplay = d.toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+                    }
+                  } catch {}
+                }
+
+                return (
+                  <div key={i} className="grid grid-cols-12 gap-x-3 px-6 py-4 hover:bg-slate-50 items-center">
+                    {/* Assigned At */}
+                    <div className="col-span-1">
+                      <p className="text-[11px] font-medium text-slate-700 leading-tight">{assignedDisplay}</p>
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Expires On (optional)</label>
-                      <input type="date" value={popupExpiry} onChange={(e) => setPopupExpiry(e.target.value)} className="w-full px-3 py-2 border border-cyan-300 rounded-lg focus:ring-2 focus:ring-cyan-500 dark:bg-gray-800 dark:border-cyan-700" data-testid="input-popup-expiry" />
-                    </div>
-                  </div>
-                  <Button onClick={handleSetPopupMessage} disabled={!popupTitle || !popupContent} className="w-full bg-cyan-600 hover:bg-cyan-700 text-white" data-testid="button-set-popup">
-                    Send Broadcast Message
-                  </Button>
-                </CardContent>
-              </Card>
-            </div>
-            )}
-            {currentMenu === 'newsletter' && (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2 flex items-center gap-2">
-                    <Mail className="w-5 h-5 text-blue-600" />
-                    Newsletter Subscribers
-                  </h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">View all email subscribers to the newsletter</p>
-                </div>
-                <Button size="sm" variant="outline" onClick={() => downloadTabData('/api/admin/export/newsletter', 'newsletter_subscribers.csv')} data-testid="button-download-newsletter">
-                  <Download className="w-4 h-4 mr-2" /> Download as CSV
-                </Button>
-              </div>
-              <Card>
-                <CardContent className="pt-6">
-                  {newsletterSubscribers.length === 0 ? (
-                    <div className="text-center py-8">
-                      <Mail className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                      <p className="text-gray-500 text-sm">No newsletter subscribers yet</p>
-                    </div>
-                  ) : (
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-sm">
-                        <thead>
-                          <tr className="border-b">
-                            <th className="text-left py-3 px-4 font-semibold text-gray-700 dark:text-gray-300">Email</th>
-                            <th className="text-left py-3 px-4 font-semibold text-gray-700 dark:text-gray-300">Subscribed At</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {newsletterSubscribers.map((subscriber: any, idx: number) => (
-                            <tr key={idx} className="border-b hover:bg-gray-50 dark:hover:bg-gray-700/50" data-testid={`row-subscriber-${idx}`}>
-                              <td className="py-3 px-4 text-gray-900 dark:text-gray-100">{subscriber.email}</td>
-                              <td className="py-3 px-4 text-gray-600 dark:text-gray-400 text-xs">{subscriber.subscribedAt}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
-                  <div className="mt-6 pt-4 border-t">
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      Total Subscribers: <span className="font-bold text-gray-900 dark:text-gray-100">{newsletterSubscribers.length}</span>
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-            )}
-            {currentMenu === 'performance' && (
-              <AdminReviewerPerformance />
-            )}
-            {currentMenu === 'deadlines' && (
-              <AdminDeadlineCalendar />
-            )}
-            {currentMenu === 'login-activity' && (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
-                    <LogOut className="w-5 h-5 text-orange-600" />
-                    Reviewer/Editor Login Activity
-                  </h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">Click on a Reviewer/Editor ID to view their login activities</p>
-                </div>
-                <Button 
-                  onClick={fetchLoginActivities}
-                  variant="outline"
-                  size="sm"
-                  className="flex items-center gap-2"
-                  data-testid="button-refresh-login-activities"
-                >
-                  <span>🔄</span>
-                  Refresh Now
-                </Button>
-              </div>
-              <div className="grid grid-cols-4 gap-4">
-                {/* Left Panel: List of Reviewer/Editor IDs */}
-                <Card className="col-span-1">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-sm">Users ({new Set(loginActivities.map(a => a.reviewerId)).size})</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2 max-h-96 overflow-y-auto">
-                      {loginActivities.length === 0 ? (
-                        <p className="text-sm text-gray-500 p-2">No login activities yet</p>
-                      ) : (
-                        Array.from(new Set(loginActivities.map(a => a.reviewerId))).map((id) => (
-                          <button
-                            key={id}
-                            onClick={() => setSelectedReviewerId(id as string)}
-                            className={`w-full text-left px-3 py-2 rounded-md transition-colors text-sm font-medium ${
-                              selectedReviewerId === id
-                                ? 'bg-orange-500 text-white'
-                                : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100 hover:bg-gray-200 dark:hover:bg-gray-600'
-                            }`}
-                            data-testid={`button-reviewer-id-${id}`}
-                          >
-                            {id}
-                          </button>
-                        ))
+
+                    {/* Manuscript */}
+                    <div className="col-span-3 space-y-0.5">
+                      <h4 className="text-[12px] font-bold text-slate-800 leading-snug line-clamp-2">{r.manuscript_title || 'Untitled'}</h4>
+                      {r.manuscript_id && (
+                        <p className="text-[9px] font-black text-blue-600 uppercase tracking-wide">{r.manuscript_id}</p>
                       )}
                     </div>
-                  </CardContent>
-                </Card>
 
-                {/* Right Panel: Activities for Selected ID */}
-                <Card className="col-span-3">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-sm">
-                      {selectedReviewerId ? `Login Activities - ${selectedReviewerId}` : 'Select a user to view activities'}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {!selectedReviewerId ? (
-                      <p className="text-sm text-gray-500 text-center py-8">Select a Reviewer/Editor ID from the left to view their login activities</p>
-                    ) : (
-                      <div className="overflow-x-auto">
-                        <table className="w-full text-sm">
-                          <thead>
-                            <tr className="border-b">
-                              <th className="text-left py-2 px-3">Time</th>
-                              <th className="text-left py-2 px-3">Activity</th>
-                              <th className="text-left py-2 px-3">Name</th>
-                              <th className="text-left py-2 px-3">Email</th>
-                              <th className="text-left py-2 px-3">Role</th>
-                              <th className="text-left py-2 px-3">Journal</th>
-                              <th className="text-left py-2 px-3">IP Address</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {loginActivities.filter(a => a.reviewerId === selectedReviewerId).length === 0 ? (
-                              <tr>
-                                <td colSpan={7} className="text-center py-4 text-gray-500">No activities found</td>
-                              </tr>
-                            ) : (
-                              loginActivities
-                                .filter(a => a.reviewerId === selectedReviewerId)
-                                .sort((a, b) => new Date(b.loginTime).getTime() - new Date(a.loginTime).getTime())
-                                .map((activity, idx) => {
-                                  const getActivityBadge = (type: string) => {
-                                    const colors: Record<string, [string, string]> = {
-                                      'login': ['bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100', 'Login'],
-                                      'update': ['bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-100', 'Update'],
-                                      'message': ['bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100', 'Message'],
-                                      'review_submission': ['bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-100', 'Review']
-                                    };
-                                    const [bgClass, label] = colors[type] || colors['login'];
-                                    return <span className={`inline-block px-2 py-1 rounded text-xs font-medium ${bgClass}`}>{label}</span>;
-                                  };
-                                  return (
-                                    <tr key={activity.id} className="border-b hover:bg-gray-50 dark:hover:bg-gray-700/50" data-testid={`row-login-${idx}`}>
-                                      <td className="py-2 px-3 text-xs">{new Date(activity.loginTime).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}</td>
-                                      <td className="py-2 px-3">{getActivityBadge((activity as any).activityType || 'login')}</td>
-                                      <td className="py-2 px-3">{activity.firstName} {activity.lastName}</td>
-                                      <td className="py-2 px-3 text-xs">{activity.email}</td>
-                                      <td className="py-2 px-3"><Badge variant="outline" className="text-xs">{activity.role}</Badge></td>
-                                      <td className="py-2 px-3 text-xs">{activity.journal}</td>
-                                      <td className="py-2 px-3 text-xs">{activity.ipAddress || 'N/A'}</td>
-                                    </tr>
-                                  );
-                                })
-                            )}
-                          </tbody>
-                        </table>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </div>
-            </div>
+                    {/* Reviewer */}
+                    <div className="col-span-2 space-y-0.5">
+                      <p className="text-[12px] font-semibold text-slate-700 line-clamp-1">{r.reviewer_full_name || '—'}</p>
+                      {r.reviewer_id && (
+                        <p className="text-[9px] font-black text-blue-600 uppercase tracking-wide">{r.reviewer_id}</p>
+                      )}
+                    </div>
+
+                    {/* Recommendation */}
+                    <div className="col-span-2">
+                      <span className="text-[11px] font-medium text-slate-600">{r.recommendation || '—'}</span>
+                    </div>
+
+                    {/* Marks */}
+                    <div className="col-span-1">
+                      {r.overall_marks ? (
+                        <span className="text-[12px] font-bold text-slate-800">{r.overall_marks}<span className="text-slate-400 font-normal">/10</span></span>
+                      ) : (
+                        <span className="text-slate-400">—</span>
+                      )}
+                    </div>
+
+                    {/* Submitted date */}
+                    <div className="col-span-1">
+                      <span className="text-[11px] font-medium text-slate-500">{r.submission_date || '—'}</span>
+                    </div>
+
+                    {/* Status */}
+                    <div className="col-span-1">
+                      <Badge variant="outline" className={`border text-[9px] font-black tracking-wide rounded px-2.5 py-0.5 shadow-sm border-none capitalize ${statusStyle}`}>
+                        {statusLabel}
+                      </Badge>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="col-span-1 flex items-center justify-end">
+                      <Button
+                        size="sm"
+                        className="h-8 bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-bold px-4 rounded-lg shadow-sm gap-1.5"
+                        onClick={() => {
+                          setSelectedReview(r);
+                          setAdminNote(r.notes || '');
+                          setIsReviewModalOpen(true);
+                        }}
+                      >
+                        Review
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })
             )}
+          </div>
+
+          {allReviews.length >= reviewsLimit && (
+            <div className="p-4 bg-white border-t border-slate-100 flex justify-center">
+              <Button onClick={() => setReviewsLimit(prev => prev + 10)} disabled={loadingReviews} variant="outline" className="text-xs font-bold text-slate-600 border-slate-200 bg-white hover:bg-slate-50 rounded-lg h-9 px-6 shadow-sm">
+                Load More
+              </Button>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  const getReviewerScore = (reviewer: any, manuscript: any) => {
+    let score = 0;
+    if (!reviewer || !manuscript) return 0;
+    if (reviewer.journal === manuscript.journal) score += 50;
+    if (reviewer.status && (reviewer.status.toLowerCase() === 'active' || reviewer.status.toLowerCase() === 'accepted')) score += 20;
+
+    const mTitle = (manuscript.title || manuscript.manuscript_title || '').toLowerCase();
+    const mArea = (manuscript.raw?.research_field || manuscript.raw?.area_of_research || '').toLowerCase();
+    const rArea = (reviewer.area_of_interest || '').toLowerCase();
+    
+    if (rArea) {
+       if (mArea && rArea.includes(mArea)) score += 30;
+       const words = mTitle.split(' ').filter((w: string) => w.length > 4);
+       words.forEach((w: string) => {
+          if (rArea.includes(w)) score += 10;
+       });
+    }
+
+    return score;
+  };
+
+  const handleOpenAssignModal = async (m: any) => {
+    setSelectedManuscriptForAssign(m);
+    setIsAssignModalOpen(true);
+    setLoadingMatches(true);
+    try {
+      const { data } = await supabase.from('reviewers').select('*');
+      if (data) {
+         setMatchingReviewers(data);
+      }
+    } catch(e) {} finally { setLoadingMatches(false); }
+  };
+
+  const handleAssignReviewer = async (reviewer: any) => {
+    if (!selectedManuscriptForAssign || !reviewer) return;
+    setAssigningReviewer(true);
+    try {
+      const { error } = await supabase.from('assignments').insert({
+        assigned_at: new Date().toISOString(),
+        reviewer_id: reviewer.id,
+        reviewer_full_name: `${reviewer.first_name || ''} ${reviewer.last_name || ''}`.trim(),
+        reviewer_email: reviewer.email,
+        manuscript_id: selectedManuscriptForAssign.id,
+        manuscript_title: selectedManuscriptForAssign.title || selectedManuscriptForAssign.manuscript_title,
+        status: 'Pending',
+        review_status: 'Pending',
+        due_date: new Date(Date.now() + 15 * 86400000).toLocaleDateString('en-GB')
+      });
+
+      if (error) throw error;
+      toast({ title: 'Assigned successfully.' });
+      setIsAssignModalOpen(false);
+      setSelectedManuscriptForAssign(null);
+      fetchReviews(true);
+      fetchDashboardData(true);
+    } catch (err) {
+      console.error(err);
+      toast({ title: 'Failed to assign reviewer', variant: 'destructive' });
+    } finally {
+      setAssigningReviewer(false);
+    }
+  };
+
+  const renderAssign = () => {
+    const assignableManuscripts = allManuscripts.filter(m => 
+      m.status !== 'Rejected' && 
+      (m.title || '').toLowerCase().includes(assignSearchTerm.toLowerCase())
+    );
+
+    return (
+      <div className="space-y-6 text-left pb-16">
+        <div className="flex flex-col md:flex-row justify-between gap-4 py-2">
+          <div className="pl-2">
+            <h2 className="text-xl font-bold text-slate-800 tracking-tight">Assign Work</h2>
+            <p className="text-xs font-medium text-slate-500 mt-0.5">Assign reviewers to manuscripts using AI-assisted rank scores.</p>
+          </div>
+          <div className="flex items-center gap-3 pr-2">
+            <Button onClick={() => fetchManuscripts(true)} disabled={loadingManuscripts} variant="outline" size="sm" className="bg-white gap-2 font-bold text-[11px] h-9 px-4 border-slate-200 rounded-md shadow-sm">
+              <RefreshCw size={14} className={loadingManuscripts ? 'animate-spin' : ''} /> Refresh
+            </Button>
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-slate-200 bg-white overflow-hidden shadow-sm">
+          <div className="flex items-center gap-4 py-3 border-b border-slate-100 px-6 bg-white">
+            <div className="relative w-full max-w-sm">
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              <Input
+                value={assignSearchTerm}
+                onChange={(e) => setAssignSearchTerm(e.target.value)}
+                placeholder="Search manuscripts to assign..."
+                className="pl-9 h-9 text-xs border-slate-200 focus-visible:ring-blue-500 rounded-md shadow-sm w-full bg-slate-50/50"
+              />
+            </div>
+            <div className="text-xs font-bold text-slate-400 whitespace-nowrap pl-2">{assignableManuscripts.length} record(s)</div>
+          </div>
+          
+          <div className="grid grid-cols-12 gap-x-4 px-6 py-3.5 bg-slate-50/80 border-b border-slate-100 items-center">
+            <div className="col-span-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest">SUBMITTED</div>
+            <div className="col-span-1 text-[10px] font-bold text-slate-500 uppercase tracking-widest">ID</div>
+            <div className="col-span-6 text-[10px] font-bold text-slate-500 uppercase tracking-widest">MANUSCRIPT DETAILS</div>
+            <div className="col-span-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest">STATUS</div>
+            <div className="col-span-1 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-right">ACTION</div>
+          </div>
+
+          <div className="divide-y divide-slate-100 bg-[#FFFFF9]">
+             {loadingManuscripts && allManuscripts.length === 0 ? (
+               <div className="p-12 text-center text-slate-400 font-medium flex justify-center"><Loader2 className="animate-spin h-6 w-6" /></div>
+             ) : assignableManuscripts.length === 0 ? (
+               <div className="p-12 text-center text-slate-400 font-medium text-sm">No available manuscripts.</div>
+             ) : (
+               assignableManuscripts.map((m, i) => (
+                 <div key={i} className="grid grid-cols-12 gap-x-4 px-6 py-4 hover:bg-slate-50 items-center">
+                   <div className="col-span-2 text-[11px] font-medium text-slate-700">{m.date}</div>
+                   <div className="col-span-1 text-[9px] font-black text-slate-400 uppercase tracking-wider">{m.id}</div>
+                   <div className="col-span-6 space-y-1">
+                     <h4 className="text-[13px] font-bold text-slate-800 leading-snug line-clamp-1">{m.title || 'Untitled'}</h4>
+                     <p className="text-[11px] font-semibold text-slate-500 flex items-center gap-2">
+                       <span className="text-blue-600 truncate max-w-[200px]">{m.journal}</span> | <span className="truncate">{m.author}</span>
+                     </p>
+                   </div>
+                   <div className="col-span-2">
+                     <Badge variant="outline" className={`border-none tracking-wide text-[9px] font-bold ${m.status?.toLowerCase() === 'accepted' ? 'bg-emerald-50 text-emerald-600' : 'bg-blue-50 text-blue-700'}`}>{m.status || 'Submitted'}</Badge>
+                   </div>
+                   <div className="col-span-1 flex justify-end">
+                      <Button
+                        size="sm"
+                        className="h-8 bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 rounded-lg shadow-sm"
+                        onClick={() => handleOpenAssignModal(m)}
+                      >
+                        Assign
+                      </Button>
+                   </div>
+                 </div>
+               ))
+             )}
           </div>
         </div>
       </div>
+    );
+  };
+
+  const renderPlaceholder = (title: string, icon: any) => {
+    const IconComponent = icon;
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center space-y-4 animate-in zoom-in-95 duration-300">
+        <div className="w-24 h-24 bg-slate-50 shadow-inner rounded-[2rem] flex items-center justify-center text-slate-300 mb-4 transform transition-transform hover:scale-110"><IconComponent size={48} strokeWidth={1.5} /></div>
+        <div>
+          <h3 className="text-3xl font-black bg-clip-text text-transparent bg-gradient-to-r from-slate-800 to-slate-400 tracking-tight">{title}</h3>
+          <p className="text-slate-500 text-sm max-w-sm mx-auto mt-3 font-medium leading-relaxed">Enterprise module is currently synchronizing. Full ERP features will be available shortly.</p>
+          <Button variant="outline" className="mt-8 border-slate-200 text-slate-600 hover:text-blue-600 hover:bg-blue-50 hover:border-blue-200 text-xs h-10 px-6 rounded-xl font-bold shadow-sm transition-all" onClick={() => setActiveTab('dashboard')}>Return to Dashboard</Button>
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div className="flex h-screen bg-[#e2e8f0] overflow-hidden font-sans print:h-auto print:block print:overflow-visible print:bg-white">
+      <SEO title="Scholar India Publishers ERP" description="Admin Dashboard" />
+
+      {/* COMPACT Sidebar with Modern Glassmorphism & Gradient */}
+      <aside className="w-[260px] bg-slate-900 border-r border-slate-800 text-slate-300 flex flex-col shadow-2xl z-50 overflow-hidden shrink-0 relative print:hidden">
+        {/* Subtle background decoration */}
+        <div className="absolute top-0 right-0 w-32 h-32 bg-blue-600/20 blur-3xl rounded-full pointer-events-none"></div>
+        <div className="absolute bottom-0 left-0 w-48 h-48 bg-indigo-600/10 blur-3xl rounded-full pointer-events-none"></div>
+
+        <div className="p-6 text-left border-b border-white/5 relative z-10 transition-colors hover:bg-white/5">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center font-black text-white text-xl flex-shrink-0 shadow-lg shadow-blue-500/20">S</div>
+            <div>
+              <h1 className="text-white font-bold text-[15px] tracking-tight leading-none mb-1">Scholar India</h1>
+              <div className="flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,106,0.8)]"></span>
+                <p className="text-[10px] text-slate-400 uppercase font-black tracking-widest leading-none">ERP CONSOLE</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex-1 overflow-y-auto w-full custom-scrollbar p-4 space-y-1 relative z-10">
+          <div className="mb-5">
+            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-3 mb-2">Main Navigation</p>
+            <NavItem icon={LayoutDashboard} label="Dashboard" id="dashboard" />
+            <NavItem icon={FileText} label="Manuscripts" id="manuscripts" />
+            <NavItem icon={Users} label="Approve Reviewers" id="reviewers" />
+            <NavItem icon={CheckSquare} label="Approve Reviews" id="reviews" />
+            <NavItem icon={ListChecks} label="Assign Work" id="assign" />
+            <NavItem icon={List} label="Assignments" id="assignments" />
+          </div>
+          
+          <div className="mb-5">
+            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-3 mb-2">Financials & Publishing</p>
+            <NavItem icon={FileCheck} label="Final Submissions" id="final_submissions" />
+            <NavItem icon={CreditCard} label="Payments" id="payments" />
+            <NavItem icon={Book} label="Books" id="books" />
+            <NavItem icon={BookOpen} label="Journals" id="journals" />
+            <NavItem icon={Archive} label="Archives" id="archives" />
+          </div>
+
+          <div className="mb-5">
+            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-3 mb-2">Communication</p>
+            <NavItem icon={Mail} label="Contact Leads" id="leads" />
+            <NavItem icon={Newspaper} label="Newsletter" id="newsletter" />
+            <NavItem icon={MessageSquare} label="Messages" id="messages" />
+            <NavItem icon={Megaphone} label="Broadcast Popup" id="broadcast" />
+          </div>
+
+          <div className="mb-2">
+            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-3 mb-2">System</p>
+            <NavItem icon={Calendar} label="Deadlines" id="deadlines" />
+            <NavItem icon={BarChart} label="Performance" id="performance" />
+            <NavItem icon={History} label="Login Activity" id="activity" />
+            <NavItem icon={Users} label="Users" id="users" />
+          </div>
+        </div>
+
+        <div className="p-4 border-t border-white/5 bg-slate-950/50 shrink-0 relative z-10 backdrop-blur-md">
+          <button onClick={handleLogout} className="w-full flex items-center justify-center gap-2 px-3 py-3 text-xs font-bold text-slate-400 hover:text-white bg-slate-800/50 hover:bg-rose-500 hover:shadow-lg hover:shadow-rose-500/20 rounded-xl transition-all"><LogOut size={16} /> Exit Enterprise System</button>
+        </div>
+      </aside>
+
+      {/* Main Content */}
+      <main className="flex-1 flex flex-col min-w-0 overflow-hidden relative print:overflow-visible print:block print:h-auto">
+        {/* Subtle top background glow */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-4xl h-64 bg-blue-100/40 blur-[120px] rounded-full pointer-events-none z-0 print:hidden"></div>
+
+        {/* TOP BAR (HIDDEN IF DASHBOARD HOME FOR FULL MATCH) */}
+        {activeTab !== 'dashboard' && (
+           <header className="h-[76px] bg-white/70 backdrop-blur-xl border-b border-slate-200/50 px-8 flex items-center justify-between z-40 shrink-0 shadow-sm transition-all sticky top-0 print:hidden">
+             <div className="text-left flex items-center gap-4">
+               <div>
+                 <h2 className="text-lg font-bold text-slate-800 tracking-tight capitalize">{activeTab.replace('_', ' ')}</h2>
+                 <div className="flex items-center gap-2 mt-0.5 uppercase tracking-widest text-slate-400 font-bold">
+                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_5px_rgba(16,185,129,0.5)] animate-pulse"></div>
+                    <span className="text-[9px]">HQ Online</span>
+                 </div>
+               </div>
+             </div>
+             <div className="flex items-center gap-4">
+               <div className="flex items-center gap-3 bg-white px-3 py-1.5 rounded-full border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
+                  <div className="text-right pl-2"><p className="text-xs font-bold text-slate-800 leading-none">Global Editor</p><p className="text-[9px] text-slate-400 font-bold uppercase mt-1 tracking-widest">Administrator</p></div>
+                  <div className="w-9 h-9 bg-gradient-to-br from-slate-800 to-slate-900 rounded-full flex items-center justify-center text-white text-[10px] font-bold shadow-sm ring-2 ring-slate-100">GE</div>
+               </div>
+             </div>
+           </header>
+        )}
+
+        <div className={`flex-1 overflow-y-auto p-10 relative z-10 custom-scrollbar print:overflow-visible print:h-auto print:p-0 ${activeTab === 'dashboard' ? 'pt-8' : ''}`}>
+           <div className="max-w-[1600px] mx-auto pb-10 print:pb-0">
+              {activeTab === 'dashboard' && renderDashboard()}
+              {activeTab === 'manuscripts' && renderManuscripts()}
+              {activeTab === 'reviewers' && renderReviewers()}
+              {activeTab === 'reviews' && renderReviews()}
+              {activeTab === 'assign' && renderAssign()}
+              {activeTab === 'assignments' && renderAssignments()}
+              {activeTab === 'final_submissions' && <SubmissionComparison />}
+              {activeTab === 'payments' && <AdminPayments />}
+              {activeTab === 'books' && <AdminBooks />}
+              {activeTab === 'leads' && <AdminContacts />}
+              {activeTab === 'newsletter' && <AdminNewsletter />}
+              {activeTab === 'deadlines' && <AdminDeadlines />}
+              {activeTab === 'performance' && <AdminPerformance />}
+              {activeTab === 'activity' && <AdminLogs />}
+              {activeTab === 'users' && <AdminUsers />}
+              {activeTab === 'journals' && <AdminJournals />}
+              {activeTab === 'archives' && <AdminArchives />}
+              {/* Placeholders for others while focused on Home RESTORE */}
+              {activeTab !== 'dashboard' && activeTab !== 'manuscripts' && activeTab !== 'reviewers' && activeTab !== 'reviews' && activeTab !== 'assign' && activeTab !== 'assignments' && activeTab !== 'final_submissions' && activeTab !== 'payments' && activeTab !== 'books' && activeTab !== 'leads' && activeTab !== 'newsletter' && activeTab !== 'deadlines' && activeTab !== 'performance' && activeTab !== 'activity' && activeTab !== 'users' && activeTab !== 'journals' && activeTab !== 'archives' && renderPlaceholder(activeTab.toUpperCase(), LayoutDashboard)}
+           </div>
+        </div>
+      </main>
+
+      {/* Manuscript Details Modal */}
+      <Dialog open={isDetailsModalOpen} onOpenChange={setIsDetailsModalOpen}>
+        <DialogContent className="max-w-4xl p-0 bg-white border border-slate-100 shadow-2xl rounded-2xl overflow-hidden gap-0 mt-8 max-h-[90vh]">
+          <DialogHeader className="px-6 py-4 border-b border-slate-100 bg-white sticky top-0 z-10">
+            <DialogTitle className="flex items-center gap-2 text-sm font-bold text-slate-800">
+              <FileText className="h-4 w-4" /> Manuscript Details
+            </DialogTitle>
+          </DialogHeader>
+
+          {selectedManuscript && (
+          <div className="p-6 overflow-y-auto max-h-[calc(90vh-140px)] custom-scrollbar">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              
+              <div className="bg-[#f8f9fa] rounded-xl p-4 border-none shadow-sm h-full list-none">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 block">MANUSCRIPT ID</span>
+                <span className="text-sm font-semibold text-slate-800 break-all">{selectedManuscript.id}</span>
+              </div>
+              <div className="bg-[#f8f9fa] rounded-xl p-4 border-none shadow-sm h-full list-none">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 block">SUBMITTED DATE</span>
+                <span className="text-sm font-semibold text-slate-800">{selectedManuscript.date}</span>
+              </div>
+
+              <div className="bg-[#f8f9fa] rounded-xl p-4 border-none shadow-sm h-full list-none">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 block">AUTHOR NAME</span>
+                <span className="text-sm font-semibold text-slate-800">{selectedManuscript.author}</span>
+              </div>
+              <div className="bg-[#f8f9fa] rounded-xl p-4 border-none shadow-sm h-full list-none">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 block">EMAIL</span>
+                <span className="text-sm font-semibold text-slate-800">{selectedManuscript.email}</span>
+              </div>
+
+              <div className="bg-[#f8f9fa] rounded-xl p-4 border-none shadow-sm h-full list-none">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 block">MOBILE</span>
+                <span className="text-sm font-semibold text-slate-800">{selectedManuscript.phone}</span>
+              </div>
+              <div className="bg-[#f8f9fa] rounded-xl p-4 border-none shadow-sm h-full list-none">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 block">JOURNAL</span>
+                <span className="text-sm font-semibold text-slate-800">{selectedManuscript.journal}</span>
+              </div>
+
+              <div className="bg-[#f8f9fa] rounded-xl p-4 border-none shadow-sm h-full list-none">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 block">MANUSCRIPT TITLE</span>
+                <span className="text-sm font-semibold text-slate-800">{selectedManuscript.title}</span>
+              </div>
+              <div className="bg-[#f8f9fa] rounded-xl p-4 border-none shadow-sm h-full list-none">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 block">AREA</span>
+                <span className="text-sm font-semibold text-slate-800">{selectedManuscript.raw?.research_field || selectedManuscript.raw?.area_of_research || '—'}</span>
+              </div>
+
+              <div className="bg-[#f8f9fa] rounded-xl p-4 border-none shadow-sm h-full list-none">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 block">DESIGNATION</span>
+                <span className="text-sm font-semibold text-slate-800">{selectedManuscript.raw?.designation || '—'}</span>
+              </div>
+              <div className="bg-[#f8f9fa] rounded-xl p-4 border-none shadow-sm h-full list-none">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 block">DEPARTMENT</span>
+                <span className="text-sm font-semibold text-slate-800">{selectedManuscript.raw?.department || '—'}</span>
+              </div>
+
+              <div className="bg-[#f8f9fa] rounded-xl p-4 border-none shadow-sm h-full list-none">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 block">ORGANIZATION</span>
+                <span className="text-sm font-semibold text-slate-800">{selectedManuscript.raw?.affiliation || selectedManuscript.raw?.institution || '—'}</span>
+              </div>
+              <div className="bg-[#f8f9fa] rounded-xl p-4 border-none shadow-sm h-full list-none">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 block">AUTHOR COUNT</span>
+                <span className="text-sm font-semibold text-slate-800">{selectedManuscript.raw?.author_count || '1'}</span>
+              </div>
+
+              <div className="bg-[#f8f9fa] rounded-xl p-4 border-none shadow-sm h-full list-none md:col-span-2">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 block">AUTHORS DETAILS</span>
+                <span className="text-sm font-semibold text-slate-800 leading-relaxed block">{selectedManuscript.raw?.author_names || '—'}</span>
+              </div>
+
+              <div className="bg-[#f8f9fa] rounded-xl p-4 border-none shadow-sm h-full list-none">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 block">STATUS</span>
+                <span className="text-sm font-semibold text-slate-800">{selectedManuscript.status}</span>
+              </div>
+              <div className="bg-[#f8f9fa] rounded-xl p-4 border-none shadow-sm h-full list-none">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 block">PLAGIARISM</span>
+                <span className="text-sm font-semibold text-slate-800">{selectedManuscript.raw?.plagiarism_report ? `${selectedManuscript.raw.plagiarism_report}%` : '—'}</span>
+              </div>
+              
+              <div className="bg-[#f8f9fa] rounded-xl p-4 border-none shadow-sm h-full list-none">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 block">DOI</span>
+                <span className="text-sm font-semibold text-slate-800">{selectedManuscript.raw?.doi || '—'}</span>
+              </div>
+              
+              <div className="bg-[#f8f9fa] rounded-xl p-4 border-none shadow-sm h-full list-none md:col-span-2 bg-gradient-to-r from-blue-50/50 to-transparent border-l-4 border-l-blue-600">
+                <a href={selectedManuscript.raw?.file_url || '#'} target="_blank" rel="noreferrer" className="flex items-center gap-3 font-semibold text-blue-700 hover:text-blue-800 transition-colors text-sm underline decoration-blue-200 underline-offset-4 font-sans">
+                  <FileText className="h-5 w-5" /> View / Download Manuscript Document
+                </a>
+              </div>
+
+            </div>
+          </div>
+          )}
+
+          <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-slate-100 bg-slate-50 sticky bottom-0 z-10 w-full mt-auto">
+             <Button variant="outline" onClick={() => setIsDetailsModalOpen(false)} className="bg-white border-slate-200 text-slate-700 hover:bg-slate-50 h-9 font-semibold shadow-sm text-[12px] px-6">Close</Button>
+             <Button onClick={() => { 
+                setIsDetailsModalOpen(false); 
+                const rawM = selectedManuscript.raw || {};
+                setEditForm({
+                   id: selectedManuscript.id,
+                   title: rawM.title || rawM.manuscript_title || selectedManuscript.title || '',
+                   journal: rawM.journal || selectedManuscript.journal || '',
+                   author: rawM.author_name || selectedManuscript.author || '',
+                   email: rawM.email || selectedManuscript.email || '',
+                   doi: rawM.doi || '',
+                   plagiarism: rawM.plagiarism_report || ''
+                });
+                setTimeout(() => setIsEditModalOpen(true), 150);
+             }} className="bg-[#1e40af] hover:bg-blue-900 border-none text-white h-9 font-semibold shadow-sm text-[12px] px-5 gap-2"><Edit className="w-3.5 h-3.5" /> Edit Manuscript</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Manuscript Modal */}
+      <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+        <DialogContent className="max-w-4xl p-0 bg-white border border-slate-100 shadow-2xl rounded-2xl overflow-hidden gap-0 mt-8 max-h-[90vh]">
+          <DialogHeader className="px-6 py-4 border-b border-slate-100 bg-white sticky top-0 z-10">
+            <DialogTitle className="flex items-center gap-2 text-sm font-bold text-slate-800">
+              <Edit className="h-4 w-4" /> Edit Manuscript
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="p-8 overflow-y-auto max-h-[calc(90vh-140px)] custom-scrollbar">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              
+              <div className="space-y-2">
+                <label className="text-[12px] font-bold text-slate-700">Manuscript Title</label>
+                <Input value={editForm.title} onChange={e => setEditForm({...editForm, title: e.target.value})} className="h-10 text-sm font-medium border-slate-200 shadow-sm rounded-lg text-slate-600 focus-visible:ring-1 focus-visible:ring-blue-600" />
+              </div>
+              
+              <div className="space-y-2">
+                <label className="text-[12px] font-bold text-slate-700">Journal</label>
+                <Input value={editForm.journal} onChange={e => setEditForm({...editForm, journal: e.target.value})} className="h-10 text-sm font-medium border-slate-200 shadow-sm rounded-lg text-slate-600 focus-visible:ring-1 focus-visible:ring-blue-600" />
+              </div>
+              
+              <div className="space-y-2">
+                <label className="text-[12px] font-bold text-slate-700">Author Name</label>
+                <Input value={editForm.author} onChange={e => setEditForm({...editForm, author: e.target.value})} className="h-10 text-sm font-medium border-slate-200 shadow-sm rounded-lg text-slate-600 focus-visible:ring-1 focus-visible:ring-blue-600" />
+              </div>
+              
+              <div className="space-y-2">
+                <label className="text-[12px] font-bold text-slate-700">Email</label>
+                <Input value={editForm.email} onChange={e => setEditForm({...editForm, email: e.target.value})} className="h-10 text-sm font-medium border-slate-200 shadow-sm rounded-lg text-slate-600 focus-visible:ring-1 focus-visible:ring-blue-600" />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[12px] font-bold text-slate-700">DOI</label>
+                <Input value={editForm.doi} onChange={e => setEditForm({...editForm, doi: e.target.value})} className="h-10 text-sm font-medium border-slate-200 shadow-sm rounded-lg text-slate-600 focus-visible:ring-1 focus-visible:ring-blue-600" />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[12px] font-bold text-slate-700">Plagiarism (%)</label>
+                <Input value={editForm.plagiarism} onChange={e => setEditForm({...editForm, plagiarism: e.target.value})} placeholder="e.g. 18" className="h-10 text-sm font-medium border-slate-200 shadow-sm rounded-lg text-slate-600 focus-visible:ring-1 focus-visible:ring-blue-600" />
+              </div>
+              
+            </div>
+          </div>
+
+          <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-slate-100 bg-white sticky bottom-0 z-10 w-full mt-auto">
+             <Button variant="outline" disabled={submittingEdit} onClick={() => setIsEditModalOpen(false)} className="bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100 h-9 font-semibold shadow-sm text-[12px] px-6">Cancel</Button>
+             <Button onClick={handleEditSubmit} disabled={submittingEdit} className="bg-[#1e40af] hover:bg-blue-900 border-none text-white h-9 font-semibold shadow-sm text-[12px] px-5 gap-2">
+                 {submittingEdit ? <Loader2 size={14} className="animate-spin" /> : "Save Changes"}
+             </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    {selectedReviewer && (
+      <Dialog open={isReviewerDetailsModalOpen} onOpenChange={setIsReviewerDetailsModalOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-white border-none shadow-2xl rounded-2xl scrollbar-hide p-0">
+          <DialogHeader className="p-8 border-b border-slate-50 bg-slate-50/50 sticky top-0 z-10">
+             <div className="flex items-center gap-4">
+                <div className="w-14 h-14 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl flex items-center justify-center text-white shadow-lg">
+                   <Users size={28} />
+                </div>
+                <div>
+                   <DialogTitle className="text-2xl font-black text-slate-800 tracking-tight">{selectedReviewer.first_name} {selectedReviewer.last_name || ''}</DialogTitle>
+                   <p className="text-xs font-bold text-slate-400 tracking-widest uppercase mt-1">Reviewer Profile # {selectedReviewer.id}</p>
+                </div>
+                <div className="ml-auto">
+                   <Badge variant="outline" className={`text-[10px] font-black tracking-widest px-4 py-1.5 rounded-full border-none shadow-sm ${selectedReviewer.status?.toLowerCase() === 'active' || selectedReviewer.status?.toLowerCase() === 'accepted' ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>
+                      {selectedReviewer.status || 'Active'}
+                   </Badge>
+                </div>
+             </div>
+          </DialogHeader>
+
+          <div className="p-8 space-y-8 text-left">
+             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="space-y-1.5 p-4 rounded-xl bg-slate-50 border border-slate-100">
+                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Email Address</p>
+                   <p className="text-sm font-bold text-slate-700 flex items-center gap-2"><Mail size={14} className="text-blue-500" /> {selectedReviewer.email}</p>
+                </div>
+                <div className="space-y-1.5 p-4 rounded-xl bg-slate-50 border border-slate-100">
+                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Mobile Number</p>
+                   <p className="text-sm font-bold text-slate-700 flex items-center gap-2"><Phone size={14} className="text-emerald-500" /> {selectedReviewer.mobile || selectedReviewer.phone || '-'}</p>
+                </div>
+                <div className="space-y-1.5 p-4 rounded-xl bg-slate-50 border border-slate-100">
+                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Role</p>
+                   <Badge className="bg-blue-600 text-white border-none font-bold text-[10px]">{selectedReviewer.role || 'Reviewer'}</Badge>
+                </div>
+                <div className="space-y-1.5 p-4 rounded-xl bg-slate-50 border border-slate-100 md:col-span-2 lg:col-span-1">
+                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Institution</p>
+                   <p className="text-sm font-bold text-slate-700 flex items-center gap-2"><Building size={14} className="text-slate-400" /> {selectedReviewer.institution || '-'}</p>
+                </div>
+                <div className="space-y-1.5 p-4 rounded-xl bg-slate-50 border border-slate-100">
+                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Designation</p>
+                   <p className="text-sm font-bold text-slate-700">{selectedReviewer.designation || '-'}</p>
+                </div>
+                <div className="space-y-1.5 p-4 rounded-xl bg-slate-50 border border-slate-100">
+                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Journal</p>
+                   <p className="text-sm font-bold text-blue-700">{selectedReviewer.journal || '-'}</p>
+                </div>
+             </div>
+
+             <div className="space-y-4">
+                <h3 className="text-xs font-black text-slate-400 uppercase tracking-[3px] flex items-center gap-2"><BookOpen size={14} /> Academic Profiles</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                   <div className="p-4 rounded-xl border border-slate-100 hover:border-blue-200 transition-colors bg-white shadow-sm space-y-2">
+                       <p className="text-[10px] font-black text-slate-400 uppercase">ORCID ID</p>
+                       <p className="text-xs font-bold text-slate-600 flex items-center justify-between">
+                          {selectedReviewer.orcid || 'Not provided'}
+                          {selectedReviewer.orcid && <Button variant="ghost" size="icon" className="h-6 w-6 text-blue-600" onClick={() => window.open(`https://orcid.org/${selectedReviewer.orcid}`, '_blank')}><ExternalLink size={12} /></Button>}
+                       </p>
+                   </div>
+                   <div className="p-4 rounded-xl border border-slate-100 hover:border-blue-200 transition-colors bg-white shadow-sm space-y-2">
+                       <p className="text-[10px] font-black text-slate-400 uppercase">Google Scholar</p>
+                       <p className="text-xs font-bold text-slate-600 flex items-center justify-between truncate pr-8">
+                          {selectedReviewer.google_scholar || 'Not provided'}
+                          {selectedReviewer.google_scholar && <Button variant="ghost" size="icon" className="h-6 w-6 text-blue-600" onClick={() => window.open(selectedReviewer.google_scholar, '_blank')}><ExternalLink size={12} /></Button>}
+                       </p>
+                   </div>
+                </div>
+             </div>
+
+             <div className="space-y-4">
+                <h3 className="text-xs font-black text-slate-400 uppercase tracking-[3px] flex items-center gap-2"><List size={14} /> Additional Info</h3>
+                <div className="bg-slate-50 border border-slate-100 rounded-2xl p-6 space-y-4">
+                   <div className="grid grid-cols-2 gap-x-12 gap-y-4">
+                      <div><p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">State / District</p><p className="text-xs font-bold text-slate-700">{selectedReviewer.state || '-'} / {selectedReviewer.district || '-'}</p></div>
+                      <div><p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Nationality</p><p className="text-xs font-bold text-slate-700">{selectedReviewer.nationality || '-'}</p></div>
+                      <div className="col-span-2"><p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Area of Interest</p><p className="text-xs font-bold text-slate-700 leading-relaxed">{selectedReviewer.area_of_interest || '-'}</p></div>
+                   </div>
+                </div>
+             </div>
+             
+             {selectedReviewer.message_to_editor && (
+                <div className="space-y-3">
+                   <h3 className="text-xs font-black text-slate-400 uppercase tracking-[3px] flex items-center gap-2"><MessageSquare size={14} /> Message to Editor</h3>
+                   <div className="p-4 rounded-xl bg-blue-50/50 border border-blue-100 italic text-xs text-slate-600 leading-relaxed">
+                      "{selectedReviewer.message_to_editor}"
+                   </div>
+                </div>
+             )}
+          </div>
+          <div className="p-6 border-t border-slate-50 bg-slate-50/50 flex justify-end gap-3 sticky bottom-0">
+             <Button variant="outline" className="text-xs font-bold h-10 px-6 rounded-xl border-slate-200" onClick={() => setIsReviewerDetailsModalOpen(false)}>Close</Button>
+             <Button className="text-xs font-bold h-10 px-8 rounded-xl bg-blue-600 hover:bg-blue-700 text-white shadow-lg" onClick={() => { updateReviewerStatus(selectedReviewer.id, 'Active'); setIsReviewerDetailsModalOpen(false); }}>Approve Reviewer</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+   )}
+
+      {/* Review Details Modal */}
+      <Dialog open={isReviewModalOpen} onOpenChange={(open) => { setIsReviewModalOpen(open); if (!open) setAdminNote(''); }}>
+        <DialogContent className="max-w-3xl p-0 bg-white border border-slate-100 shadow-2xl rounded-2xl overflow-hidden gap-0 max-h-[90vh]">
+          <DialogHeader className="px-6 py-4 border-b border-slate-100 bg-white sticky top-0 z-10">
+            <DialogTitle className="flex items-center gap-2 text-sm font-bold text-slate-800">
+              <FileSearch className="h-4 w-4 text-blue-600" /> Review Details
+            </DialogTitle>
+          </DialogHeader>
+
+          {selectedReview && (
+            <div className="overflow-y-auto max-h-[calc(90vh-140px)] p-6 space-y-4 custom-scrollbar">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Manuscript</p>
+                  <p className="text-sm font-bold text-slate-800 leading-snug">{selectedReview.manuscript_title || '—'}</p>
+                  {selectedReview.manuscript_id && <p className="text-[9px] font-black text-blue-600 uppercase mt-1">{selectedReview.manuscript_id}</p>}
+                </div>
+                <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Reviewer</p>
+                  <p className="text-sm font-bold text-slate-800">{selectedReview.reviewer_full_name || '—'}</p>
+                  {selectedReview.reviewer_id && <p className="text-[9px] font-black text-blue-600 uppercase mt-1">{selectedReview.reviewer_id}</p>}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-emerald-50 border-l-4 border-emerald-500 rounded-xl p-4">
+                  <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Overall Marks</p>
+                  <p className="text-3xl font-black text-emerald-600">
+                    {selectedReview.overall_marks || '—'}
+                    {selectedReview.overall_marks && <span className="text-base font-normal text-emerald-400">/10</span>}
+                  </p>
+                </div>
+                <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Recommendation</p>
+                  <p className="text-sm font-bold text-slate-800">{selectedReview.recommendation || '—'}</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                {[
+                  { label: 'Importance', value: selectedReview.importance },
+                  { label: 'Title feedback', value: selectedReview.title_feedback },
+                  { label: 'Abstract feedback', value: selectedReview.abstract_feedback },
+                  { label: 'Scientific Correctness', value: selectedReview.scientific_correctness },
+                  { label: 'References feedback', value: selectedReview.references_feedback },
+                  { label: 'Language Quality', value: selectedReview.language_quality },
+                  { label: 'General Comments', value: selectedReview.general_comments },
+                  { label: 'Ethical Issues', value: selectedReview.ethical_issues },
+                  { label: 'Ethical Details', value: selectedReview.ethical_details },
+                  { label: 'Competing Interests', value: selectedReview.competing_interests },
+                  { label: 'Plagiarism Suspected', value: selectedReview.plagiarism_suspected },
+                ].map(({ label, value }) => (
+                  <div key={label} className="bg-slate-50 rounded-xl p-4 border border-slate-100">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">{label}</p>
+                    <p className="text-sm font-semibold text-slate-700">{value || '—'}</p>
+                  </div>
+                ))}
+              </div>
+
+              <div className="space-y-2 pt-2">
+                <label className="text-xs font-bold text-slate-700">Admin Note (for approve/reject)</label>
+                <textarea
+                  value={adminNote}
+                  onChange={(e) => setAdminNote(e.target.value)}
+                  placeholder="Add your note here..."
+                  rows={4}
+                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
+                />
+              </div>
+            </div>
+          )}
+
+          <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-slate-100 bg-slate-50 sticky bottom-0 z-10">
+            <Button onClick={() => handleReviewAction('Approved')} disabled={submittingReview} className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs h-10 px-6 rounded-xl gap-2 shadow-sm">
+              {submittingReview ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />} Approve
+            </Button>
+            <Button onClick={() => handleReviewAction('Rejected')} disabled={submittingReview} className="bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs h-10 px-6 rounded-xl gap-2 shadow-sm">
+              {submittingReview ? <Loader2 size={14} className="animate-spin" /> : <X size={14} />} Reject
+            </Button>
+            <Button variant="outline" onClick={() => { setIsReviewModalOpen(false); setAdminNote(''); }} className="font-bold text-xs h-10 px-6 rounded-xl border-slate-200">
+              Close
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Assign Work Modal */}
+      <Dialog open={isAssignModalOpen} onOpenChange={setIsAssignModalOpen}>
+        <DialogContent className="max-w-5xl p-0 bg-white border border-slate-100 shadow-2xl rounded-2xl overflow-hidden gap-0 max-h-[90vh]">
+          <DialogHeader className="px-6 py-4 border-b border-slate-100 bg-white sticky top-0 z-10">
+            <DialogTitle className="flex items-center gap-2 text-sm font-bold text-slate-800">
+              <Users className="h-4 w-4 text-indigo-600" /> Assign Reviewer to Manuscript
+            </DialogTitle>
+          </DialogHeader>
+
+          {selectedManuscriptForAssign && (
+            <div className="p-6 bg-slate-50/50 border-b border-slate-100">
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Target Manuscript</p>
+              <h3 className="text-sm font-bold text-slate-800">{selectedManuscriptForAssign.title || selectedManuscriptForAssign.manuscript_title}</h3>
+              <div className="flex gap-4 mt-2">
+                <Badge variant="outline" className="bg-white border-slate-200 text-slate-600 font-medium text-[10px]">{selectedManuscriptForAssign.journal}</Badge>
+                <div className="text-[10px] font-medium text-slate-500">Area: {selectedManuscriptForAssign.raw?.research_field || selectedManuscriptForAssign.raw?.area_of_research || 'Not specified'}</div>
+              </div>
+            </div>
+          )}
+
+          <div className="overflow-y-auto max-h-[calc(90vh-180px)] p-0 custom-scrollbar bg-[#FFFFF9]">
+            <div className="grid grid-cols-12 gap-x-4 px-6 py-3 bg-slate-100/50 border-b border-slate-100 items-center sticky top-0 z-10 backdrop-blur-sm">
+               <div className="col-span-1 text-[10px] font-black text-indigo-600 uppercase tracking-widest text-center">RANK</div>
+               <div className="col-span-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest">REVIEWER</div>
+               <div className="col-span-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest">JOURNAL</div>
+               <div className="col-span-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest">STATUS</div>
+               <div className="col-span-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-right">ACTION</div>
+            </div>
+            
+            <div className="divide-y divide-slate-100">
+              {loadingMatches ? (
+                 <div className="py-20 flex flex-col items-center justify-center gap-4 text-slate-400">
+                    <Loader2 className="w-8 h-8 animate-spin" />
+                    <span className="text-sm font-semibold">Running AI Match Analysis...</span>
+                 </div>
+              ) : matchingReviewers
+                .map(r => ({ ...r, rankScore: getReviewerScore(r, selectedManuscriptForAssign) }))
+                .sort((a, b) => b.rankScore - a.rankScore)
+                .map((r, i) => (
+                  <div key={r.id} className="grid grid-cols-12 gap-x-4 px-6 py-4 hover:bg-slate-50 items-center transition-colors">
+                     <div className="col-span-1 text-center flex flex-col items-center">
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center font-black text-xs ${i === 0 ? 'bg-amber-100 text-amber-700 ring-2 ring-amber-400 shadow-sm' : i === 1 ? 'bg-slate-200 text-slate-700' : i === 2 ? 'bg-orange-100 text-orange-800' : 'bg-slate-50 text-slate-400'}`}>
+                           #{i + 1}
+                        </div>
+                        <span className="text-[9px] font-bold text-slate-400 mt-1">{r.rankScore} pts</span>
+                     </div>
+                     <div className="col-span-4 space-y-0.5">
+                       <h4 className="text-[13px] font-bold text-slate-800">{r.first_name} {r.last_name || ''}</h4>
+                       <p className="text-[10px] font-medium text-slate-500 truncate max-w-[200px]">{r.area_of_interest || 'No area specified'}</p>
+                     </div>
+                     <div className="col-span-3">
+                       <p className="text-[11px] font-semibold text-slate-600 truncate">{r.journal}</p>
+                     </div>
+                     <div className="col-span-2">
+                       <Badge variant="outline" className={`border-none tracking-wide text-[9px] font-bold ${r.status?.toLowerCase() === 'active' ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-500'}`}>{r.status || 'Unknown'}</Badge>
+                     </div>
+                     <div className="col-span-2 flex justify-end">
+                       <Button 
+                         onClick={() => handleAssignReviewer(r)} 
+                         disabled={assigningReviewer}
+                         className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-8 px-4 text-xs shadow-sm rounded-lg w-20"
+                       >
+                         {assigningReviewer ? <Loader2 className="w-3 h-3 animate-spin"/> : 'Assign'}
+                       </Button>
+                     </div>
+                  </div>
+              ))}
+            </div>
+          </div>
+          <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end">
+             <Button variant="outline" onClick={() => setIsAssignModalOpen(false)} className="text-xs font-bold border-slate-200 h-9">Close</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

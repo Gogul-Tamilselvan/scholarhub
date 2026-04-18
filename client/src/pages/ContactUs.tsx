@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import Header from "@/components/Header";
 import SEO from "@/components/SEO";
+import { supabase } from "@/lib/supabase";
 
 export default function ContactUs() {
   const { toast } = useToast();
@@ -33,15 +34,20 @@ export default function ContactUs() {
     setIsSubmitting(true);
 
     try {
-      const response = await fetch("/api/submit-contact", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formData),
-      });
+      const [firstName, ...lastNames] = formData.name.split(' ');
+      const { error } = await supabase.from('contact_messages').insert([{
+        first_name: firstName || '',
+        last_name: lastNames.join(' ') || '',
+        email: formData.email,
+        phone: formData.phone,
+        enquiry_type: formData.enquiryType,
+        subject: formData.subject,
+        message: formData.message,
+        submitted_at: new Date().toISOString(),
+        is_read_system: false
+      }]);
 
-      if (response.ok) {
+      if (!error) {
         toast({
           title: "Message sent successfully!",
           description: "We have received your request. Our team will contact you soon.",
@@ -57,8 +63,7 @@ export default function ContactUs() {
           message: ""
         });
       } else {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to send message");
+        throw new Error(error.message || "Failed to send message");
       }
     } catch (error) {
       console.error("Error submitting contact form:", error);

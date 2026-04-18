@@ -77,6 +77,22 @@ interface TabbedJournalPageProps {
   currentIssue?: string;
   startingYear?: string;
   referenceStyle?: "APA" | "APA_MLA";
+  dynamicArchives?: {
+    volumes: any[];
+    issues: any[];
+    articles: any[];
+  } | null;
+  journalParticulars?: {
+    issn?: string;
+    frequency?: string;
+    language?: string;
+    publisherName?: string;
+    publisherAddress?: string;
+    publicationFormat?: string;
+    email?: string;
+  } | null;
+  currentIssueArticles?: Article[];
+  currentIssueMeta?: { volume: string; issue: string; period: string };
 }
 
 export default function TabbedJournalPage({
@@ -99,6 +115,10 @@ export default function TabbedJournalPage({
   currentIssue = "1",
   startingYear = "2026",
   referenceStyle = "APA",
+  dynamicArchives = null,
+  journalParticulars = null,
+  currentIssueArticles = [],
+  currentIssueMeta,
 }: TabbedJournalPageProps) {
   const [location] = useLocation();
   const [activeTab, setActiveTab] = useState(() => {
@@ -240,19 +260,19 @@ export default function TabbedJournalPage({
                     </div>
                     <div className="border-l-4 border-blue-200 pl-4">
                       <p className="text-sm text-blue-600 dark:text-blue-400 font-semibold">Frequency</p>
-                      <p className="text-base text-gray-900 dark:text-gray-100">Quarterly</p>
+                      <p className="text-base text-gray-900 dark:text-gray-100">{journalParticulars?.frequency || 'Quarterly'}</p>
                     </div>
                     <div className="border-l-4 border-blue-200 pl-4">
                       <p className="text-sm text-blue-600 dark:text-blue-400 font-semibold">ISSN</p>
-                      <p className="text-base text-gray-900 dark:text-gray-100">XXXXX</p>
+                      <p className="text-base text-gray-900 dark:text-gray-100">{journalParticulars?.issn || 'XXXXX'}</p>
                     </div>
                     <div className="border-l-4 border-blue-200 pl-4">
                       <p className="text-sm text-blue-600 dark:text-blue-400 font-semibold">Publisher Name</p>
-                      <p className="text-base text-gray-900 dark:text-gray-100">Scholar India Publishers</p>
+                      <p className="text-base text-gray-900 dark:text-gray-100">{journalParticulars?.publisherName || 'Scholar India Publishers'}</p>
                     </div>
                     <div className="border-l-4 border-blue-200 pl-4">
                       <p className="text-sm text-blue-600 dark:text-blue-400 font-semibold">Publisher Address</p>
-                      <p className="text-base text-gray-900 dark:text-gray-100">2/477, Perumal Kovil Street, Mettuchery, Mappedu, Tiruvallur, Chennai - 631402, Tamilnadu, India</p>
+                      <p className="text-base text-gray-900 dark:text-gray-100">{journalParticulars?.publisherAddress || '2/477, Perumal Kovil Street, Mettuchery, Mappedu, Tiruvallur, Chennai - 631402, Tamilnadu, India'}</p>
                     </div>
                   </div>
                   <div className="space-y-3">
@@ -266,15 +286,15 @@ export default function TabbedJournalPage({
                     </div>
                     <div className="border-l-4 border-blue-200 pl-4">
                       <p className="text-sm text-blue-600 dark:text-blue-400 font-semibold">Language</p>
-                      <p className="text-base text-gray-900 dark:text-gray-100">English</p>
+                      <p className="text-base text-gray-900 dark:text-gray-100">{journalParticulars?.language || 'English'}</p>
                     </div>
                     <div className="border-l-4 border-blue-200 pl-4">
                       <p className="text-sm text-blue-600 dark:text-blue-400 font-semibold">Publication Format</p>
-                      <p className="text-base text-gray-900 dark:text-gray-100">Online (Open Access)</p>
+                      <p className="text-base text-gray-900 dark:text-gray-100">{journalParticulars?.publicationFormat || 'Online (Open Access)'}</p>
                     </div>
                     <div className="border-l-4 border-blue-200 pl-4">
                       <p className="text-sm text-blue-600 dark:text-blue-400 font-semibold">Email</p>
-                      <p className="text-base text-gray-900 dark:text-gray-100">prof.klirsn@gmail.com / editor@scholarindiapub.com</p>
+                      <p className="text-base text-gray-900 dark:text-gray-100">{journalParticulars?.email || 'prof.klirsn@gmail.com / editor@scholarindiapub.com'}</p>
                     </div>
                   </div>
                 </div>
@@ -517,9 +537,11 @@ export default function TabbedJournalPage({
                       <Calendar className="h-6 w-6 text-yellow-400" />
                     </div>
                     <div>
-                      <CardTitle className="text-xl md:text-2xl font-serif text-white">Current Issue (April - June 2026)</CardTitle>
+                      <CardTitle className="text-xl md:text-2xl font-serif text-white">
+                        Current Issue {currentIssueMeta ? `(${currentIssueMeta.period})` : '(April - June 2026)'}
+                      </CardTitle>
                       <p className="text-sm md:text-base font-medium text-blue-100">
-                        (Volume {currentVolume}, Issue {currentIssue})
+                        (Volume {currentIssueMeta?.volume || currentVolume}, Issue {currentIssueMeta?.issue || currentIssue})
                       </p>
                     </div>
                   </div>
@@ -541,9 +563,12 @@ export default function TabbedJournalPage({
                 </div>
               </CardHeader>
               <CardContent className="pt-6">
-                {articles && articles.length > 0 ? (
+                {(() => {
+                  // Use currentIssueArticles if available (dynamic journals), else fall back to articles prop
+                  const displayArticles = currentIssueArticles && currentIssueArticles.length > 0 ? currentIssueArticles : articles;
+                  return displayArticles && displayArticles.length > 0 ? (
                   <div className="space-y-4">
-                    {articles.map((article) => (
+                    {displayArticles.map((article) => (
                       <Card key={article.id} className="border-l-4 border-[#213361] shadow-md hover:shadow-lg transition-all bg-white dark:bg-gray-900 overflow-hidden mb-6">
                         <CardContent className="p-4 md:p-5">
                           <div className="flex flex-col md:flex-row gap-4 md:gap-5">
@@ -602,13 +627,7 @@ export default function TabbedJournalPage({
                                     </Link>
                                   </Button>
                                   <Button asChild variant="ghost" className="h-8 text-xs font-bold text-blue-900 hover:text-blue-800 hover:bg-blue-50 px-3 border border-transparent hover:border-blue-100">
-                                        <a href={
-                                          article.articleId === "sjhss-v1i2-001"
-                                            ? "/downloads/SIPHSv1i201.pdf"
-                                            : article.articleId === "sjhss-v1i2-002"
-                                              ? "/downloads/SIPHSv1i202.pdf"
-                                              : `/downloads/${article.articleId}.pdf`
-                                        } target="_blank" rel="noopener noreferrer">
+                                        <a href={`/downloads/${article.articleId}.pdf`} target="_blank" rel="noopener noreferrer">
                                       <FileText className="h-3.5 w-3.5 mr-2" /> Full PDF
                                     </a>
                                   </Button>
@@ -625,10 +644,11 @@ export default function TabbedJournalPage({
                     <Calendar className="h-20 w-20 text-blue-400 mx-auto mb-6" />
                     <h3 className="text-2xl font-semibold mb-3 text-blue-900 dark:text-blue-300">Coming Soon</h3>
                     <p className="text-base text-blue-600 dark:text-blue-400 max-w-md mx-auto">
-                      Volume {currentVolume}, Issue {currentIssue} (April - June 2026) is currently under preparation.
+                      Volume {currentIssueMeta?.volume || currentVolume}, Issue {currentIssueMeta?.issue || currentIssue} is currently under preparation.
                     </p>
                   </div>
-                )}
+                );
+                })()}
               </CardContent>
             </Card>
           </TabsContent>
@@ -636,27 +656,64 @@ export default function TabbedJournalPage({
           <TabsContent value="archives">
             <div className="space-y-0">
               {(() => {
-                const isCommerce = title.toLowerCase().includes('commerce');
-                const volumes = isCommerce
-                  ? [
-                      { key: "v2", label: "Volume 2 (Current)", period: "Jan - Dec 2026", status: "In Progress", issues: [
-                        { num: 1, label: "Issue 1", period: "Jan - Mar 2026", hasArticles: true, getArticles: () => v2i1Articles },
-                        { num: 2, label: "Issue 2", period: "Apr - Jun 2026", hasArticles: true, getArticles: () => articles },
-                        { num: 3, label: "Issue 3", period: "Jul - Sep 2026", hasArticles: false, getArticles: () => [] as Article[] },
-                        { num: 4, label: "Issue 4", period: "Oct - Dec 2026", hasArticles: false, getArticles: () => [] as Article[] },
-                      ]},
-                      { key: "v1", label: "Volume 1", period: "Oct - Dec 2025", status: "Published", issues: [
-                        { num: 1, label: "Issue 1", period: "Oct - Dec 2025", hasArticles: true, getArticles: () => archivedArticles },
-                      ]},
-                    ]
-                  : [
-                      { key: "v1", label: "Volume 1 (Current)", period: "Jan - Dec 2026", status: "In Progress", issues: [
-                        { num: 1, label: "Issue 1", period: "Jan - Mar 2026", hasArticles: true, getArticles: () => archivedArticles },
-                        { num: 2, label: "Issue 2", period: "Apr - Jun 2026", hasArticles: true, getArticles: () => articles },
-                        { num: 3, label: "Issue 3", period: "Jul - Sep 2026", hasArticles: false, getArticles: () => [] as Article[] },
-                        { num: 4, label: "Issue 4", period: "Oct - Dec 2026", hasArticles: false, getArticles: () => [] as Article[] },
-                      ]},
-                    ];
+                // If dynamicArchives is provided, use DB data instead of hardcoded
+                let volumes: { key: string; label: string; period: string; status: string; issues: { num: number; label: string; period: string; hasArticles: boolean; getArticles: () => Article[] }[] }[];
+
+                if (dynamicArchives && dynamicArchives.volumes.length > 0) {
+                  volumes = dynamicArchives.volumes.map((v: any) => ({
+                    key: `v${v.volume_number}`,
+                    label: v.label || `Volume ${v.volume_number}`,
+                    period: v.period || '',
+                    status: v.status || 'In Progress',
+                    issues: dynamicArchives.issues
+                      .filter((i: any) => i.volume_id === v.id)
+                      .sort((a: any, b: any) => a.issue_number - b.issue_number)
+                      .map((i: any) => {
+                        const issueArticles = dynamicArchives.articles
+                          .filter((a: any) => a.issue_id === i.id)
+                          .sort((a: any, b: any) => (a.sort_order || 0) - (b.sort_order || 0))
+                          .map((a: any, idx: number) => ({
+                            id: idx + 1,
+                            articleId: a.article_id,
+                            title: a.title,
+                            authors: a.authors,
+                            affiliation: a.affiliation || '',
+                            pages: a.pages || '',
+                            doi: a.doi || '',
+                          }));
+                        return {
+                          num: i.issue_number,
+                          label: i.label || `Issue ${i.issue_number}`,
+                          period: i.period || '',
+                          hasArticles: issueArticles.length > 0,
+                          getArticles: () => issueArticles,
+                        };
+                      }),
+                  }));
+                } else {
+                  // Hardcoded fallback for Commerce and Humanities
+                  const isCommerce = title.toLowerCase().includes('commerce');
+                  volumes = isCommerce
+                    ? [
+                        { key: "v2", label: "Volume 2 (Current)", period: "Jan - Dec 2026", status: "In Progress", issues: [
+                          { num: 1, label: "Issue 1", period: "Jan - Mar 2026", hasArticles: true, getArticles: () => v2i1Articles },
+                          { num: 2, label: "Issue 2", period: "Apr - Jun 2026", hasArticles: true, getArticles: () => articles },
+                          { num: 3, label: "Issue 3", period: "Jul - Sep 2026", hasArticles: false, getArticles: () => [] as Article[] },
+                          { num: 4, label: "Issue 4", period: "Oct - Dec 2026", hasArticles: false, getArticles: () => [] as Article[] },
+                        ]},
+                        { key: "v1", label: "Volume 1", period: "Oct - Dec 2025", status: "Published", issues: [
+                          { num: 1, label: "Issue 1", period: "Oct - Dec 2025", hasArticles: true, getArticles: () => archivedArticles },
+                        ]},
+                      ]
+                    : [
+                        { key: "v1", label: "Volume 1 (Current)", period: "Jan - Dec 2026", status: "In Progress", issues: [
+                          { num: 1, label: "Issue 1", period: "Jan - Mar 2026", hasArticles: true, getArticles: () => archivedArticles },
+                          { num: 2, label: "Issue 2", period: "Apr - Jun 2026", hasArticles: true, getArticles: () => articles },
+                          { num: 3, label: "Issue 3", period: "Jul - Sep 2026", hasArticles: false, getArticles: () => [] as Article[] },
+                          { num: 4, label: "Issue 4", period: "Oct - Dec 2026", hasArticles: false, getArticles: () => [] as Article[] },
+                        ]},
+                      ];
+                }
                 const currentVol = volumes.find(v => v.key === selectedVolume);
                 const currentIssueData = currentVol?.issues.find(i => `i${i.num}` === selectedIssue);
 

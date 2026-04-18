@@ -1,9 +1,11 @@
 import { useRoute } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Download, ArrowLeft, FileText } from "lucide-react";
+import { Download, ArrowLeft, FileText, Loader2 } from "lucide-react";
 import { Link } from "wouter";
 import ArticleSEO from "@/components/ArticleSEO";
+import { useState, useEffect } from "react";
+import { supabase } from "@/lib/supabase";
 
 interface Article {
   id: string;
@@ -657,7 +659,81 @@ const articles: Record<string, Article> = {
 export default function ArticleLanding() {
   const [, params] = useRoute("/article/:id");
   const articleId = params?.id || "";
-  const article = articles[articleId];
+  const hardcodedArticle = articles[articleId];
+
+  const [dbArticle, setDbArticle] = useState<Article | null>(null);
+  const [dbLoading, setDbLoading] = useState(!hardcodedArticle && !!articleId);
+  const [dbChecked, setDbChecked] = useState(!!hardcodedArticle);
+
+  // If not found in hardcoded, try DB
+  useEffect(() => {
+    if (!hardcodedArticle && articleId && !dbChecked) {
+      setDbLoading(true);
+      (async () => {
+        try {
+          // Simple sequential queries - always works regardless of FK setup
+          const { data: artData, error: artErr } = await supabase
+            .from('journal_articles')
+            .select('*')
+            .eq('article_id', articleId)
+            .single();
+
+          if (artErr || !artData) {
+            console.log("Article not found in DB:", artErr?.message);
+            setDbLoading(false);
+            setDbChecked(true);
+            return;
+          }
+
+          // Get issue
+          const { data: issData } = await supabase
+            .from('journal_issues')
+            .select('*')
+            .eq('id', artData.issue_id)
+            .single();
+
+          // Get volume
+          const { data: volData } = issData
+            ? await supabase.from('journal_volumes').select('*').eq('id', issData.volume_id).single()
+            : { data: null };
+
+          // Get journal
+          const { data: jData } = volData
+            ? await supabase.from('journals').select('*').eq('id', volData.journal_id).single()
+            : { data: null };
+
+          setDbArticle({
+            id: artData.article_id,
+            title: artData.title,
+            authors: artData.authors,
+            affiliation: artData.affiliation || '',
+            pages: artData.pages || '',
+            volume: String(volData?.volume_number || '1'),
+            issue: String(issData?.issue_number || '1'),
+            year: jData?.starting_year || new Date().getFullYear().toString(),
+            journal: jData?.title || 'Scholar India Journal',
+            pdfUrl: `/downloads/${artData.article_id}.pdf`,
+            doi: artData.doi || undefined,
+          });
+        } catch (err) {
+          console.error("DB article lookup failed:", err);
+        } finally {
+          setDbLoading(false);
+          setDbChecked(true);
+        }
+      })();
+    }
+  }, [hardcodedArticle, articleId, dbChecked]);
+
+  const article = hardcodedArticle || dbArticle;
+
+  if (dbLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-blue-900" />
+      </div>
+    );
+  }
 
   if (!article) {
     return (

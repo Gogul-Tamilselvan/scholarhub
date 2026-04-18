@@ -1,7 +1,8 @@
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Menu, X, ChevronDown, BookOpen, BookMarked, Briefcase, LogIn, FileText } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { supabase } from "@/lib/supabase";
 import logoImage from "@assets/Untitled design (1)_1760793768867.png";
 
 export default function Header() {
@@ -11,6 +12,19 @@ export default function Header() {
   const [servicesOpen, setServicesOpen] = useState(false);
   const [submitOpen, setSubmitOpen] = useState(false);
   const [loginOpen, setLoginOpen] = useState(false);
+  const [dynamicJournals, setDynamicJournals] = useState<any[]>([]);
+
+  useEffect(() => {
+    async function loadDynamic() {
+      try {
+        const { data } = await supabase.from('journals').select('title, slug').order('created_at', { ascending: true });
+        if (data) setDynamicJournals(data);
+      } catch (e) {
+        // Silently ignore if table doesn't exist
+      }
+    }
+    loadDynamic();
+  }, []);
 
   const dropdownItemClass =
     "block px-4 py-2.5 text-sm text-slate-800 hover:bg-amber-400 hover:text-slate-900 transition-colors cursor-pointer";
@@ -54,12 +68,11 @@ export default function Header() {
               <div className="absolute top-full left-0 hidden group-hover:block pt-1 z-50">
                 <div className="bg-white border border-slate-200 rounded-md shadow-xl overflow-hidden min-w-56">
                   <div className="h-0.5 bg-gradient-to-r from-amber-400 to-yellow-300" />
-                  <Link href="/commerce-management" data-testid="link-commerce-journal">
-                    <div className={dropdownItemClass}>Commerce & Management</div>
-                  </Link>
-                  <Link href="/humanities" data-testid="link-humanities-journal">
-                    <div className={dropdownItemClass}>Humanities & Social Sciences</div>
-                  </Link>
+                  {dynamicJournals.map(j => (
+                    <Link key={j.slug} href={j.slug === 'sjcm' ? '/commerce-management' : j.slug === 'sjhss' ? '/humanities' : `/journal/${j.slug}`}>
+                      <div className={dropdownItemClass}>{j.title.replace(/^Scholar Journal of\s+/i, '')}</div>
+                    </Link>
+                  ))}
                 </div>
               </div>
             </div>
@@ -118,12 +131,12 @@ export default function Header() {
               <div className="absolute top-full right-0 hidden group-hover:block pt-1 z-50">
                 <div className="bg-white border border-slate-200 rounded-md shadow-xl overflow-hidden min-w-44">
                   <div className="h-0.5 bg-gradient-to-r from-amber-400 to-yellow-300" />
-                  <a href="/erp/admin-login.html" data-testid="link-admin-login">
+                  <Link href="/admin/login" data-testid="link-admin-login">
                     <div className={dropdownItemClass}>Admin</div>
-                  </a>
-                  <a href="/erp/member-login.html" data-testid="link-reviewer-login">
+                  </Link>
+                  <Link href="/reviewer-login" data-testid="link-reviewer-login">
                     <div className={dropdownItemClass}>Reviewer / Editor</div>
-                  </a>
+                  </Link>
                 </div>
               </div>
             </div>
@@ -172,12 +185,11 @@ export default function Header() {
               </Button>
               {journalsOpen && (
                 <div className="pl-4 mt-1 space-y-0.5">
-                  <Link href="/commerce-management" onClick={() => setMobileMenuOpen(false)}>
-                    <div className="px-3 py-2 text-sm text-[#213361] hover:bg-amber-400 hover:text-slate-900 rounded transition-colors">Commerce & Management</div>
-                  </Link>
-                  <Link href="/humanities" onClick={() => setMobileMenuOpen(false)}>
-                    <div className="px-3 py-2 text-sm text-[#213361] hover:bg-amber-400 hover:text-slate-900 rounded transition-colors">Humanities & Social Sciences</div>
-                  </Link>
+                  {dynamicJournals.map(j => (
+                    <Link key={j.slug} href={j.slug === 'sjcm' ? '/commerce-management' : j.slug === 'sjhss' ? '/humanities' : `/journal/${j.slug}`} onClick={() => setMobileMenuOpen(false)}>
+                      <div className="px-3 py-2 text-sm text-[#213361] hover:bg-amber-400 hover:text-slate-900 rounded transition-colors">{j.title.replace(/^Scholar Journal of\s+/i, '')}</div>
+                    </Link>
+                  ))}
                 </div>
               )}
             </div>
@@ -233,12 +245,12 @@ export default function Header() {
               </Button>
               {loginOpen && (
                 <div className="pl-4 mt-1 space-y-0.5">
-                  <a href="/erp/admin-login.html" onClick={() => { setMobileMenuOpen(false); setLoginOpen(false); }}>
+                  <Link href="/admin/login" onClick={() => { setMobileMenuOpen(false); setLoginOpen(false); }}>
                     <div className="px-3 py-2 text-sm text-[#213361] hover:bg-amber-400 hover:text-slate-900 rounded transition-colors">Admin</div>
-                  </a>
-                  <a href="/erp/member-login.html" onClick={() => { setMobileMenuOpen(false); setLoginOpen(false); }}>
+                  </Link>
+                  <Link href="/reviewer-login" onClick={() => { setMobileMenuOpen(false); setLoginOpen(false); }}>
                     <div className="px-3 py-2 text-sm text-[#213361] hover:bg-amber-400 hover:text-slate-900 rounded transition-colors">Reviewer / Editor</div>
-                  </a>
+                  </Link>
                 </div>
               )}
             </div>

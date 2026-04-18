@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -34,10 +35,22 @@ export default function ManuscriptSubmissionForm({ journalName }: ManuscriptSubm
   const [manuscriptId, setManuscriptId] = useState<string | null>(null);
   const { toast } = useToast();
 
-  const journals = [
-    "Scholar Journal of Commerce and Management",
-    "Scholar Journal of Humanities and Social Sciences"
-  ];
+  const [journals, setJournals] = useState<string[]>([]);
+  
+  useEffect(() => {
+    async function fetchJournals() {
+      const { data, error } = await supabase.from('journals').select('title');
+      if (data && !error && data.length > 0) {
+        setJournals(data.map(j => j.title));
+      } else {
+        setJournals([
+          "Scholar Journal of Commerce and Management",
+          "Scholar Journal of Humanities and Social Sciences"
+        ]);
+      }
+    }
+    fetchJournals();
+  }, []);
 
   const designations = [
     "Asst. Professor",
@@ -87,61 +100,107 @@ export default function ManuscriptSubmissionForm({ journalName }: ManuscriptSubm
     setIsSubmitting(true);
 
     try {
-      // Prepare form data for submission
-      const submissionData = new FormData();
-      
-      // Add authors data
-      submissionData.append("authors", JSON.stringify(authors));
-      
-      // Add first author's details for primary contact
-      submissionData.append("email", authors[0].email);
-      submissionData.append("mobile", authors[0].mobile);
-      submissionData.append("name", authors[0].name);
-      submissionData.append("designation", authors[0].designation);
-      submissionData.append("department", authors[0].department);
-      submissionData.append("organisation", authors[0].organisation);
-      submissionData.append("orcid", authors[0].orcid || "");
-      submissionData.append("journal", formData.journal);
-      submissionData.append("manuscriptTitle", formData.manuscriptTitle);
-      
-      if (formData.manuscript) {
-        submissionData.append("manuscript", formData.manuscript);
+      if (!formData.manuscript) {
+        throw new Error("Please upload a manuscript file");
       }
 
-      // Submit to backend API
-      const response = await fetch('/api/submit-manuscript', {
-        method: 'POST',
-        body: submissionData,
+      // 1. Generate Smart Manuscript ID
+      const generateManuscriptId = () => {
+        const targetJournal = formData.journal || journalName || "";
+        const isCommerce = targetJournal.includes("Commerce");
+        const journalPrefix = isCommerce ? "SJCM" : "SJHSS";
+        const date = new Date();
+        const year = date.getFullYear().toString().slice(-2);
+        const month = (date.getMonth() + 1).toString().padStart(2, '0');
+        const randomChars = Array.from({ length: 4 }, () => 
+          'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'.charAt(Math.floor(Math.random() * 36))
+        ).join('');
+        return `MAN${journalPrefix}${year}${month}${randomChars}`;
+      };
+      
+      const uniqueId = generateManuscriptId();
+      const fileExtension = formData.manuscript.name.split('.').pop() || 'docx';
+      const s3FileName = `manuscripts/${uniqueId}.${fileExtension}`;
+
+      // 2. Get Pre-signed URL from Secure Edge Function
+      const { data: presignData, error: presignError } = await supabase.functions.invoke('s3-presign', {
+        body: {
+          fileName: s3FileName,
+          fileType: formData.manuscript.type || 'application/octet-stream',
+        }
       });
 
-      const result = await response.json();
-
-      if (response.ok) {
-        const id = result.manuscriptId;
-        setManuscriptId(id);
-        toast({
-          title: "Submission successful!",
-          description: `Your manuscript has been submitted successfully. Manuscript ID: ${id}. You will receive a confirmation email shortly.`,
-        });
-
-        // Scroll to top to show the success message with Manuscript ID
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-
-        // Reset form
-        setAuthors([{ name: "", designation: "", department: "", organisation: "", email: "", mobile: "", orcid: "" }]);
-        setFormData({
-          journal: journalName || "",
-          manuscriptTitle: "",
-          manuscript: null
-        });
-        
-        // Reset file input
-        const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
-        if (fileInput) fileInput.value = '';
-
-      } else {
-        throw new Error(result.error || 'Submission failed');
+      if (presignError) {
+        throw new Error("Failed to authenticate upload with server. Edge function failed.");
       }
+
+      const { signedUrl, publicUrl: s3Url } = presignData;
+
+      // 3. Upload actual file directly to AWS S3 using the signed URL
+      const arrayBuffer = await formData.manuscript.arrayBuffer();
+      const uploadResponse = await fetch(signedUrl, {
+        method: "PUT",
+        headers: {
+          "Content-Type": formData.manuscript.type || 'application/octet-stream',
+        },
+        body: new Uint8Array(arrayBuffer),
+      });
+
+      if (!uploadResponse.ok) {
+        throw new Error("Failed to upload the document to S3 storage.");
+      }
+
+      console.log("Uploaded successfully to S3 at:", s3Url);
+
+      // 4. Submit to Supabase Database
+      const firstAuthor = authors[0];
+      const authorNames = authors.map(a => a.name).join(", ");
+      
+      const { data, error } = await supabase
+        .from('manuscripts')
+        .insert([{
+          id: uniqueId,
+          author_name: firstAuthor.name,
+          designation: firstAuthor.designation,
+          department: firstAuthor.department,
+          affiliation: firstAuthor.organisation,
+          email: firstAuthor.email,
+          mobile: firstAuthor.mobile,
+          journal: formData.journal || journalName || "",
+          manuscript_title: formData.manuscriptTitle,
+          author_count: authors.length,
+          author_names: authorNames,
+          file_url: s3Url,
+          status: 'submitted'
+        }])
+        .select();
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      const id = uniqueId;
+      setManuscriptId(id);
+      
+      toast({
+        title: "Submission successful!",
+        description: `Your manuscript has been submitted successfully. Manuscript ID: ${id}. You will receive a confirmation email shortly.`,
+      });
+
+      // Scroll to top to show the success message with Manuscript ID
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+
+      // Reset form
+      setAuthors([{ name: "", designation: "", department: "", organisation: "", email: "", mobile: "", orcid: "" }]);
+      setFormData({
+        journal: journalName || "",
+        manuscriptTitle: "",
+        manuscript: null
+      });
+      
+      // Reset file input
+      const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+      if (fileInput) fileInput.value = '';
 
     } catch (error) {
       console.error("Submission error:", error);

@@ -12,6 +12,7 @@ import FounderProfile from "@/pages/FounderProfile";
 import CommerceJournal from "@/pages/CommerceJournal";
 import HumanitiesJournal from "@/pages/HumanitiesJournal";
 import SocialSciencesJournal from "@/pages/SocialSciencesJournal";
+import DynamicJournalPage from "@/pages/DynamicJournalPage";
 import SubmitManuscriptPage from "@/pages/SubmitManuscriptPage";
 import BookPublicationInfo from "@/pages/BookPublicationInfo";
 import CallForBooks from "@/pages/CallForBooks";
@@ -44,12 +45,6 @@ function ScrollToTop() {
   return null;
 }
 
-function ErpRedirect({ to }: { to: string }) {
-  useLayoutEffect(() => {
-    window.location.href = to;
-  }, [to]);
-  return null;
-}
 
 function Router() {
   return (
@@ -63,6 +58,7 @@ function Router() {
       <Route path="/humanities-social-sciences" component={HumanitiesJournal} />
       <Route path="/journals/humanities" component={HumanitiesJournal} />
       <Route path="/journals/commerce" component={CommerceJournal} />
+      <Route path="/journal/:slug" component={DynamicJournalPage} />
       <Route path="/submit" component={SubmitManuscriptPage} />
       <Route path="/book-publication-info" component={BookPublicationInfo} />
       <Route path="/call-for-books" component={CallForBooks} />
@@ -73,22 +69,12 @@ function Router() {
       <Route path="/join-reviewer" component={ReviewerApplication} />
       <Route path="/reviewer-search" component={ReviewerSearch} />
       <Route path="/manuscript-track" component={ManuscriptTrack} />
-      <Route path="/reviewer-login">
-        {() => <ErpRedirect to="/erp/member-login.html" />}
-      </Route>
-      <Route path="/reviewer-dashboard">
-        {() => <ErpRedirect to="/erp/member-dashboard.html" />}
-      </Route>
-      <Route path="/editor-dashboard">
-        {() => <ErpRedirect to="/erp/member-dashboard.html" />}
-      </Route>
+      <Route path="/reviewer-login" component={ReviewerLogin} />
+      <Route path="/reviewer-dashboard" component={ReviewerDashboard} />
+      <Route path="/editor-dashboard" component={EditorDashboard} />
       <Route path="/editor-profile/:name" component={EditorProfile} />
-      <Route path="/admin/login">
-        {() => <ErpRedirect to="/erp/admin-login.html" />}
-      </Route>
-      <Route path="/admin/dashboard">
-        {() => <ErpRedirect to="/erp/admin-dashboard.html" />}
-      </Route>
+      <Route path="/admin/login" component={AdminLogin} />
+      <Route path="/admin/dashboard" component={AdminDashboard} />
       <Route path="/admin/certificate-editor" component={AdminCertificateEditor} />
       <Route path="/payment" component={PublicationPayment} />
       <Route path="/copyright-form" component={FinalPaperForm} />
@@ -97,12 +83,15 @@ function Router() {
         {(params) => {
           // Check if the ID is an issue (e.g., sjcm-v1i1) or an article (e.g., sjcm-v1i1-001)
           const id = params.id;
-          const isArticle = id.split('-').length > 2; // Articles have more dashes (sjcm-v1i1-001)
+          // Known issue prefixes: sjcm-v1i1, sjcm-v2i1, sjhss-v1i1, etc.
+          // Articles have 3+ dash-separated parts OR are DB-based (always go to ArticleLanding which has DB fallback)
+          const parts = id.split('-');
+          const looksLikeIssue = parts.length === 2 && /^v\d+i\d+$/.test(parts[1]);
           
-          if (isArticle) {
-            return <ArticleLanding />;
-          } else {
+          if (looksLikeIssue) {
             return <IssueLanding />;
+          } else {
+            return <ArticleLanding />;
           }
         }}
       </Route>

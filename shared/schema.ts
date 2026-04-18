@@ -5,8 +5,61 @@ import { z } from "zod";
 
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  username: text("username").notNull().unique(),
+  email: text("email").notNull().unique(),
+  username: text("username"),
   password: text("password").notNull(),
+  role: text("role").notNull().default('admin'), // 'admin', 'reviewer', 'editor'
+});
+
+export const journals = pgTable("journals", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  slug: text("slug").notNull().unique(),
+  title: text("title").notNull(),
+  subject: text("subject"),
+  startingYear: text("starting_year"),
+  aim: text("aim"),
+  scope: text("scope"),
+  publicationTypes: text("publication_types"),
+  researchFocus: text("research_focus"),
+  targetAudience: text("target_audience"),
+  subjectCovers: text("subject_covers"), // Comma-separated list
+  referenceStyle: text("reference_style").default("APA"),
+  createdAt: timestamp("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+});
+
+export const journalVolumes = pgTable("journal_volumes", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  journalId: text("journal_id").notNull(), // FK to journals.id
+  volumeNumber: integer("volume_number").notNull(),
+  label: text("label"), // e.g. "Volume 1"
+  period: text("period"), // e.g. "Jan - Dec 2026"
+  status: text("status").default("In Progress"), // Published, In Progress
+  createdAt: timestamp("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+});
+
+export const journalIssues = pgTable("journal_issues", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  volumeId: text("volume_id").notNull(), // FK to journal_volumes.id
+  journalId: text("journal_id").notNull(), // FK to journals.id
+  issueNumber: integer("issue_number").notNull(),
+  label: text("label"), // e.g. "Issue 1"
+  period: text("period"), // e.g. "Jan - Mar 2026"
+  isCurrent: boolean("is_current").default(false),
+  createdAt: timestamp("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+});
+
+export const journalArticles = pgTable("journal_articles", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  issueId: text("issue_id").notNull(), // FK to journal_issues.id
+  journalId: text("journal_id").notNull(), // FK to journals.id
+  articleId: text("article_id").notNull(), // e.g. "sjcm-v1i1-001"
+  title: text("title").notNull(),
+  authors: text("authors").notNull(),
+  affiliation: text("affiliation"),
+  pages: text("pages"),
+  doi: text("doi"),
+  sortOrder: integer("sort_order").default(0),
+  createdAt: timestamp("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
 });
 
 export const journalStats = pgTable("journal_stats", {
@@ -118,8 +171,10 @@ export const finalPaperSubmissions = pgTable("final_paper_submissions", {
 });
 
 export const insertUserSchema = createInsertSchema(users).pick({
+  email: true,
   username: true,
   password: true,
+  role: true,
 });
 
 export const insertJournalStatsSchema = createInsertSchema(journalStats).omit({
@@ -181,6 +236,70 @@ export const insertFinalPaperSubmissionSchema = createInsertSchema(finalPaperSub
   id: true,
   createdAt: true,
 });
+
+// --- NEW SUPABASE-READY TYPES ---
+
+export const manuscriptSchema = z.object({
+  id: z.string(),
+  submittedAt: z.string().or(z.date()).optional(),
+  authorName: z.string().optional(),
+  designation: z.string().optional(),
+  department: z.string().optional(),
+  affiliation: z.string().optional(),
+  email: z.string().optional(),
+  mobile: z.string().optional(),
+  journal: z.string().optional(),
+  title: z.string().optional(),
+  researchField: z.string().optional(),
+  authorCount: z.number().optional(),
+  authorNames: z.string().optional(),
+  fileUrl: z.string().optional(),
+  status: z.string().optional(),
+  doi: z.string().optional(),
+});
+
+export const reviewerSchema = z.object({
+  id: z.string(),
+  submittedDate: z.string().or(z.date()).optional(),
+  firstName: z.string().optional(),
+  lastName: z.string().optional(),
+  email: z.string().optional(),
+  mobile: z.string().optional(),
+  role: z.string().optional(),
+  designation: z.string().optional(),
+  areaOfInterest: z.string().optional(),
+  journal: z.string().optional(),
+  orcid: z.string().optional(),
+  googleScholar: z.string().optional(),
+  institution: z.string().optional(),
+  state: z.string().optional(),
+  district: z.string().optional(),
+  pinNumber: z.string().optional(),
+  nationality: z.string().optional(),
+  messageToEditor: z.string().optional(),
+  profilePdfLink: z.string().optional(),
+  status: z.string().optional(),
+  reviewsSubmitted: z.number().optional(),
+  lastSubmissionDate: z.string().or(z.date()).optional(),
+});
+
+export const assignmentSchema = z.object({
+  id: z.string().optional(),
+  assignedAt: z.string().or(z.date()).optional(),
+  reviewerId: z.string(),
+  manuscriptId: z.string(),
+  dueDate: z.string().or(z.date()).optional(),
+  notes: z.string().optional(),
+  status: z.string().optional(),
+  manuscriptLink: z.string().optional(),
+  recommendation: z.string().optional(),
+  overallMarks: z.string().optional(),
+  reviewerEmail: z.string().optional(),
+});
+
+export type Manuscript = z.infer<typeof manuscriptSchema>;
+export type Reviewer = z.infer<typeof reviewerSchema>;
+export type Assignment = z.infer<typeof assignmentSchema>;
 
 export const bookDownloads = pgTable("book_downloads", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),

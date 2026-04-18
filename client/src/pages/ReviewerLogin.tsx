@@ -9,6 +9,8 @@ import { Link, useLocation } from "wouter";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 
+import { supabase } from "@/lib/supabase";
+
 export default function ReviewerLogin() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -41,45 +43,45 @@ export default function ReviewerLogin() {
     setIsLoading(true);
 
     try {
-      const response = await fetch('/api/reviewer-login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: email.trim().toLowerCase(),
-          password: password.trim()
-        })
-      });
+      // Query Supabase directly
+      const { data, error: dbError } = await supabase
+        .from('reviewers')
+        .select('*')
+        .eq('email', email.trim().toLowerCase())
+        .single();
 
-      const result = await response.json();
+      if (dbError || !data) {
+        throw new Error("Invalid email or password. Please check and try again.");
+      }
 
-      if (response.ok && result.success) {
+      // Check if password matches either Reviewer ID or New Password
+      const isIdMatch = data.id === password.trim();
+      const isNewPasswordMatch = data.new_password === password.trim();
+
+      if (isIdMatch || isNewPasswordMatch) {
         localStorage.setItem('reviewerSession', JSON.stringify({
-          reviewerId: result.reviewer.reviewerId,
-          email: result.reviewer.email,
-          name: result.reviewer.name,
-          role: result.reviewer.role,
-          journal: result.reviewer.journal,
+          reviewerId: data.id,
+          email: data.email,
+          name: `${data.first_name} ${data.last_name}`,
+          role: data.role,
+          journal: data.journal,
           loggedInAt: new Date().toISOString()
         }));
 
         toast({
           title: "Login Successful",
-          description: `Welcome back, ${result.reviewer.firstName || result.reviewer.name || 'Reviewer'}!`,
+          description: `Welcome back, ${data.first_name || 'Reviewer'}!`,
         });
 
         setLocation('/reviewer-dashboard');
       } else {
-        toast({
-          title: "Login Failed",
-          description: result.message || "Invalid email or Reviewer ID. Please check and try again.",
-          variant: "destructive"
-        });
+        throw new Error("Invalid email or password. Please check and try again.");
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Login error:', error);
       toast({
-        title: "Login Error",
-        description: "Unable to connect to the server. Please try again later.",
+        title: "Login Failed",
+        description: error.message || "Unable to connect to the database.",
         variant: "destructive"
       });
     } finally {

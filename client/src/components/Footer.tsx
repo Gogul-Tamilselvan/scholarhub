@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/lib/supabase";
 
 export default function Footer() {
   const [email, setEmail] = useState("");
@@ -24,21 +25,25 @@ export default function Footer() {
 
     setIsSubscribing(true);
     try {
-      const response = await fetch('/api/newsletter/subscribe', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email })
-      });
+      const { error } = await supabase.from('newsletter_subscribers').insert([{ 
+        email: email, 
+        subscribed_at: new Date().toISOString() 
+      }]);
 
-      const data = await response.json();
-      if (data.success) {
-        toast({ title: "Success", description: "You've been subscribed to our newsletter!" });
-        setEmail("");
-      } else {
-        toast({ title: "Error", description: data.message || "Failed to subscribe", variant: "destructive" });
+      if (error) {
+        if (error.code === '23505') {
+            toast({ title: "Already Subscribed", description: "This email is already on our newsletter list!" });
+            setEmail("");
+            return;
+        }
+        throw new Error(error.message);
       }
-    } catch (error) {
-      toast({ title: "Error", description: "An error occurred. Please try again.", variant: "destructive" });
+
+      toast({ title: "Success", description: "You've been subscribed to our newsletter!" });
+      setEmail("");
+      
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message || "An error occurred. Please try again.", variant: "destructive" });
     } finally {
       setIsSubscribing(false);
     }

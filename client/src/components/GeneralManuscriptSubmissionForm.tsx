@@ -221,8 +221,23 @@ export default function GeneralManuscriptSubmissionForm({ journalTitle, subject 
 
       // 1. Generate Smart Manuscript ID
       const generateManuscriptId = () => {
-        const isCommerce = formData.journal.includes("Commerce");
-        const journalPrefix = isCommerce ? "SJCM" : "SJHSS";
+        const targetJournal = formData.journal || journalTitle || "";
+        
+        const getJournalCode = (name: string) => {
+          if (!name) return "SJ";
+          if (name.includes("Commerce")) return "SJCM";
+          if (name.includes("Humanities")) return "SJHSS";
+          if (name.toLowerCase() === 'test') return 'StSS';
+          
+          const ignored = ["of", "and", "the", "in", "a", "an", "for", "with"];
+          return name
+            .split(/\s+/)
+            .filter(w => w.length > 0 && !ignored.includes(w.toLowerCase()))
+            .map(w => w[0].toUpperCase())
+            .join('') || "SJ";
+        };
+
+        const journalPrefix = getJournalCode(targetJournal);
         const date = new Date();
         const year = date.getFullYear().toString().slice(-2);
         const month = (date.getMonth() + 1).toString().padStart(2, '0');

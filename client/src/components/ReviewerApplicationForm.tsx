@@ -299,8 +299,22 @@ export default function ReviewerApplicationForm({ journalTitle, onCancel }: Revi
     try {
       // 1. Generate Smart Custom ID
       const rolePrefix = formData.role === "Editorial Board Member" ? "EDT" : "REV";
-      const isCommerce = formData.journal.includes("Commerce");
-      const journalCode = isCommerce ? "SJCM" : "SJHSS";
+      const targetJournal = formData.journal || "";
+      const getJournalCode = (name: string) => {
+        if (!name) return "SJ";
+        if (name.includes("Commerce")) return "SJCM";
+        if (name.includes("Humanities")) return "SJHSS";
+        if (name.toLowerCase() === 'test') return 'StSS';
+        
+        const ignored = ["of", "and", "the", "in", "a", "an", "for", "with"];
+        return name
+          .split(/\s+/)
+          .filter(w => w.length > 0 && !ignored.includes(w.toLowerCase()))
+          .map(w => w[0].toUpperCase())
+          .join('') || "SJ";
+      };
+
+      const journalCode = getJournalCode(targetJournal);
       const year = new Date().getFullYear().toString().slice(-2);
       const randomChars = Array.from({ length: 6 }, () => 
         'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'.charAt(Math.floor(Math.random() * 36))

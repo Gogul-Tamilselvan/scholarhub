@@ -107,8 +107,23 @@ export default function ManuscriptSubmissionForm({ journalName }: ManuscriptSubm
       // 1. Generate Smart Manuscript ID
       const generateManuscriptId = () => {
         const targetJournal = formData.journal || journalName || "";
-        const isCommerce = targetJournal.includes("Commerce");
-        const journalPrefix = isCommerce ? "SJCM" : "SJHSS";
+        
+        // Dynamic Journal Code Generation
+        const getJournalCode = (name: string) => {
+          if (!name) return "SJ";
+          if (name.includes("Commerce")) return "SJCM";
+          if (name.includes("Humanities")) return "SJHSS";
+          if (name.toLowerCase() === 'test') return 'StSS'; // User requested for test journal
+          
+          const ignored = ["of", "and", "the", "in", "a", "an", "for", "with"];
+          return name
+            .split(/\s+/)
+            .filter(w => w.length > 0 && !ignored.includes(w.toLowerCase()))
+            .map(w => w[0].toUpperCase())
+            .join('') || "SJ";
+        };
+
+        const journalPrefix = getJournalCode(targetJournal);
         const date = new Date();
         const year = date.getFullYear().toString().slice(-2);
         const month = (date.getMonth() + 1).toString().padStart(2, '0');

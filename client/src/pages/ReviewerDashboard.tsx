@@ -575,8 +575,10 @@ export default function ReviewerDashboard() {
                         assignedWorks.slice(0, 5).map((work, idx) => (
                           <tr key={idx} className="hover:bg-slate-50 transition-colors">
                             <td className="px-6 py-4">
-                              <span className="font-bold text-blue-600 block text-sm line-clamp-1">{work.title || 'Untitled'}</span>
-                              <span className="text-slate-400 text-xs font-mono block mt-0.5">{work.manuscriptId}</span>
+                              <span className="font-bold text-blue-600 block text-sm line-clamp-1">{work.title || work.manuscriptId || 'Untitled'}</span>
+                              {work.manuscriptId && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(work.manuscriptId) && (
+                                <span className="text-slate-400 text-xs font-mono block mt-0.5">{work.manuscriptId}</span>
+                              )}
                             </td>
                             <td className="px-6 py-4 font-medium text-slate-700">{work.journal}</td>
                             <td className="px-6 py-4 font-medium text-slate-700">{work.dueDate || '-'}</td>
@@ -664,8 +666,10 @@ export default function ReviewerDashboard() {
                         assignedWorks.map((work, idx) => (
                           <tr key={idx} className="hover:bg-slate-50 transition-all">
                             <td className="px-6 py-4">
-                              <span className="font-bold text-blue-700 block text-sm line-clamp-2 leading-snug">{work.title || 'Untitled'}</span>
-                              <span className="text-slate-400 text-xs font-mono inline-block mt-1">{work.manuscriptId}</span>
+                              <span className="font-bold text-blue-700 block text-sm line-clamp-2 leading-snug">{work.title || work.manuscriptId || 'Untitled'}</span>
+                              {work.manuscriptId && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(work.manuscriptId) && (
+                                <span className="text-slate-400 text-xs font-mono inline-block mt-1">{work.manuscriptId}</span>
+                              )}
                             </td>
                             <td className="px-6 py-4 font-medium text-slate-700">{work.journal}</td>
                             <td className="px-6 py-4">

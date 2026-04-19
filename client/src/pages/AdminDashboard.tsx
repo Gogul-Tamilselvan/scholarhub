@@ -1557,7 +1557,7 @@ export default function AdminDashboard() {
 
   const renderAssign = () => {
     const assignableManuscripts = allManuscripts.filter(m => 
-      m.status !== 'Rejected' && 
+      m.status?.toLowerCase() === 'under review' && 
       (m.title || '').toLowerCase().includes(assignSearchTerm.toLowerCase())
     );
 

@@ -1522,10 +1522,21 @@ export default function AdminDashboard() {
     const dateString = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
     setAssignForm({ reviewerId: '', dueDate: dateString });
     try {
+      // Fetch already-assigned reviewer IDs for this manuscript
+      const { data: existingAssignments } = await supabase
+        .from('assignments')
+        .select('reviewer_id')
+        .eq('manuscript_id', m.id);
+      const alreadyAssignedIds = (existingAssignments || []).map((a: any) => a.reviewer_id);
+
+      // Fetch all active reviewers then exclude already assigned
       const { data } = await supabase.from('reviewers').select('*').in('status', ['Active', 'Accepted']);
       if (data) {
-         setMatchingReviewers(data);
+        const available = data.filter((r: any) => !alreadyAssignedIds.includes(r.id));
+        setMatchingReviewers(available);
       }
+      // Store existing count on the manuscript object for UI
+      setSelectedManuscriptForAssign({ ...m, assignedCount: (existingAssignments || []).length });
     } catch(e) {} finally { setLoadingMatches(false); }
   };
 
@@ -1533,6 +1544,16 @@ export default function AdminDashboard() {
     if (!selectedManuscriptForAssign || !assignForm.reviewerId || !assignForm.dueDate) return;
     const reviewer = matchingReviewers.find(r => r.id === assignForm.reviewerId);
     if (!reviewer) return;
+
+    // Check the current assignment count (max 3)
+    const { data: existingCount } = await supabase
+      .from('assignments')
+      .select('id')
+      .eq('manuscript_id', selectedManuscriptForAssign.id);
+    if ((existingCount || []).length >= 3) {
+      toast({ title: 'Limit reached', description: 'A maximum of 3 reviewers can be assigned per manuscript.', variant: 'destructive' });
+      return;
+    }
     
     setAssigningReviewer(true);
     try {
@@ -1599,9 +1620,8 @@ export default function AdminDashboard() {
           </div>
           
           <div className="grid grid-cols-12 gap-x-4 px-6 py-3.5 bg-slate-50/80 border-b border-slate-100 items-center">
-            <div className="col-span-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest">SUBMITTED</div>
-            <div className="col-span-1 text-[10px] font-bold text-slate-500 uppercase tracking-widest">ID</div>
-            <div className="col-span-6 text-[10px] font-bold text-slate-500 uppercase tracking-widest">MANUSCRIPT DETAILS</div>
+            <div className="col-span-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest">ID</div>
+            <div className="col-span-7 text-[10px] font-bold text-slate-500 uppercase tracking-widest">MANUSCRIPT DETAILS</div>
             <div className="col-span-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest">STATUS</div>
             <div className="col-span-1 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-right">ACTION</div>
           </div>
@@ -1614,9 +1634,8 @@ export default function AdminDashboard() {
              ) : (
                assignableManuscripts.map((m, i) => (
                  <div key={i} className="grid grid-cols-12 gap-x-4 px-6 py-4 hover:bg-slate-50 items-center">
-                   <div className="col-span-2 text-[11px] font-medium text-slate-700">{m.date}</div>
-                   <div className="col-span-1 text-[9px] font-black text-slate-400 uppercase tracking-wider">{m.id}</div>
-                   <div className="col-span-6 space-y-1">
+                   <div className="col-span-2 text-[9px] font-black text-slate-400 uppercase tracking-wider">{m.id}</div>
+                   <div className="col-span-7 space-y-1">
                      <h4 className="text-[13px] font-bold text-slate-800 leading-snug line-clamp-1">{m.title || 'Untitled'}</h4>
                      <p className="text-[11px] font-semibold text-slate-500 flex items-center gap-2">
                        <span className="text-blue-600 truncate max-w-[200px]">{m.journal}</span> | <span className="truncate">{m.author}</span>
@@ -2134,11 +2153,23 @@ export default function AdminDashboard() {
           </DialogHeader>
 
           <div className="p-8 space-y-7 bg-white">
-            {selectedManuscriptForAssign && (
+          {selectedManuscriptForAssign && (
               <div className="p-4 bg-[#f8f9fa] rounded-lg border-none shadow-sm pb-5">
                 <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">MANUSCRIPT</p>
                 <h3 className="text-base font-bold text-slate-800 leading-tight mb-2">{selectedManuscriptForAssign.title || selectedManuscriptForAssign.manuscript_title}</h3>
-                <p className="text-[11px] font-medium text-slate-500 uppercase">ID: {selectedManuscriptForAssign.id}</p>
+                <div className="flex items-center gap-3">
+                  <p className="text-[11px] font-medium text-slate-500 uppercase">ID: {selectedManuscriptForAssign.id}</p>
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                    (selectedManuscriptForAssign.assignedCount || 0) >= 3
+                      ? 'bg-red-100 text-red-600'
+                      : 'bg-blue-50 text-blue-600'
+                  }`}>
+                    {selectedManuscriptForAssign.assignedCount || 0}/3 Assigned
+                  </span>
+                </div>
+                {(selectedManuscriptForAssign.assignedCount || 0) >= 3 && (
+                  <p className="text-[11px] text-red-600 font-semibold mt-2">⚠ Maximum reviewers already assigned for this manuscript.</p>
+                )}
               </div>
             )}
 
@@ -2179,7 +2210,7 @@ export default function AdminDashboard() {
              <Button 
                className="bg-[#2442a8] hover:bg-[#1a3385] text-white font-bold h-10 px-6 rounded-lg text-[13px] shadow-md transition-all gap-2"
                onClick={handleAssignReviewer}
-               disabled={assigningReviewer || !assignForm.reviewerId || !assignForm.dueDate}
+               disabled={assigningReviewer || !assignForm.reviewerId || !assignForm.dueDate || (selectedManuscriptForAssign?.assignedCount || 0) >= 3}
              >
                {assigningReviewer ? <Loader2 className="w-4 h-4 animate-spin"/> : <Check size={16} strokeWidth={3} />} Assign
              </Button>

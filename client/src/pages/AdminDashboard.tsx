@@ -1547,7 +1547,6 @@ export default function AdminDashboard() {
         manuscript_id: selectedManuscriptForAssign.id,
         manuscript_title: selectedManuscriptForAssign.title || selectedManuscriptForAssign.manuscript_title,
         status: 'Pending',
-        review_status: 'Pending',
         due_date: formattedDate
       });
 

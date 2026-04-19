@@ -575,8 +575,8 @@ export default function ReviewerDashboard() {
                         assignedWorks.slice(0, 5).map((work, idx) => (
                           <tr key={idx} className="hover:bg-slate-50 transition-colors">
                             <td className="px-6 py-4">
-                              <span className="font-bold text-blue-600 block">{work.manuscriptId}</span>
-                              <span className="text-slate-500 text-xs truncate max-w-[200px] block mt-0.5">{work.title || 'Untitled'}</span>
+                              <span className="font-bold text-blue-600 block text-sm line-clamp-1">{work.title || 'Untitled'}</span>
+                              <span className="text-slate-400 text-xs font-mono block mt-0.5">{work.manuscriptId}</span>
                             </td>
                             <td className="px-6 py-4 font-medium text-slate-700">{work.journal}</td>
                             <td className="px-6 py-4 font-medium text-slate-700">{work.dueDate || '-'}</td>
@@ -664,8 +664,8 @@ export default function ReviewerDashboard() {
                         assignedWorks.map((work, idx) => (
                           <tr key={idx} className="hover:bg-slate-50 transition-all">
                             <td className="px-6 py-4">
-                              <span className="font-bold text-blue-700 block text-sm">{work.manuscriptId}</span>
-                              <span className="text-slate-600 text-[13px] truncate max-w-[250px] inline-block mt-1 font-medium">{work.title || 'Untitled'}</span>
+                              <span className="font-bold text-blue-700 block text-sm line-clamp-2 leading-snug">{work.title || 'Untitled'}</span>
+                              <span className="text-slate-400 text-xs font-mono inline-block mt-1">{work.manuscriptId}</span>
                             </td>
                             <td className="px-6 py-4 font-medium text-slate-700">{work.journal}</td>
                             <td className="px-6 py-4">

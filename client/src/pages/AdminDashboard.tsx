@@ -198,7 +198,7 @@ export default function AdminDashboard() {
       const { data, error } = await supabase.from('manuscripts').select('*').order('submitted_at', { ascending: false }).limit(manuscriptsLimit);
       if (!error && data) {
          const formatted = data.map(m => ({
-            id: m.id || "UNKNOWN",
+            id: m.manuscript_id || m.id || "UNKNOWN",
             title: m.manuscript_title || m.title || "Untitled",
             author: m.author_name || "Unknown",
             email: m.email || "No Email",

@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useLocation } from "wouter";
 import logoImage from "@assets/Untitled design (1)_1760793768867.png";
+import { supabase } from "@/lib/supabase";
 
 interface ReviewerProfile {
   reviewerId: string;
@@ -161,14 +162,34 @@ export default function ReviewerDashboard() {
 
   const loadMessageCount = async (reviewerId: string) => {
     try {
-      const response = await fetch(`/api/reviewer/message-threads?reviewerId=${reviewerId}`);
-      const data = await response.json();
-      const unreadCount = data.threads?.filter((thread: any) => {
-        const latestMessage = thread.messages?.[thread.messages.length - 1];
-        return latestMessage?.type === 'admin' && !latestMessage?.isRead;
-      })?.length || 0;
-      setUnreadMessageCount(unreadCount);
-      setThreads(data.threads || []);
+      const { data: revMsgs } = await supabase.from('reviewer_messages').select('*').eq('reviewer_id', reviewerId);
+      const { data: admMsgs } = await supabase.from('admin_replies').select('*').eq('reviewer_id', reviewerId);
+      
+      const threadMap = new Map<string, any[]>();
+      
+      (revMsgs || []).forEach(msg => {
+        const msId = msg.manuscript_id || 'GENERAL';
+        if (!threadMap.has(msId)) threadMap.set(msId, []);
+        threadMap.get(msId)!.push({ type: 'reviewer', message: msg.message, submittedAt: msg.submitted_at, isRead: true });
+      });
+      
+      (admMsgs || []).forEach(msg => {
+        const msId = msg.manuscript_id || 'GENERAL';
+        if (!threadMap.has(msId)) threadMap.set(msId, []);
+        threadMap.get(msId)!.push({ type: 'admin', message: msg.reply_message, submittedAt: msg.submitted_at || msg.original_message_date, isRead: true });
+      });
+      
+      const threadsList: MessageThread[] = Array.from(threadMap.entries()).map(([msId, msgs]) => {
+        msgs.sort((a, b) => new Date(a.submittedAt).getTime() - new Date(b.submittedAt).getTime());
+        return {
+          manuscriptId: msId,
+          messages: msgs,
+          latestMessage: msgs.length ? msgs[msgs.length - 1].message : ''
+        };
+      });
+
+      setUnreadMessageCount(0);
+      setThreads(threadsList);
     } catch (err) {
       console.error('Error loading message count:', err);
     }
@@ -176,29 +197,68 @@ export default function ReviewerDashboard() {
 
   const fetchProfileData = async (email: string, reviewerId: string, showPopupOnce: boolean = false) => {
     try {
-      const [profileRes, popupRes] = await Promise.all([
-        fetch('/api/reviewer-profile', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, reviewerId })
-        }),
-        fetch(`/api/admin/popup-message?role=${profile?.role || 'Reviewer'}`)
-      ]);
+      const { data: profileData, error: profileError } = await supabase
+        .from('reviewers')
+        .select('*')
+        .eq('email', email)
+        .eq('id', reviewerId)
+        .single();
 
-      const result = await profileRes.json();
-      const popupData = await popupRes.json();
-
-      if (profileRes.ok && result.success) {
-        setProfile(result.profile);
-        setAssignedWorks(result.assignedWorks || []);
-        if (showPopupOnce && popupData.success && popupData.message) {
-          setPopupMessage(popupData.message);
-          setShowPopup(true);
-          sessionStorage.setItem('popupShownInSession', 'true');
-        }
-      } else if (profileRes.status === 404 || profileRes.status === 401) {
+      if (profileError || !profileData) {
         toast({ title: "Session Expired", description: "Please login again.", variant: "destructive" });
         handleLogout();
+        return;
+      }
+
+      const { data: adminMsg } = await supabase
+        .from('admin_messages')
+        .select('*')
+        .eq('active', true)
+        .eq('target_role', profileData.role || 'Reviewer')
+        .maybeSingle();
+
+      const { data: assignmentsData } = await supabase
+        .from('assignments')
+        .select('*')
+        .eq('reviewer_id', reviewerId);
+
+      setProfile({
+        reviewerId: profileData.id,
+        firstName: profileData.first_name,
+        lastName: profileData.last_name,
+        email: profileData.email,
+        role: profileData.role,
+        status: profileData.status || 'Active',
+        mobile: profileData.mobile,
+        institution: profileData.institution,
+        designation: profileData.designation,
+        areaOfInterest: profileData.area_of_interest,
+        journal: profileData.journal,
+        orcid: profileData.orcid,
+        googleScholar: profileData.google_scholar,
+        submittedDate: profileData.submitted_date,
+        nationality: profileData.nationality,
+        pinNumber: profileData.pin_number,
+        state: profileData.state,
+        district: profileData.district
+      });
+
+      const formatted = (assignmentsData || []).map((a: any) => ({
+        manuscriptId: a.manuscript_id,
+        title: a.manuscript_title || '(No title)',
+        journal: '',
+        status: a.status || 'Pending',
+        dueDate: a.due_date,
+        manuscriptLink: a.manuscript_link,
+        reviewSubmitted: !!a.recommendation || !!a.overall_marks,
+        reviewStatus: a.status
+      }));
+      setAssignedWorks(formatted);
+
+      if (showPopupOnce && adminMsg) {
+        setPopupMessage({ title: adminMsg.title, content: adminMsg.content });
+        setShowPopup(true);
+        sessionStorage.setItem('popupShownInSession', 'true');
       }
     } catch (error) {
       console.error('Error fetching profile:', error);
@@ -220,19 +280,17 @@ export default function ReviewerDashboard() {
     }
     setChangingPassword(true);
     try {
-      const response = await fetch('/api/reviewer/change-password', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ reviewerId: profile?.reviewerId, email: profile?.email, newPassword: passwordForm.newPassword })
-      });
-      const data = await response.json();
-      if (data.success) {
+      const { error } = await supabase.from('reviewers')
+        .update({ new_password: passwordForm.newPassword })
+        .eq('id', profile?.reviewerId);
+        
+      if (error) {
+        setPasswordErrors([error.message]);
+      } else {
         toast({ title: 'Success', description: 'Password changed successfully!' });
         setShowPasswordDialog(false);
         setPasswordForm({ newPassword: '', confirmPassword: '' });
         setPasswordErrors([]);
-      } else {
-        setPasswordErrors(data.errors || [data.message]);
       }
     } catch (error: any) {
       setPasswordErrors(['Failed to change password']);
@@ -254,23 +312,20 @@ export default function ReviewerDashboard() {
         hour: '2-digit', minute: '2-digit', hour12: true
       });
 
-      const response = await fetch('/api/reviewer/send-message', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          reviewerId: profile?.reviewerId,
-          manuscriptId,
-          message: newMessage
-        })
+      const { error } = await supabase.from('reviewer_messages').insert({
+        reviewer_id: profile?.reviewerId,
+        reviewer_name: `${profile?.firstName} ${profile?.lastName}`,
+        manuscript_id: manuscriptId,
+        message: newMessage,
+        submitted_at: submittedAt
       });
 
-      const result = await response.json();
-      if (response.ok) {
+      if (!error) {
         toast({ title: 'Success', description: 'Message sent to admin' });
         setNewMessage('');
         loadMessageCount(profile?.reviewerId || '');
       } else {
-        toast({ title: 'Error', description: result.message || 'Failed to send message', variant: 'destructive' });
+        toast({ title: 'Error', description: error.message || 'Failed to send message', variant: 'destructive' });
       }
     } catch (err) {
       toast({ title: 'Error', description: 'Failed to send message', variant: 'destructive' });
@@ -280,16 +335,7 @@ export default function ReviewerDashboard() {
   };
 
   const markMessageAsRead = async (manuscriptId: string) => {
-    try {
-      await fetch('/api/reviewer/mark-message-read', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ reviewerId: profile?.reviewerId, manuscriptId })
-      });
-      loadMessageCount(profile?.reviewerId || '');
-    } catch (err) {
-      console.error('Error marking message as read:', err);
-    }
+    // Left empty since is_read wasn't strictly configured in current DB layout
   };
 
   const isDeadlineOver = (dueDate: string): boolean => {
@@ -825,21 +871,30 @@ export default function ReviewerDashboard() {
               }
               setIsSubmittingReview(true);
               try {
-                const payload = {
-                  reviewerId: profile?.reviewerId || '',
-                  reviewerName: `${profile?.firstName} ${profile?.lastName}`,
-                  reviewerEmail: profile?.email || '',
-                  manuscriptId: reviewSubmission.selectedManuscriptForReview,
-                  ...reviewSubmission
-                };
-                const res = await fetch('/api/submit-review', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-                const result = await res.json();
-                if (res.ok && result.success) {
+                const { error } = await supabase.from('assignments').update({
+                  recommendation: reviewSubmission.recommendation,
+                  overall_marks: String(reviewSubmission.overallMarks),
+                  importance: reviewSubmission.importanceOfManuscript,
+                  title_feedback: reviewSubmission.titleSuitability,
+                  abstract_feedback: reviewSubmission.abstractComprehensive,
+                  scientific_correctness: reviewSubmission.scientificCorrectness,
+                  references_feedback: reviewSubmission.referencesSufficient,
+                  language_quality: reviewSubmission.languageQuality,
+                  general_comments: reviewSubmission.generalComments,
+                  ethical_issues: reviewSubmission.ethicalIssues,
+                  ethical_details: reviewSubmission.ethicalIssuesDetails,
+                  competing_interests: reviewSubmission.competingInterests,
+                  plagiarism_suspected: reviewSubmission.plagiarismSuspected,
+                  status: 'Completed'
+                }).eq('manuscript_id', reviewSubmission.selectedManuscriptForReview)
+                  .eq('reviewer_id', profile?.reviewerId);
+
+                if (!error) {
                    toast({ title: 'Success', description: 'Your review has been submitted successfully!' });
                    setReviewSubmission({...reviewSubmission, selectedManuscriptForReview: ''});
                    window.location.reload();
                 } else {
-                   toast({ title: 'Error', description: result.message || 'Submission failed.', variant: 'destructive' });
+                   toast({ title: 'Error', description: error.message || 'Submission failed.', variant: 'destructive' });
                 }
               } catch (err) {
                 toast({ title: 'Error', description: 'Network error occurred.', variant: 'destructive' });

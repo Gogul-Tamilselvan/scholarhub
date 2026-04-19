@@ -554,7 +554,7 @@ export default function ReviewerDashboard() {
                   <Button variant="outline" size="sm" className="h-8 text-xs font-medium" onClick={() => setCurrentMenu('assignments')}>View All</Button>
                 </CardHeader>
                 <div className="p-0 overflow-x-auto">
-                  <table className="w-fulltext-sm">
+                  <table className="w-full text-sm">
                     <thead className="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider font-semibold border-b border-slate-100 text-left">
                       <tr>
                         <th className="px-6 py-4 whitespace-nowrap">Manuscript</th>

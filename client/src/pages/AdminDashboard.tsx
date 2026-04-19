@@ -8,7 +8,7 @@ import {
   UserPlus, Mail, BookOpen, CreditCard, 
   LogOut, Bell, RefreshCw,
   Clock, CheckCircle2,
-  ChevronRight, Laptop, MessageSquare, Plus,
+  ChevronRight, ChevronDown, Laptop, MessageSquare, Plus,
   Search, Trash2, Loader2, ExternalLink, Filter,
   MoreVertical, Download, AlertCircle, Calendar,
   FileCheck, Newspaper, Megaphone, BarChart, History,
@@ -172,6 +172,7 @@ export default function AdminDashboard() {
   const [assigningReviewer, setAssigningReviewer] = useState(false);
   const [matchingReviewers, setMatchingReviewers] = useState<any[]>([]);
   const [loadingMatches, setLoadingMatches] = useState(false);
+  const [assignForm, setAssignForm] = useState({ reviewerId: '', dueDate: '' });
 
   // All Assignments State
   const [assignmentsSearchTerm, setAssignmentsSearchTerm] = useState('');
@@ -1517,18 +1518,27 @@ export default function AdminDashboard() {
     setSelectedManuscriptForAssign(m);
     setIsAssignModalOpen(true);
     setLoadingMatches(true);
+    const d = new Date(Date.now() + 15 * 86400000);
+    const dateString = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    setAssignForm({ reviewerId: '', dueDate: dateString });
     try {
-      const { data } = await supabase.from('reviewers').select('*');
+      const { data } = await supabase.from('reviewers').select('*').in('status', ['Active', 'Accepted']);
       if (data) {
          setMatchingReviewers(data);
       }
     } catch(e) {} finally { setLoadingMatches(false); }
   };
 
-  const handleAssignReviewer = async (reviewer: any) => {
-    if (!selectedManuscriptForAssign || !reviewer) return;
+  const handleAssignReviewer = async () => {
+    if (!selectedManuscriptForAssign || !assignForm.reviewerId || !assignForm.dueDate) return;
+    const reviewer = matchingReviewers.find(r => r.id === assignForm.reviewerId);
+    if (!reviewer) return;
+    
     setAssigningReviewer(true);
     try {
+      const parts = assignForm.dueDate.split('-');
+      const formattedDate = parts.length === 3 ? `${parts[2]}-${parts[1]}-${parts[0]}` : assignForm.dueDate;
+
       const { error } = await supabase.from('assignments').insert({
         assigned_at: new Date().toISOString(),
         reviewer_id: reviewer.id,
@@ -1538,7 +1548,7 @@ export default function AdminDashboard() {
         manuscript_title: selectedManuscriptForAssign.title || selectedManuscriptForAssign.manuscript_title,
         status: 'Pending',
         review_status: 'Pending',
-        due_date: new Date(Date.now() + 15 * 86400000).toLocaleDateString('en-GB')
+        due_date: formattedDate
       });
 
       if (error) throw error;
@@ -2117,75 +2127,64 @@ export default function AdminDashboard() {
 
       {/* Assign Work Modal */}
       <Dialog open={isAssignModalOpen} onOpenChange={setIsAssignModalOpen}>
-        <DialogContent className="max-w-5xl p-0 bg-white border border-slate-100 shadow-2xl rounded-2xl overflow-hidden gap-0 max-h-[90vh]">
-          <DialogHeader className="px-6 py-4 border-b border-slate-100 bg-white sticky top-0 z-10">
-            <DialogTitle className="flex items-center gap-2 text-sm font-bold text-slate-800">
-              <Users className="h-4 w-4 text-indigo-600" /> Assign Reviewer to Manuscript
+        <DialogContent className="max-w-xl p-0 bg-white border border-slate-100 shadow-2xl rounded-xl overflow-hidden gap-0">
+          <DialogHeader className="px-6 py-5 border-b border-slate-100 bg-white">
+            <DialogTitle className="flex items-center gap-2 text-[15px] font-bold text-slate-800">
+              <UserPlus className="h-5 w-5 text-slate-800" /> Assign Reviewer
             </DialogTitle>
           </DialogHeader>
 
-          {selectedManuscriptForAssign && (
-            <div className="p-6 bg-slate-50/50 border-b border-slate-100">
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Target Manuscript</p>
-              <h3 className="text-sm font-bold text-slate-800">{selectedManuscriptForAssign.title || selectedManuscriptForAssign.manuscript_title}</h3>
-              <div className="flex gap-4 mt-2">
-                <Badge variant="outline" className="bg-white border-slate-200 text-slate-600 font-medium text-[10px]">{selectedManuscriptForAssign.journal}</Badge>
-                <div className="text-[10px] font-medium text-slate-500">Area: {selectedManuscriptForAssign.raw?.research_field || selectedManuscriptForAssign.raw?.area_of_research || 'Not specified'}</div>
+          <div className="p-8 space-y-7 bg-white">
+            {selectedManuscriptForAssign && (
+              <div className="p-4 bg-[#f8f9fa] rounded-lg border-none shadow-sm pb-5">
+                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">MANUSCRIPT</p>
+                <h3 className="text-base font-bold text-slate-800 leading-tight mb-2">{selectedManuscriptForAssign.title || selectedManuscriptForAssign.manuscript_title}</h3>
+                <p className="text-[11px] font-medium text-slate-500 uppercase">ID: {selectedManuscriptForAssign.id}</p>
+              </div>
+            )}
+
+            <div className="space-y-2.5">
+              <label className="text-[12px] font-bold text-slate-800">Select Reviewer / Board Member *</label>
+              <div className="relative">
+                <select 
+                  className="w-full h-11 px-4 text-[13px] font-medium bg-white border border-slate-200 rounded-lg text-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-600 focus:border-blue-600 appearance-none shadow-sm cursor-pointer"
+                  value={assignForm.reviewerId}
+                  onChange={(e) => setAssignForm({ ...assignForm, reviewerId: e.target.value })}
+                  disabled={loadingMatches}
+                >
+                  <option value="" disabled>— Choose Active Reviewer —</option>
+                  {matchingReviewers.map(r => (
+                    <option key={r.id} value={r.id}>
+                      {r.first_name} {r.last_name || ''} ({r.role || 'Reviewer'}) - {r.journal || 'N/A'}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-800 font-black pointer-events-none stroke-[3]" />
               </div>
             </div>
-          )}
 
-          <div className="overflow-y-auto max-h-[calc(90vh-180px)] p-0 custom-scrollbar bg-[#FFFFF9]">
-            <div className="grid grid-cols-12 gap-x-4 px-6 py-3 bg-slate-100/50 border-b border-slate-100 items-center sticky top-0 z-10 backdrop-blur-sm">
-               <div className="col-span-1 text-[10px] font-black text-indigo-600 uppercase tracking-widest text-center">RANK</div>
-               <div className="col-span-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest">REVIEWER</div>
-               <div className="col-span-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest">JOURNAL</div>
-               <div className="col-span-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest">STATUS</div>
-               <div className="col-span-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-right">ACTION</div>
-            </div>
-            
-            <div className="divide-y divide-slate-100">
-              {loadingMatches ? (
-                 <div className="py-20 flex flex-col items-center justify-center gap-4 text-slate-400">
-                    <Loader2 className="w-8 h-8 animate-spin" />
-                    <span className="text-sm font-semibold">Running AI Match Analysis...</span>
-                 </div>
-              ) : matchingReviewers
-                .map(r => ({ ...r, rankScore: getReviewerScore(r, selectedManuscriptForAssign) }))
-                .sort((a, b) => b.rankScore - a.rankScore)
-                .map((r, i) => (
-                  <div key={r.id} className="grid grid-cols-12 gap-x-4 px-6 py-4 hover:bg-slate-50 items-center transition-colors">
-                     <div className="col-span-1 text-center flex flex-col items-center">
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center font-black text-xs ${i === 0 ? 'bg-amber-100 text-amber-700 ring-2 ring-amber-400 shadow-sm' : i === 1 ? 'bg-slate-200 text-slate-700' : i === 2 ? 'bg-orange-100 text-orange-800' : 'bg-slate-50 text-slate-400'}`}>
-                           #{i + 1}
-                        </div>
-                        <span className="text-[9px] font-bold text-slate-400 mt-1">{r.rankScore} pts</span>
-                     </div>
-                     <div className="col-span-4 space-y-0.5">
-                       <h4 className="text-[13px] font-bold text-slate-800">{r.first_name} {r.last_name || ''}</h4>
-                       <p className="text-[10px] font-medium text-slate-500 truncate max-w-[200px]">{r.area_of_interest || 'No area specified'}</p>
-                     </div>
-                     <div className="col-span-3">
-                       <p className="text-[11px] font-semibold text-slate-600 truncate">{r.journal}</p>
-                     </div>
-                     <div className="col-span-2">
-                       <Badge variant="outline" className={`border-none tracking-wide text-[9px] font-bold ${r.status?.toLowerCase() === 'active' ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-500'}`}>{r.status || 'Unknown'}</Badge>
-                     </div>
-                     <div className="col-span-2 flex justify-end">
-                       <Button 
-                         onClick={() => handleAssignReviewer(r)} 
-                         disabled={assigningReviewer}
-                         className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-8 px-4 text-xs shadow-sm rounded-lg w-20"
-                       >
-                         {assigningReviewer ? <Loader2 className="w-3 h-3 animate-spin"/> : 'Assign'}
-                       </Button>
-                     </div>
-                  </div>
-              ))}
+            <div className="space-y-2.5">
+              <label className="text-[12px] font-bold text-slate-800">Due Date *</label>
+              <div className="relative">
+                <Input 
+                  type="date" 
+                  value={assignForm.dueDate}
+                  onChange={(e) => setAssignForm({ ...assignForm, dueDate: e.target.value })}
+                  className="w-full h-11 px-4 text-[13px] font-medium bg-white border border-slate-200 rounded-lg text-slate-700 shadow-sm"
+                />
+              </div>
             </div>
           </div>
-          <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end">
-             <Button variant="outline" onClick={() => setIsAssignModalOpen(false)} className="text-xs font-bold border-slate-200 h-9">Close</Button>
+
+          <div className="px-6 py-4 bg-white border-t border-slate-100 flex justify-end gap-3">
+             <Button 
+               className="bg-[#2442a8] hover:bg-[#1a3385] text-white font-bold h-10 px-6 rounded-lg text-[13px] shadow-md transition-all gap-2"
+               onClick={handleAssignReviewer}
+               disabled={assigningReviewer || !assignForm.reviewerId || !assignForm.dueDate}
+             >
+               {assigningReviewer ? <Loader2 className="w-4 h-4 animate-spin"/> : <Check size={16} strokeWidth={3} />} Assign
+             </Button>
+             <Button variant="outline" onClick={() => setIsAssignModalOpen(false)} className="bg-slate-50 text-slate-700 font-bold border border-slate-200 h-10 px-6 rounded-lg hover:bg-slate-100 transition-colors text-[13px]">Cancel</Button>
           </div>
         </DialogContent>
       </Dialog>

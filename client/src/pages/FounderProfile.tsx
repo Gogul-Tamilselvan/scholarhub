@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { Link } from "wouter";
 import { motion } from "framer-motion";
-import kalaiPicPath from "@assets/kalaiPic_1763906403778.jpg";
+import kalaiPicPath from "@assets/kalaiPic_1763906403778.JPG";
 
 export default function FounderProfile() {
   const education = [

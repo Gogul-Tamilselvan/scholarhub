@@ -1,19 +1,19 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { 
   LogOut, User, FileText, Upload, Mail, Phone, 
   Building, Globe, Award, Calendar, CheckCircle,
   Clock, AlertCircle, Loader2, Download, Send as SendIcon, Lock,
-  BarChart3, MessageCircle, Bell
+  MessageCircle, Bell, LayoutDashboard, Menu, X, CheckCheck, ListTodo, FileCheck2, Inbox, ChevronRight
 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { useLocation } from "wouter";
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
+import logoImage from "@assets/Untitled design (1)_1760793768867.png";
 
 interface ReviewerProfile {
   reviewerId: string;
@@ -90,7 +90,7 @@ export default function ReviewerDashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [profile, setProfile] = useState<ReviewerProfile | null>(null);
   const [assignedWorks, setAssignedWorks] = useState<AssignedWork[]>([]);
-  const [currentMenu, setCurrentMenu] = useState('profile');
+  const [currentMenu, setCurrentMenu] = useState('dashboard');
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
   const [passwordForm, setPasswordForm] = useState({ newPassword: '', confirmPassword: '' });
   const [passwordErrors, setPasswordErrors] = useState<string[]>([]);
@@ -102,11 +102,9 @@ export default function ReviewerDashboard() {
   const [selectedThread, setSelectedThread] = useState<MessageThread | null>(null);
   const [newMessage, setNewMessage] = useState('');
   const [sendingMessage, setSendingMessage] = useState(false);
-  const [selectedManuscript, setSelectedManuscript] = useState('');
-  const [messagesLoading, setMessagesLoading] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
-  const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
-  const [isRefreshing, setIsRefreshing] = useState(false);
+  
   const [reviewSubmission, setReviewSubmission] = useState<ReviewSubmission>({
     selectedManuscriptForReview: '',
     importanceOfManuscript: '',
@@ -156,7 +154,7 @@ export default function ReviewerDashboard() {
           console.error("Error parsing session in poll:", e);
         }
       }
-    }, 30000); // Increased from 5000 to 30000 to reduce unnecessary API calls and potential session conflicts
+    }, 30000);
 
     return () => clearInterval(pollInterval);
   }, []);
@@ -177,7 +175,6 @@ export default function ReviewerDashboard() {
   };
 
   const fetchProfileData = async (email: string, reviewerId: string, showPopupOnce: boolean = false) => {
-    setIsRefreshing(true);
     try {
       const [profileRes, popupRes] = await Promise.all([
         fetch('/api/reviewer-profile', {
@@ -194,7 +191,6 @@ export default function ReviewerDashboard() {
       if (profileRes.ok && result.success) {
         setProfile(result.profile);
         setAssignedWorks(result.assignedWorks || []);
-        setLastUpdated(new Date());
         if (showPopupOnce && popupData.success && popupData.message) {
           setPopupMessage(popupData.message);
           setShowPopup(true);
@@ -208,7 +204,6 @@ export default function ReviewerDashboard() {
       console.error('Error fetching profile:', error);
     } finally {
       setIsLoading(false);
-      setIsRefreshing(false);
     }
   };
 
@@ -248,11 +243,8 @@ export default function ReviewerDashboard() {
 
   const handleSendMessage = async () => {
     if (!newMessage.trim()) return;
-    const manuscriptId = selectedThread?.manuscriptId || selectedManuscript;
-    if (!manuscriptId) {
-      toast({ title: 'Error', description: 'Please select a manuscript', variant: 'destructive' });
-      return;
-    }
+    const manuscriptId = selectedThread?.manuscriptId || 'GENERAL';
+    if (!manuscriptId) return;
 
     setSendingMessage(true);
     try {
@@ -262,23 +254,20 @@ export default function ReviewerDashboard() {
         hour: '2-digit', minute: '2-digit', hour12: true
       });
 
-      const response = await fetch('/api/send-reviewer-message', {
+      const response = await fetch('/api/reviewer/send-message', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           reviewerId: profile?.reviewerId,
-          reviewerName: `${profile?.firstName} ${profile?.lastName}`,
           manuscriptId,
-          message: newMessage,
-          submittedAt
+          message: newMessage
         })
       });
 
       const result = await response.json();
-      if (result.success) {
+      if (response.ok) {
         toast({ title: 'Success', description: 'Message sent to admin' });
         setNewMessage('');
-        setSelectedManuscript('');
         loadMessageCount(profile?.reviewerId || '');
       } else {
         toast({ title: 'Error', description: result.message || 'Failed to send message', variant: 'destructive' });
@@ -315,906 +304,633 @@ export default function ReviewerDashboard() {
     }
   };
 
-  const getDaysRemaining = (dueDate: string): number => {
-    if (!dueDate) return 0;
-    try {
-      const due = new Date(dueDate);
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      return Math.ceil((due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-    } catch {
-      return 0;
-    }
-  };
-
   const pendingWorks = assignedWorks.filter(w => {
     const isCompleted = w.reviewSubmitted || (w.status && w.status.toLowerCase().includes('completed'));
     return !isCompleted && w.status && (w.status.toLowerCase().includes('pending') || w.status.toLowerCase().includes('accepted'));
   });
+  
   const completedWorks = assignedWorks.filter(w => w.reviewSubmitted || (w.status && w.status.toLowerCase().includes('completed')));
-  const upcomingDeadlines = assignedWorks.filter(w => w.dueDate && !w.reviewSubmitted && !(w.status && w.status.toLowerCase().includes('completed')) && !isDeadlineOver(w.dueDate)).sort((a, b) => new Date(a.dueDate!).getTime() - new Date(b.dueDate!).getTime());
-  const overdueWorks = assignedWorks.filter(w => w.dueDate && !w.reviewSubmitted && !(w.status && w.status.toLowerCase().includes('completed')) && isDeadlineOver(w.dueDate));
+  
+  const generalStatusBadge = (work: AssignedWork) => {
+    if (work.reviewSubmitted) return <Badge className="bg-emerald-100 text-emerald-800 border-none font-medium text-[11px]">Completed</Badge>;
+    if (isDeadlineOver(work.dueDate || '')) return <Badge className="bg-rose-100 text-rose-800 border-none font-medium text-[11px]">Overdue</Badge>;
+    if (work.reviewStatus?.toLowerCase() === 'accepted') return <Badge className="bg-blue-100 text-blue-800 border-none font-medium text-[11px]">Accepted</Badge>;
+    return <Badge className="bg-amber-100 text-amber-800 border-none font-medium text-[11px]">Pending Review</Badge>;
+  };
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex flex-col">
-        <Header />
-        <main className="flex-1 flex items-center justify-center bg-gradient-to-b from-blue-50 to-white dark:from-gray-900 dark:to-gray-800">
-          <div className="text-center">
-            <Loader2 className="w-12 h-12 animate-spin text-blue-600 mx-auto mb-4" />
-            <p className="text-gray-600 dark:text-gray-300 font-medium">Loading Reviewer Dashboard...</p>
-            <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">Fetching your profile and assignments</p>
-          </div>
-        </main>
-        <Footer />
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="text-center">
+          <Loader2 className="w-10 h-10 animate-spin text-blue-600 mx-auto mb-4" />
+          <p className="text-slate-600 font-medium">Loading Portal...</p>
+        </div>
       </div>
     );
   }
 
   if (!profile) {
     return (
-      <div className="min-h-screen flex flex-col">
-        <Header />
-        <main className="flex-1 flex items-center justify-center bg-gradient-to-b from-blue-50 to-white">
-          <Card className="max-w-md">
-            <CardContent className="pt-6 text-center">
-              <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
-              <h2 className="text-xl font-semibold mb-2">Session Expired</h2>
-              <p className="text-gray-600 mb-4">Please login again to access your dashboard.</p>
-              <Button onClick={() => setLocation('/reviewer-login')}>Go to Login</Button>
-            </CardContent>
-          </Card>
-        </main>
-        <Footer />
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <Card className="max-w-md shadow-xl border-0">
+          <CardContent className="pt-6 text-center">
+            <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+            <h2 className="text-xl font-bold text-slate-800 mb-2">Session Expired</h2>
+            <p className="text-slate-500 mb-6">Please login again to access your dashboard.</p>
+            <Button onClick={() => setLocation('/reviewer-login')} className="w-full">Return to Login</Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
   const menuItems = [
-    { id: 'profile', label: 'Profile', icon: User },
-    { id: 'manuscripts', label: 'Manuscripts', icon: FileText },
-    { id: 'performance', label: 'Performance', icon: BarChart3 },
-    { id: 'submit-review', label: 'Submit Review', icon: Upload, disabled: pendingWorks.length === 0 },
-    { id: 'deadlines', label: 'Deadlines', icon: Calendar },
-    { id: 'messages', label: 'Messages', icon: MessageCircle, badge: unreadMessageCount }
+    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { id: 'assignments', label: 'My Assignments', icon: FileText },
+    { id: 'messages', label: 'Messages', icon: MessageCircle, badge: unreadMessageCount },
+    { id: 'profile', label: 'My Profile', icon: User }
   ];
 
+  const getTabName = (id: string) => menuItems.find(m => m.id === id)?.label || 'Dashboard';
+  const getInitials = () => `${(profile.firstName || 'U').charAt(0)}${(profile.lastName || 'A').charAt(0)}`;
+
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
-      <Header />
+    <div className="min-h-screen flex bg-[#f8fafc] font-sans">
       
-      <Dialog open={showPopup} onOpenChange={setShowPopup}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>{popupMessage?.title || 'Important Message'}</DialogTitle>
-          </DialogHeader>
-          <div className="py-4">
-            <p className="text-gray-700 whitespace-pre-wrap">{popupMessage?.content}</p>
+      {/* Mobile Sidebar Overlay */}
+      {mobileMenuOpen && (
+        <div className="fixed inset-0 bg-slate-900/50 z-40 md:hidden" onClick={() => setMobileMenuOpen(false)} />
+      )}
+
+      {/* Sidebar */}
+      <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-[#0d162d] text-slate-300 flex flex-col transform transition-transform duration-300 md:relative md:translate-x-0 ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+        <div className="p-5 flex items-center gap-3 border-b border-white/10 shrink-0">
+          <div className="bg-white rounded p-1 flex items-center justify-center h-10 w-10">
+            <img src={logoImage} alt="Logo" className="w-full h-full object-contain" />
           </div>
-          <Button onClick={() => setShowPopup(false)} className="w-full">Close</Button>
+          <div>
+            <h2 className="text-white font-bold tracking-wide">Scholar India</h2>
+            <p className="text-[10px] text-blue-300 uppercase tracking-widest font-semibold mt-0.5">Member Portal</p>
+          </div>
+        </div>
+        
+        <div className="p-4 flex-1 overflow-y-auto">
+          <p className="text-[10px] uppercase tracking-widest font-bold text-slate-500 mb-4 px-2">Navigation</p>
+          <nav className="space-y-1.5">
+            {menuItems.map(item => {
+              const isActive = currentMenu === item.id;
+              return (
+                <button 
+                  key={item.id}
+                  onClick={() => { setCurrentMenu(item.id); setMobileMenuOpen(false); }} 
+                  className={`w-full flex justify-between items-center px-4 py-3 text-sm transition-all duration-200 ${isActive ? 'bg-blue-600 text-white font-medium rounded-r-full shadow-md' : 'text-slate-400 hover:bg-white/5 hover:text-slate-200 rounded-lg'}`}
+                >
+                  <div className="flex items-center gap-3">
+                    <item.icon className="w-4 h-4" />
+                    {item.label}
+                  </div>
+                  {item.badge && item.badge > 0 ? (
+                    <span className="bg-red-500 text-white text-[10px] font-bold rounded-full px-2 py-0.5 min-w-[20px] text-center shadow-sm">
+                      {item.badge}
+                    </span>
+                  ) : null}
+                </button>
+              );
+            })}
+          </nav>
+        </div>
+        
+        <div className="p-5 border-t border-white/10 shrink-0">
+          <div className="flex items-center gap-3 mb-5">
+             <div className="w-10 h-10 rounded-full bg-blue-600 border-2 border-slate-800 text-white flex items-center justify-center font-bold text-sm shadow-md">
+                {getInitials()}
+             </div>
+             <div className="min-w-0">
+                <p className="text-white text-sm font-semibold truncate">{profile.firstName} {profile.lastName}</p>
+                <p className="text-xs text-slate-400 truncate">{profile.role}</p>
+             </div>
+          </div>
+          <button onClick={handleLogout} className="flex items-center gap-3 text-red-400 hover:text-red-300 text-sm font-medium transition-colors w-full px-2">
+            <LogOut className="w-4 h-4" />
+            Sign Out
+          </button>
+        </div>
+      </aside>
+
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col min-h-screen min-w-0">
+        {/* Top Navbar */}
+        <header className="bg-white h-16 border-b border-slate-200 flex items-center justify-between px-4 sm:px-6 shrink-0 z-10 shadow-sm">
+          <div className="flex items-center gap-3">
+            <button className="md:hidden text-slate-500 p-2 -ml-2" onClick={() => setMobileMenuOpen(true)}>
+              <Menu className="w-5 h-5" />
+            </button>
+            <div>
+              <h1 className="text-xl font-bold text-slate-800 hidden sm:block">{getTabName(currentMenu)}</h1>
+              <p className="text-[11px] text-slate-500 hidden sm:block">Welcome, {profile.firstName} {profile.lastName}</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-4 sm:gap-6">
+            <button className="relative text-slate-500 hover:text-blue-600 transition-colors" onClick={() => setCurrentMenu('messages')}>
+               <Bell className="w-5 h-5" />
+               {unreadMessageCount > 0 && <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 border border-white rounded-full" />}
+            </button>
+            <div className="flex items-center gap-3 pl-4 border-l border-slate-200">
+              <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-600 to-indigo-700 text-white flex items-center justify-center font-bold text-xs shadow-md">
+                 {getInitials()}
+              </div>
+              <div className="hidden sm:block text-right min-w-0">
+                <p className="text-[13px] font-bold text-slate-800">{profile.firstName}</p>
+                <p className="text-[11px] text-slate-500 truncate max-w-[120px]">Member / {profile.role}</p>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        {/* Scrollable Content */}
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
+          
+          {/* TAB: DASHBOARD */}
+          {currentMenu === 'dashboard' && (
+            <div className="max-w-7xl mx-auto space-y-6">
+              {/* Stats Cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+                <Card className="border-0 shadow-md">
+                  <CardContent className="p-5 flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center shrink-0">
+                      <ListTodo className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Assigned</p>
+                      <h3 className="text-2xl font-black text-slate-800">{assignedWorks.length}</h3>
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card className="border-0 shadow-md">
+                  <CardContent className="p-5 flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center shrink-0">
+                      <Clock className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Pending Review</p>
+                      <h3 className="text-2xl font-black text-slate-800">{pendingWorks.length}</h3>
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card className="border-0 shadow-md">
+                  <CardContent className="p-5 flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
+                      <CheckCircle className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Completed</p>
+                      <h3 className="text-2xl font-black text-slate-800">{completedWorks.length}</h3>
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card className="border-0 shadow-md">
+                  <CardContent className="p-5 flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-full bg-red-100 text-red-600 flex items-center justify-center shrink-0">
+                      <Mail className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Unread Messages</p>
+                      <h3 className="text-2xl font-black text-slate-800">{unreadMessageCount}</h3>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Active Assignments */}
+              <Card className="border-0 shadow-md overflow-hidden">
+                <CardHeader className="bg-white border-b border-slate-100 flex flex-row items-center justify-between py-4">
+                  <CardTitle className="text-base font-bold text-slate-800">Active Assignments</CardTitle>
+                  <Button variant="outline" size="sm" className="h-8 text-xs font-medium" onClick={() => setCurrentMenu('assignments')}>View All</Button>
+                </CardHeader>
+                <div className="p-0 overflow-x-auto">
+                  <table className="w-fulltext-sm">
+                    <thead className="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider font-semibold border-b border-slate-100 text-left">
+                      <tr>
+                        <th className="px-6 py-4 whitespace-nowrap">Manuscript</th>
+                        <th className="px-6 py-4 whitespace-nowrap">Journal</th>
+                        <th className="px-6 py-4 whitespace-nowrap">Due Date</th>
+                        <th className="px-6 py-4 whitespace-nowrap">Status</th>
+                        <th className="px-6 py-4 whitespace-nowrap text-right">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 bg-white text-sm">
+                      {assignedWorks.length === 0 ? (
+                        <tr>
+                          <td colSpan={5} className="px-6 py-12 text-center text-slate-500">
+                            No assignments found
+                          </td>
+                        </tr>
+                      ) : (
+                        assignedWorks.slice(0, 5).map((work, idx) => (
+                          <tr key={idx} className="hover:bg-slate-50 transition-colors">
+                            <td className="px-6 py-4">
+                              <span className="font-bold text-blue-600 block">{work.manuscriptId}</span>
+                              <span className="text-slate-500 text-xs truncate max-w-[200px] block mt-0.5">{work.title || 'Untitled'}</span>
+                            </td>
+                            <td className="px-6 py-4 font-medium text-slate-700">{work.journal}</td>
+                            <td className="px-6 py-4 font-medium text-slate-700">{work.dueDate || '-'}</td>
+                            <td className="px-6 py-4">
+                               {generalStatusBadge(work)}
+                            </td>
+                            <td className="px-6 py-4 text-right">
+                              <Button variant="ghost" size="sm" className="text-blue-600 hover:bg-blue-50" onClick={() => setCurrentMenu('assignments')}>
+                                Details <ChevronRight className="w-4 h-4 ml-1" />
+                              </Button>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </Card>
+
+              {/* Recent Messages */}
+              <Card className="border-0 shadow-md">
+                <CardHeader className="bg-white border-b border-slate-100 flex flex-row items-center justify-between py-4">
+                  <div className="flex items-center gap-2">
+                    <MessageCircle className="w-5 h-5 text-blue-600" />
+                    <CardTitle className="text-base font-bold text-slate-800">Recent Messages</CardTitle>
+                  </div>
+                  <Button variant="outline" size="sm" className="h-8 text-xs font-medium" onClick={() => setCurrentMenu('messages')}>Open Inbox</Button>
+                </CardHeader>
+                <CardContent className="p-0">
+                  {threads.length === 0 ? (
+                    <div className="p-8 text-center text-slate-500">No recent messages</div>
+                  ) : (
+                    <div className="divide-y divide-slate-100">
+                       {threads.slice(0, 3).map((th, idx) => {
+                         const lastUserMessage = th.messages[th.messages.length - 1];
+                         return (
+                           <div key={idx} className="flex items-start gap-4 p-4 hover:bg-slate-50 transition-colors cursor-pointer" onClick={() => { setSelectedThread(th); setCurrentMenu('messages'); }}>
+                             <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center shrink-0">
+                               <User className="w-5 h-5 text-slate-500" />
+                             </div>
+                             <div className="min-w-0 flex-1">
+                               <div className="flex justify-between items-start mb-0.5">
+                                 <p className="text-sm font-bold text-slate-800">Admin <span className="text-xs text-slate-500 font-normal ml-1">({th.manuscriptId})</span></p>
+                                 <span className="text-xs text-slate-400">{lastUserMessage?.submittedAt?.split(',')[0]}</span>
+                               </div>
+                               <p className="text-sm text-slate-600 truncate">{lastUserMessage?.message}</p>
+                             </div>
+                           </div>
+                         );
+                       })}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {/* TAB: MY ASSIGNMENTS */}
+          {currentMenu === 'assignments' && (
+            <div className="max-w-7xl mx-auto">
+              <Card className="border-0 shadow-lg overflow-hidden">
+                <CardHeader className="bg-white border-b border-slate-200 py-5">
+                  <CardTitle className="text-lg font-bold text-slate-800">All Assignments</CardTitle>
+                  <CardDescription>Manage and review your assigned manuscripts</CardDescription>
+                </CardHeader>
+                <div className="p-0 overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead className="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider font-semibold border-b border-slate-200 text-left">
+                      <tr>
+                        <th className="px-6 py-4 whitespace-nowrap">Manuscript</th>
+                        <th className="px-6 py-4 whitespace-nowrap">Journal</th>
+                        <th className="px-6 py-4 whitespace-nowrap">Due Date</th>
+                        <th className="px-6 py-4 whitespace-nowrap">Status</th>
+                        <th className="px-6 py-4 whitespace-nowrap text-center">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 bg-white">
+                      {assignedWorks.length === 0 ? (
+                        <tr>
+                          <td colSpan={5} className="px-6 py-12 text-center text-slate-500 text-base">
+                            No active assignments.
+                          </td>
+                        </tr>
+                      ) : (
+                        assignedWorks.map((work, idx) => (
+                          <tr key={idx} className="hover:bg-slate-50 transition-all">
+                            <td className="px-6 py-4">
+                              <span className="font-bold text-blue-700 block text-sm">{work.manuscriptId}</span>
+                              <span className="text-slate-600 text-[13px] truncate max-w-[250px] inline-block mt-1 font-medium">{work.title || 'Untitled'}</span>
+                            </td>
+                            <td className="px-6 py-4 font-medium text-slate-700">{work.journal}</td>
+                            <td className="px-6 py-4">
+                              <div className="flex items-center gap-2">
+                                <Calendar className="w-4 h-4 text-slate-400" />
+                                <span className={`font-semibold ${isDeadlineOver(work.dueDate || '') ? 'text-red-600' : 'text-slate-700'}`}>{work.dueDate || 'Not Set'}</span>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4">
+                               {generalStatusBadge(work)}
+                            </td>
+                            <td className="px-6 py-4 text-center">
+                               <div className="flex flex-col sm:flex-row items-center justify-center gap-2">
+                                 <Button 
+                                    variant="outline" 
+                                    size="sm" 
+                                    disabled={!!(work.reviewSubmitted || (work.status && work.status.toLowerCase().includes('completed')))}
+                                    className="w-full sm:w-auto text-xs h-8 shadow-sm"
+                                    onClick={() => {
+                                      const url = work.manuscriptLink || work.fileUrl;
+                                      if (url && typeof url === 'string') window.open(url, '_blank');
+                                      else toast({ title: "Unavailable", description: "Manuscript file link not found.", variant: "destructive" });
+                                    }}
+                                  >
+                                   <Download className="w-3.5 h-3.5 mr-1.5" /> Download
+                                 </Button>
+                                 <Button 
+                                    size="sm" 
+                                    onClick={() => setReviewSubmission({ ...reviewSubmission, selectedManuscriptForReview: work.manuscriptId })}
+                                    disabled={!!(work.reviewSubmitted || (work.status && work.status.toLowerCase().includes('completed')))}
+                                    className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-xs h-8 shadow-sm"
+                                  >
+                                   <FileCheck2 className="w-3.5 h-3.5 mr-1.5" /> Submit Review
+                                 </Button>
+                               </div>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </Card>
+            </div>
+          )}
+
+          {/* TAB: MESSAGES */}
+          {currentMenu === 'messages' && (
+            <div className="max-w-7xl mx-auto h-[70vh] bg-white rounded-xl shadow-lg border border-slate-200 flex overflow-hidden">
+               {/* Messages Sidebar */}
+               <div className="w-1/3 border-r border-slate-200 flex flex-col bg-slate-50/50">
+                  <div className="p-4 border-b border-slate-200 bg-white">
+                    <h3 className="font-bold text-slate-800">Inbox</h3>
+                  </div>
+                  <div className="flex-1 overflow-y-auto">
+                    {threads.length === 0 ? (
+                      <div className="p-8 text-center text-slate-500 text-sm">No conversations</div>
+                    ) : (
+                      threads.map((th, idx) => (
+                        <button key={idx} onClick={() => { setSelectedThread(th); markMessageAsRead(th.manuscriptId); }} className={`w-full text-left p-4 border-b border-slate-100 hover:bg-white transition-colors ${selectedThread?.manuscriptId === th.manuscriptId ? 'bg-white border-l-4 border-l-blue-600 shadow-sm' : ''}`}>
+                          <div className="flex justify-between items-start mb-1">
+                            <span className="font-bold text-sm text-slate-800">Admin</span>
+                            <span className="text-[10px] text-slate-400 font-medium bg-slate-100 px-2 py-0.5 rounded">{th.manuscriptId}</span>
+                          </div>
+                          <p className="text-xs text-slate-500 truncate mt-1">{(th.messages[th.messages.length - 1]?.message || '').substring(0, 40)}...</p>
+                        </button>
+                      ))
+                    )}
+                  </div>
+               </div>
+               
+               {/* Messages Content */}
+               <div className="w-2/3 flex flex-col bg-white overflow-hidden">
+                 {selectedThread ? (
+                   <>
+                     <div className="p-4 border-b border-slate-200 flex justify-between items-center bg-white shadow-sm z-10">
+                       <h3 className="font-bold text-slate-800 flex items-center gap-2"><Inbox className="w-4 h-4 text-blue-600" /> MS: {selectedThread.manuscriptId}</h3>
+                     </div>
+                     <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50/30">
+                       {selectedThread.messages.map((msg, idx) => (
+                         <div key={idx} className={`flex flex-col max-w-[80%] ${msg.type === 'reviewer' ? 'ml-auto items-end' : 'mr-auto items-start'}`}>
+                           <span className="text-[10px] text-slate-400 font-medium mb-1 px-1">{msg.type === 'reviewer' ? 'You' : 'Admin'} • {msg.submittedAt}</span>
+                           <div className={`p-3 rounded-2xl text-sm shadow-sm ${msg.type === 'reviewer' ? 'bg-blue-600 text-white rounded-tr-none' : 'bg-white border border-slate-200 text-slate-700 rounded-tl-none'}`}>
+                             {msg.message}
+                           </div>
+                         </div>
+                       ))}
+                     </div>
+                     <div className="p-4 border-t border-slate-200 bg-white">
+                       <div className="flex gap-2">
+                         <Input value={newMessage} onChange={e => setNewMessage(e.target.value)} placeholder="Type your reply here..." className="bg-slate-50 shadow-inner border-slate-200" onKeyDown={e => e.key === 'Enter' && handleSendMessage()} />
+                         <Button onClick={handleSendMessage} disabled={sendingMessage || !newMessage.trim()} className="bg-blue-600 hover:bg-blue-700 shadow-md">
+                           <SendIcon className="w-4 h-4 sm:mr-2" /> <span className="hidden sm:inline">Send</span>
+                         </Button>
+                       </div>
+                     </div>
+                   </>
+                 ) : (
+                   <div className="flex-1 flex flex-col items-center justify-center text-slate-400 bg-slate-50/50">
+                     <MessageCircle className="w-12 h-12 mb-4 text-slate-300" />
+                     <p>Select a conversation to start messaging</p>
+                   </div>
+                 )}
+               </div>
+            </div>
+          )}
+
+          {/* TAB: MY PROFILE */}
+          {currentMenu === 'profile' && (
+            <div className="max-w-4xl mx-auto">
+              <Card className="border-0 shadow-lg">
+                <CardHeader className="bg-white border-b border-slate-200 py-6">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <CardTitle className="text-xl font-bold text-slate-800">My Profile</CardTitle>
+                      <CardDescription>View your registered portal profile details</CardDescription>
+                    </div>
+                    <Button onClick={() => setShowPasswordDialog(true)} variant="outline" className="shadow-sm">
+                      <Lock className="w-4 h-4 mr-2" /> Change Password
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent className="p-6 md:p-8">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12">
+                    <div className="space-y-6">
+                      <h4 className="text-sm font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100 pb-2">Personal Details</h4>
+                      <div className="space-y-4">
+                        <div>
+                          <p className="text-xs text-slate-500 font-medium mb-1">Full Name</p>
+                          <p className="font-semibold text-slate-800">{profile.firstName} {profile.lastName}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-slate-500 font-medium mb-1">Email / Member ID</p>
+                          <p className="font-semibold text-slate-800">{profile.email} <span className="text-slate-400 font-normal">({profile.reviewerId})</span></p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-slate-500 font-medium mb-1">Mobile Number</p>
+                          <p className="font-semibold text-slate-800">{profile.mobile || '-'}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-slate-500 font-medium mb-1">Status & Role</p>
+                          <div className="flex gap-2 items-center mt-1">
+                             <Badge className={profile.status === 'Active' ? 'bg-green-100 text-green-800 border-none' : 'bg-yellow-100 text-yellow-800 border-none'}>{profile.status}</Badge>
+                             <Badge variant="outline" className="text-blue-600 border-blue-200 bg-blue-50">{profile.role}</Badge>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-6">
+                      <h4 className="text-sm font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100 pb-2">Academic Profile</h4>
+                      <div className="space-y-4">
+                        <div>
+                          <p className="text-xs text-slate-500 font-medium mb-1">Institution</p>
+                          <p className="font-semibold text-slate-800">{profile.institution} <span className="text-slate-500 font-normal">({profile.designation})</span></p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-slate-500 font-medium mb-1">Journal Assigned</p>
+                          <p className="font-semibold text-slate-800">{profile.journal || '-'}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-slate-500 font-medium mb-1">Area of Interest</p>
+                          <p className="font-semibold text-slate-800">{profile.areaOfInterest || '-'}</p>
+                        </div>
+                        <div className="flex gap-6 pt-2">
+                           {profile.orcid && (
+                             <a href={profile.orcid} target="_blank" rel="noreferrer" className="text-blue-600 font-medium hover:underline text-sm flex items-center gap-1"><Globe className="w-4 h-4"/> ORCID Profile</a>
+                           )}
+                           {profile.googleScholar && (
+                             <a href={profile.googleScholar} target="_blank" rel="noreferrer" className="text-blue-600 font-medium hover:underline text-sm flex items-center gap-1"><Award className="w-4 h-4"/> Google Scholar</a>
+                           )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+        </main>
+      </div>
+
+      {/* Review Submission Dialog Modal */}
+      <Dialog open={!!reviewSubmission.selectedManuscriptForReview} onOpenChange={(open) => !open && setReviewSubmission({ ...reviewSubmission, selectedManuscriptForReview: '' })}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader className="border-b border-slate-200 pb-4 mb-4">
+            <DialogTitle className="text-2xl font-bold text-slate-800 flex items-center gap-2"><Upload className="w-5 h-5 text-blue-600" /> Submit Peer Review</DialogTitle>
+            <DialogDescription>
+              Complete your evaluation for Manuscript {reviewSubmission.selectedManuscriptForReview}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <form className="space-y-8" onSubmit={async (e) => {
+              e.preventDefault();
+              if (!reviewSubmission.importanceOfManuscript.trim() || !reviewSubmission.generalComments.trim() || !reviewSubmission.recommendation) {
+                toast({ title: 'Error', description: 'Please fill all required fields and select a recommendation', variant: 'destructive' });
+                return;
+              }
+              if (!reviewSubmission.competingInterestDeclaration) {
+                toast({ title: 'Error', description: 'You must declare competing interests before submitting.', variant: 'destructive' });
+                return;
+              }
+              setIsSubmittingReview(true);
+              try {
+                const payload = {
+                  reviewerId: profile?.reviewerId || '',
+                  reviewerName: `${profile?.firstName} ${profile?.lastName}`,
+                  reviewerEmail: profile?.email || '',
+                  manuscriptId: reviewSubmission.selectedManuscriptForReview,
+                  ...reviewSubmission
+                };
+                const res = await fetch('/api/submit-review', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                const result = await res.json();
+                if (res.ok && result.success) {
+                   toast({ title: 'Success', description: 'Your review has been submitted successfully!' });
+                   setReviewSubmission({...reviewSubmission, selectedManuscriptForReview: ''});
+                   window.location.reload();
+                } else {
+                   toast({ title: 'Error', description: result.message || 'Submission failed.', variant: 'destructive' });
+                }
+              } catch (err) {
+                toast({ title: 'Error', description: 'Network error occurred.', variant: 'destructive' });
+              } finally {
+                setIsSubmittingReview(false);
+              }
+          }}>
+            <div className="grid md:grid-cols-2 gap-6 bg-slate-50 p-6 rounded-xl border border-slate-100">
+               <div className="space-y-3">
+                  <label className="text-sm font-bold text-slate-700">Importance of Manuscript *</label>
+                  <Textarea placeholder="Rate the importance and relevance..." value={reviewSubmission.importanceOfManuscript} onChange={e => setReviewSubmission({...reviewSubmission, importanceOfManuscript: e.target.value})} className="bg-white" required />
+               </div>
+               <div className="space-y-3">
+                  <label className="text-sm font-bold text-slate-700">Title Suitability</label>
+                  <Textarea placeholder="Comments on title..." value={reviewSubmission.titleSuitability} onChange={e => setReviewSubmission({...reviewSubmission, titleSuitability: e.target.value})} className="bg-white" />
+               </div>
+               <div className="space-y-3">
+                  <label className="text-sm font-bold text-slate-700">Abstract Comprehensiveness</label>
+                  <Textarea placeholder="Is the abstract complete?" value={reviewSubmission.abstractComprehensive} onChange={e => setReviewSubmission({...reviewSubmission, abstractComprehensive: e.target.value})} className="bg-white" />
+               </div>
+               <div className="space-y-3">
+                  <label className="text-sm font-bold text-slate-700">Scientific Correctness</label>
+                  <Textarea placeholder="Methodology, logic, correctness..." value={reviewSubmission.scientificCorrectness} onChange={e => setReviewSubmission({...reviewSubmission, scientificCorrectness: e.target.value})} className="bg-white" />
+               </div>
+            </div>
+
+            <div className="space-y-3">
+               <label className="text-sm font-bold text-slate-700">General Comments to Editor/Author *</label>
+               <Textarea placeholder="Provide detailed review comments..." value={reviewSubmission.generalComments} onChange={e => setReviewSubmission({...reviewSubmission, generalComments: e.target.value})} className="min-h-[120px]" required />
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-6 bg-amber-50/50 p-6 rounded-xl border border-amber-100">
+               <div className="space-y-3">
+                 <label className="text-sm font-bold text-slate-700">Overall Rating (1-10)</label>
+                 <Input type="number" min="1" max="10" value={reviewSubmission.overallMarks} onChange={e => setReviewSubmission({...reviewSubmission, overallMarks: parseInt(e.target.value) || 0})} className="bg-white" />
+               </div>
+               <div className="space-y-3">
+                 <label className="text-sm font-bold text-slate-700">Final Recommendation *</label>
+                 <select className="w-full h-10 border border-slate-200 rounded-md px-3 bg-white text-sm" value={reviewSubmission.recommendation} onChange={e => setReviewSubmission({...reviewSubmission, recommendation: e.target.value})} required>
+                    <option value="">Select an option</option>
+                    <option value="accept">Accept Submission</option>
+                    <option value="minor_revisions">Revisions Required (Minor)</option>
+                    <option value="major_revisions">Revisions Required (Major)</option>
+                    <option value="reject">Decline Submission</option>
+                 </select>
+               </div>
+            </div>
+
+            <div className="p-4 bg-slate-100 rounded-lg flex items-start gap-3 border border-slate-200">
+               <input type="checkbox" id="compete" className="mt-1 w-4 h-4" checked={reviewSubmission.competingInterestDeclaration} onChange={e => setReviewSubmission({...reviewSubmission, competingInterestDeclaration: e.target.checked})} />
+               <label htmlFor="compete" className="text-sm text-slate-700 font-medium">I declare that I have evaluated this manuscript strictly ethically, and I have no conflict of interest with the authors.</label>
+            </div>
+
+            <div className="flex justify-end gap-3 pt-4 border-t border-slate-200">
+               <Button type="button" variant="outline" onClick={() => setReviewSubmission({...reviewSubmission, selectedManuscriptForReview: ''})}>Cancel</Button>
+               <Button type="submit" className="bg-blue-600 hover:bg-blue-700" disabled={isSubmittingReview}>
+                 {isSubmittingReview ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <SendIcon className="w-4 h-4 mr-2" />}
+                 Submit Review Result
+               </Button>
+            </div>
+          </form>
         </DialogContent>
       </Dialog>
 
+      {/* Utilities Dialogs */}
       <Dialog open={showPasswordDialog} onOpenChange={setShowPasswordDialog}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Change Password</DialogTitle>
-            <DialogDescription>Create a strong password with at least 8 characters</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             {passwordErrors.length > 0 && (
-              <div className="bg-red-50 border border-red-200 rounded p-3">
-                {passwordErrors.map((err, idx) => <p key={idx} className="text-sm text-red-600">{err}</p>)}
+              <div className="bg-red-50 border border-red-200 p-3 rounded">
+                {passwordErrors.map((e,i)=><p key={i} className="text-sm text-red-600">{e}</p>)}
               </div>
             )}
-            <Input type="password" placeholder="New Password" value={passwordForm.newPassword} onChange={(e) => setPasswordForm({...passwordForm, newPassword: e.target.value})} data-testid="input-new-password" />
-            <Input type="password" placeholder="Confirm Password" value={passwordForm.confirmPassword} onChange={(e) => setPasswordForm({...passwordForm, confirmPassword: e.target.value})} data-testid="input-confirm-password" />
-            <Button onClick={handleChangePassword} disabled={changingPassword || !passwordForm.newPassword} className="w-full" data-testid="button-submit-password">
-              {changingPassword ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}Change Password
-            </Button>
+            <Input type="password" placeholder="New Password" value={passwordForm.newPassword} onChange={e => setPasswordForm({...passwordForm, newPassword: e.target.value})}/>
+            <Input type="password" placeholder="Confirm Password" value={passwordForm.confirmPassword} onChange={e => setPasswordForm({...passwordForm, confirmPassword: e.target.value})}/>
+            <Button onClick={handleChangePassword} disabled={changingPassword || !passwordForm.newPassword} className="w-full bg-blue-600">Change Password</Button>
           </div>
         </DialogContent>
       </Dialog>
+      
+      <Dialog open={showPopup} onOpenChange={setShowPopup}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>{popupMessage?.title || 'Notice'}</DialogTitle></DialogHeader>
+          <div className="py-4"><p className="text-slate-700 whitespace-pre-wrap">{popupMessage?.content}</p></div>
+          <Button onClick={() => setShowPopup(false)} className="w-full bg-blue-600">Close</Button>
+        </DialogContent>
+      </Dialog>
 
-      <main className="flex-1 py-4 md:py-6">
-        <div className="container mx-auto px-3 md:px-4 max-w-7xl">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 mb-4 md:mb-6">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 md:w-14 md:h-14 rounded-full bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center text-white font-bold text-lg shadow-lg">
-                {(profile.firstName || 'U').charAt(0)}{(profile.lastName || 'A').charAt(0)}
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h1 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-gray-100" data-testid="text-dashboard-title">
-                    {profile.firstName} {profile.lastName}
-                  </h1>
-                  <span className="flex items-center gap-1 px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-[10px] font-semibold rounded-full">
-                    <span className={`w-2 h-2 rounded-full bg-green-500 ${isRefreshing ? 'animate-ping' : 'animate-pulse'}`}></span>
-                    LIVE
-                  </span>
-                </div>
-                <p className="text-sm text-blue-600 dark:text-blue-400">{profile.role} ID: {profile.reviewerId} | Updated: {lastUpdated.toLocaleTimeString()}</p>
-              </div>
-            </div>
-            <div className="flex gap-2 flex-wrap">
-              <Button variant="outline" size="sm" onClick={() => setShowPasswordDialog(true)} className="gap-1" data-testid="button-change-password">
-                <Lock className="w-4 h-4" />
-                <span className="hidden sm:inline">Password</span>
-              </Button>
-              <Button variant="outline" size="sm" onClick={handleLogout} className="gap-1 text-red-600 border-red-300" data-testid="button-logout">
-                <LogOut className="w-4 h-4" />
-                <span className="hidden sm:inline">Logout</span>
-              </Button>
-            </div>
-          </div>
-
-          <div className="flex flex-col lg:flex-row gap-4 md:gap-6">
-            <div className="lg:w-56 flex-shrink-0">
-              <div className="bg-[#213361] rounded-xl shadow-lg overflow-hidden">
-                <div className="p-3 border-b border-blue-700">
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-full bg-yellow-400 flex items-center justify-center">
-                      <span className="text-blue-900 font-bold text-xs">SIP</span>
-                    </div>
-                    <div>
-                      <p className="text-white font-semibold text-sm">{profile.role} Portal</p>
-                      <p className="text-blue-200 text-xs">{profile.journal}</p>
-                    </div>
-                  </div>
-                </div>
-                <div className="p-2 space-y-1">
-                  {menuItems.map(item => {
-                    const Icon = item.icon;
-                    return (
-                      <button
-                        key={item.id}
-                        onClick={() => !item.disabled && setCurrentMenu(item.id)}
-                        disabled={item.disabled}
-                        className={`w-full flex items-center justify-between gap-2 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
-                          currentMenu === item.id
-                            ? 'bg-blue-700 text-white'
-                            : item.disabled
-                            ? 'text-blue-300 opacity-50 cursor-not-allowed'
-                            : 'text-blue-100 hover:bg-blue-800'
-                        }`}
-                        data-testid={`menu-${item.id}`}
-                      >
-                        <div className="flex items-center gap-2">
-                          <Icon className="w-4 h-4" />
-                          <span>{item.label}</span>
-                        </div>
-                        {item.badge && item.badge > 0 && (
-                          <span className="bg-red-500 text-white text-xs font-bold rounded-full px-1.5 py-0.5 min-w-[20px] text-center">{item.badge}</span>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-
-            <div className="flex-1 min-w-0">
-              {currentMenu === 'profile' && (
-                <Card className="shadow-lg border-0">
-                  <CardHeader className="bg-gradient-to-r from-blue-600 to-blue-700 text-white py-4">
-                    <CardTitle className="flex items-center gap-2 text-lg">
-                      <User className="w-5 h-5" />
-                      Profile Information
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-4 md:p-6">
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
-                      <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 text-center">
-                        <p className="text-xs font-bold text-blue-600 uppercase mb-1">Status</p>
-                        <Badge className={profile.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}>{profile.status}</Badge>
-                      </div>
-                      <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-3 text-center">
-                        <p className="text-xs font-bold text-purple-600 uppercase mb-1">Role</p>
-                        <p className="font-semibold text-purple-800 dark:text-purple-300">{profile.role}</p>
-                      </div>
-                      <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-lg p-3 text-center">
-                        <p className="text-xs font-bold text-emerald-600 uppercase mb-1">Journal</p>
-                        <p className="font-semibold text-emerald-800 dark:text-emerald-300 text-xs">{profile.journal}</p>
-                      </div>
-                      <div className="bg-amber-50 dark:bg-amber-900/20 rounded-lg p-3 text-center">
-                        <p className="text-xs font-bold text-amber-600 uppercase mb-1">ID</p>
-                        <p className="font-mono font-semibold text-amber-800 dark:text-amber-300 text-xs">{profile.reviewerId}</p>
-                      </div>
-                    </div>
-
-                    <div className="grid md:grid-cols-2 gap-4 mt-4">
-                      <div className="space-y-3">
-                        <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                          <Mail className="w-4 h-4 text-blue-600 flex-shrink-0" />
-                          <div className="min-w-0">
-                            <p className="text-xs text-gray-500">Email</p>
-                            <p className="font-medium text-gray-900 dark:text-gray-100 truncate">{profile.email}</p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                          <Phone className="w-4 h-4 text-blue-600 flex-shrink-0" />
-                          <div>
-                            <p className="text-xs text-gray-500">Mobile</p>
-                            <p className="font-medium text-gray-900 dark:text-gray-100">{profile.mobile || 'Not provided'}</p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                          <Award className="w-4 h-4 text-blue-600 flex-shrink-0" />
-                          <div>
-                            <p className="text-xs text-gray-500">Designation</p>
-                            <p className="font-medium text-gray-900 dark:text-gray-100">{profile.designation}</p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                          <Building className="w-4 h-4 text-blue-600 flex-shrink-0" />
-                          <div className="min-w-0">
-                            <p className="text-xs text-gray-500">Institution</p>
-                            <p className="font-medium text-gray-900 dark:text-gray-100 truncate">{profile.institution}</p>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="space-y-3">
-                        <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                          <FileText className="w-4 h-4 text-blue-600 flex-shrink-0" />
-                          <div className="min-w-0">
-                            <p className="text-xs text-gray-500">Area of Interest</p>
-                            <p className="font-medium text-gray-900 dark:text-gray-100 truncate">{profile.areaOfInterest}</p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                          <Globe className="w-4 h-4 text-blue-600 flex-shrink-0" />
-                          <div className="min-w-0">
-                            <p className="text-xs text-gray-500">ORCID</p>
-                            {profile.orcid ? (
-                              <a href={profile.orcid} target="_blank" rel="noopener noreferrer" className="font-medium text-blue-600 hover:underline truncate block">{profile.orcid}</a>
-                            ) : (
-                              <p className="font-medium text-gray-500">Not provided</p>
-                            )}
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                          <Award className="w-4 h-4 text-blue-600 flex-shrink-0" />
-                          <div className="min-w-0">
-                            <p className="text-xs text-gray-500">Google Scholar</p>
-                            {profile.googleScholar ? (
-                              <a href={profile.googleScholar} target="_blank" rel="noopener noreferrer" className="font-medium text-blue-600 hover:underline">View Profile</a>
-                            ) : (
-                              <p className="font-medium text-gray-500">Not provided</p>
-                            )}
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                          <Globe className="w-4 h-4 text-blue-600 flex-shrink-0" />
-                          <div>
-                            <p className="text-xs text-gray-500">Nationality</p>
-                            <p className="font-medium text-gray-900 dark:text-gray-100">{profile.nationality || 'Not provided'}</p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              {currentMenu === 'manuscripts' && (
-                <Card className="shadow-lg border-0">
-                  <CardHeader className="bg-gradient-to-r from-blue-600 to-blue-700 text-white py-4">
-                    <CardTitle className="flex items-center gap-2 text-lg">
-                      <FileText className="w-5 h-5" />
-                      Assigned Manuscripts
-                    </CardTitle>
-                    <CardDescription className="text-blue-100">View all manuscripts assigned to you for review</CardDescription>
-                  </CardHeader>
-                  <CardContent className="p-0">
-                    {assignedWorks.length === 0 ? (
-                      <div className="p-8 text-center">
-                        <FileText className="w-12 h-12 mx-auto text-gray-300 dark:text-gray-600 mb-3" />
-                        <p className="text-gray-700 dark:text-gray-300 font-medium">No manuscripts assigned yet</p>
-                        <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">New assignments will appear here automatically</p>
-                      </div>
-                    ) : (
-                      <div className="overflow-x-auto">
-                        <table className="w-full text-sm">
-                          <thead className="bg-gray-100 dark:bg-gray-800">
-                            <tr>
-                              <th className="px-4 py-3 text-left font-semibold text-gray-700 dark:text-gray-300">Manuscript ID</th>
-                              <th className="px-4 py-3 text-left font-semibold text-gray-700 dark:text-gray-300">Title</th>
-                              <th className="px-4 py-3 text-left font-semibold text-gray-700 dark:text-gray-300">Journal</th>
-                              <th className="px-4 py-3 text-left font-semibold text-gray-700 dark:text-gray-300">Status</th>
-                              <th className="px-4 py-3 text-left font-semibold text-gray-700 dark:text-gray-300">Due Date</th>
-                              <th className="px-4 py-3 text-center font-semibold text-gray-700 dark:text-gray-300">Actions</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                            {assignedWorks.map((work, idx) => (
-                              <tr key={idx} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
-                                <td className="px-4 py-3 font-mono text-blue-700 dark:text-blue-300 font-semibold" data-testid={`text-ms-id-${idx}`}>{work.manuscriptId}</td>
-                                <td className="px-4 py-3 text-gray-900 dark:text-gray-100 max-w-xs truncate" data-testid={`text-ms-title-${idx}`}>{work.title || 'Untitled'}</td>
-                                <td className="px-4 py-3 text-gray-600 dark:text-gray-400">{work.journal}</td>
-                                <td className="px-4 py-3">
-                                  {work.reviewSubmitted ? (
-                                    <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">Completed</Badge>
-                                  ) : isDeadlineOver(work.dueDate || '') ? (
-                                    <Badge className="bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300">Overdue</Badge>
-                                  ) : (
-                                    <Badge className="bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">Pending</Badge>
-                                  )}
-                                </td>
-                                <td className="px-4 py-3 text-center">
-                                  <div className="flex flex-col sm:flex-row gap-2 justify-center">
-                                    <Button 
-                                      variant="outline" 
-                                      size="sm" 
-                                      className="gap-1"
-                                      disabled={!!(work.reviewSubmitted || (work.status && work.status.toLowerCase().includes('completed')))}
-                                      onClick={() => {
-                                        const url = work.manuscriptLink || work.fileUrl;
-                                        if (url && typeof url === 'string' && url.startsWith('http')) {
-                                          window.open(url, '_blank');
-                                        } else {
-                                          toast({ title: "Error", description: "Manuscript file link not available.", variant: "destructive" });
-                                        }
-                                      }}
-                                    >
-                                      <Download className="w-4 h-4" />
-                                      <span className="hidden sm:inline">Download</span>
-                                    </Button>
-                                    <Button 
-                                      size="sm" 
-                                      className="gap-1 bg-blue-600 hover:bg-blue-700"
-                                      disabled={!!(work.reviewSubmitted || (work.status && work.status.toLowerCase().includes('completed')))}
-                                      onClick={() => {
-                                        setReviewSubmission({
-                                          ...reviewSubmission,
-                                          selectedManuscriptForReview: work.manuscriptId
-                                        });
-                                        setCurrentMenu('submit-review');
-                                      }}
-                                    >
-                                      <SendIcon className="w-4 h-4" />
-                                      <span className="hidden sm:inline">Submit Review</span>
-                                    </Button>
-                                  </div>
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              )}
-
-              {currentMenu === 'performance' && (
-                <Card className="shadow-lg border-0">
-                  <CardHeader className="bg-gradient-to-r from-blue-600 to-blue-700 text-white py-4">
-                    <CardTitle className="flex items-center gap-2 text-lg">
-                      <BarChart3 className="w-5 h-5" />
-                      Performance Summary
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-4 md:p-6">
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                      <div className="bg-gradient-to-br from-blue-100 to-blue-50 dark:from-blue-900/30 dark:to-blue-900/10 border border-blue-200 dark:border-blue-700 rounded-xl p-4 text-center">
-                        <p className="text-xs font-bold text-blue-600 uppercase mb-1">Total Assigned</p>
-                        <p className="text-3xl font-bold text-blue-800 dark:text-blue-200">{assignedWorks.length}</p>
-                      </div>
-                      <div className="bg-gradient-to-br from-green-100 to-green-50 dark:from-green-900/30 dark:to-green-900/10 border border-green-200 dark:border-green-700 rounded-xl p-4 text-center">
-                        <p className="text-xs font-bold text-green-600 uppercase mb-1">Completed</p>
-                        <p className="text-3xl font-bold text-green-800 dark:text-green-200">{completedWorks.length}</p>
-                      </div>
-                      <div className="bg-gradient-to-br from-amber-100 to-amber-50 dark:from-amber-900/30 dark:to-amber-900/10 border border-amber-200 dark:border-amber-700 rounded-xl p-4 text-center">
-                        <p className="text-xs font-bold text-amber-600 uppercase mb-1">Pending</p>
-                        <p className="text-3xl font-bold text-amber-800 dark:text-amber-200">{pendingWorks.length}</p>
-                      </div>
-                      <div className="bg-gradient-to-br from-purple-100 to-purple-50 dark:from-purple-900/30 dark:to-purple-900/10 border border-purple-200 dark:border-purple-700 rounded-xl p-4 text-center">
-                        <p className="text-xs font-bold text-purple-600 uppercase mb-1">Completion Rate</p>
-                        <p className="text-3xl font-bold text-purple-800 dark:text-purple-200">{assignedWorks.length > 0 ? Math.round((completedWorks.length / assignedWorks.length) * 100) : 0}%</p>
-                      </div>
-                    </div>
-                    
-                    {overdueWorks.length > 0 && (
-                      <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-lg p-4 mb-4">
-                        <div className="flex items-center gap-2 mb-2">
-                          <AlertCircle className="w-5 h-5 text-red-600" />
-                          <h4 className="font-semibold text-red-800 dark:text-red-200">Overdue Reviews</h4>
-                        </div>
-                        <p className="text-sm text-red-700 dark:text-red-300">You have {overdueWorks.length} overdue review(s). Please complete them as soon as possible.</p>
-                      </div>
-                    )}
-
-                    <div className="space-y-3">
-                      <h4 className="font-semibold text-gray-800 dark:text-gray-200">Recent Activity</h4>
-                      {completedWorks.length === 0 ? (
-                        <p className="text-gray-500 text-sm">No completed reviews yet</p>
-                      ) : (
-                        <div className="space-y-2">
-                          {completedWorks.slice(0, 5).map((work, idx) => (
-                            <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                              <div className="flex items-center gap-3">
-                                <CheckCircle className="w-5 h-5 text-green-600" />
-                                <div>
-                                  <p className="font-medium text-gray-900 dark:text-gray-100 text-sm">{work.manuscriptId}</p>
-                                  <p className="text-xs text-gray-500">{work.title?.substring(0, 40)}...</p>
-                                </div>
-                              </div>
-                              <Badge className="bg-green-100 text-green-800">Completed</Badge>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              {currentMenu === 'submit-review' && (
-                <Card className="shadow-lg border-0">
-                  <CardHeader className="bg-gradient-to-r from-blue-600 to-blue-700 text-white py-4">
-                    <CardTitle className="flex items-center gap-2 text-lg">
-                      <Upload className="w-5 h-5" />
-                      Peer Review Form
-                    </CardTitle>
-                    <CardDescription className="text-blue-100">Complete your peer review for assigned manuscripts</CardDescription>
-                  </CardHeader>
-                  <CardContent className="p-4 md:p-6">
-                    {pendingWorks.length === 0 ? (
-                      <div className="text-center py-8">
-                        <CheckCircle className="w-12 h-12 mx-auto text-green-500 mb-3" />
-                        <p className="text-gray-600 dark:text-gray-300 font-medium">No pending reviews. All caught up!</p>
-                        <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">New assignments will appear here when you have pending reviews</p>
-                      </div>
-                    ) : (
-                      <form onSubmit={async (e) => {
-                        e.preventDefault();
-                        if (!reviewSubmission.selectedManuscriptForReview) {
-                          toast({ title: 'Error', description: 'Please select a manuscript', variant: 'destructive' });
-                          return;
-                        }
-                        if (!reviewSubmission.importanceOfManuscript.trim() || !reviewSubmission.generalComments.trim()) {
-                          toast({ title: 'Error', description: 'Please fill all required fields (Importance and General Comments)', variant: 'destructive' });
-                          return;
-                        }
-                        if (!reviewSubmission.recommendation) {
-                          toast({ title: 'Error', description: 'Please select a recommendation', variant: 'destructive' });
-                          return;
-                        }
-                        if (!reviewSubmission.competingInterestDeclaration) {
-                          toast({ title: 'Error', description: 'Please declare that you have no competing interest', variant: 'destructive' });
-                          return;
-                        }
-                        setIsSubmittingReview(true);
-                        try {
-                          const payload = {
-                            reviewerId: profile?.reviewerId || '',
-                            reviewerName: `${profile?.firstName} ${profile?.lastName}`,
-                            reviewerEmail: profile?.email || '',
-                            manuscriptId: reviewSubmission.selectedManuscriptForReview,
-                            ...reviewSubmission
-                          };
-                          const response = await fetch('/api/submit-review', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-                          const result = await response.json();
-                          if (response.ok && result.success) {
-                            toast({ title: 'Success', description: 'Your review has been submitted successfully!' });
-                            setReviewSubmission({
-                              selectedManuscriptForReview: '', importanceOfManuscript: '', titleSuitability: '', abstractComprehensive: '', scientificCorrectness: '', referencesSufficient: '', languageQuality: '', generalComments: '', ethicalIssues: '', ethicalIssuesDetails: '', competingInterests: '', plagiarismSuspected: '', plagiarismDetails: '', competingInterestDeclaration: false, overallMarks: 5, recommendation: ''
-                            });
-                            const s = localStorage.getItem('reviewerSession');
-                            if (s) {
-                              const d = JSON.parse(s);
-                              fetchProfileData(d.email, d.reviewerId, false);
-                            }
-                          } else {
-                            toast({ title: 'Error', description: result.message || 'Failed to submit review', variant: 'destructive' });
-                          }
-                        } catch (error) {
-                          toast({ title: 'Error', description: 'Unable to submit review. Please try again.', variant: 'destructive' });
-                        } finally {
-                          setIsSubmittingReview(false);
-                        }
-                      }} className="space-y-6">
-                        
-                        <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg p-4">
-                          <h4 className="font-semibold text-amber-800 dark:text-amber-200 mb-2 flex items-center gap-2">
-                            <AlertCircle className="w-4 h-4" />
-                            General Guidelines for Peer Review
-                          </h4>
-                          <ul className="text-sm text-amber-700 dark:text-amber-300 space-y-1 list-disc pl-5">
-                            <li><strong>AI-generated or AI-assisted review comments are strictly prohibited.</strong></li>
-                            <li>NO manuscript should be rejected only on the basis of 'lack of Novelty', provided it is scientifically robust and technically sound.</li>
-                          </ul>
-                        </div>
-
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Select Manuscript *</label>
-                          <select value={reviewSubmission.selectedManuscriptForReview} onChange={(e) => setReviewSubmission({...reviewSubmission, selectedManuscriptForReview: e.target.value})} className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800" data-testid="select-manuscript-review">
-                            <option value="">-- Select Manuscript --</option>
-                            {pendingWorks.map((work, idx) => (
-                              <option key={idx} value={work.manuscriptId}>{work.manuscriptId} - {(work.title || 'Untitled').substring(0, 40)}</option>
-                            ))}
-                          </select>
-                        </div>
-
-                        {reviewSubmission.selectedManuscriptForReview && (
-                          <>
-                            <div className="border-t pt-4">
-                              <h3 className="text-lg font-semibold text-blue-700 dark:text-blue-300 mb-4 flex items-center gap-2">
-                                <FileText className="w-5 h-5" />
-                                PART 1: Review Comments
-                              </h3>
-                              
-                              <div className="space-y-4">
-                                <div>
-                                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                    Importance of Manuscript for Scientific Community *
-                                    <span className="text-xs text-gray-500 ml-2">(Minimum 3-4 sentences required)</span>
-                                  </label>
-                                  <textarea value={reviewSubmission.importanceOfManuscript} onChange={(e) => setReviewSubmission({...reviewSubmission, importanceOfManuscript: e.target.value})} className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg h-28 resize-none bg-white dark:bg-gray-800" placeholder="Please write a few sentences regarding the importance of this manuscript for the scientific community..." data-testid="textarea-importance" />
-                                </div>
-
-                                <div>
-                                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                    Is the title of the article suitable?
-                                    <span className="text-xs text-gray-500 ml-2">(If not, please suggest an alternative title)</span>
-                                  </label>
-                                  <textarea value={reviewSubmission.titleSuitability} onChange={(e) => setReviewSubmission({...reviewSubmission, titleSuitability: e.target.value})} className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg h-20 resize-none bg-white dark:bg-gray-800" placeholder="Comment on title suitability and suggest alternatives if needed..." />
-                                </div>
-
-                                <div>
-                                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                    Is the abstract comprehensive?
-                                    <span className="text-xs text-gray-500 ml-2">(Suggest additions or deletions if needed)</span>
-                                  </label>
-                                  <textarea value={reviewSubmission.abstractComprehensive} onChange={(e) => setReviewSubmission({...reviewSubmission, abstractComprehensive: e.target.value})} className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg h-20 resize-none bg-white dark:bg-gray-800" placeholder="Is the abstract comprehensive? Do you suggest the addition or deletion of some points?" />
-                                </div>
-
-                                <div>
-                                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                    Is the manuscript scientifically correct?
-                                  </label>
-                                  <textarea value={reviewSubmission.scientificCorrectness} onChange={(e) => setReviewSubmission({...reviewSubmission, scientificCorrectness: e.target.value})} className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg h-20 resize-none bg-white dark:bg-gray-800" placeholder="Comment on the scientific correctness of the manuscript..." />
-                                </div>
-
-                                <div>
-                                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                    Are the references sufficient and recent?
-                                    <span className="text-xs text-gray-500 ml-2">(Suggest additional references if needed)</span>
-                                  </label>
-                                  <textarea value={reviewSubmission.referencesSufficient} onChange={(e) => setReviewSubmission({...reviewSubmission, referencesSufficient: e.target.value})} className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg h-20 resize-none bg-white dark:bg-gray-800" placeholder="Are references sufficient and recent? Mention any additional references..." />
-                                </div>
-
-                                <div>
-                                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                    Is the language/English quality suitable for scholarly communications?
-                                  </label>
-                                  <textarea value={reviewSubmission.languageQuality} onChange={(e) => setReviewSubmission({...reviewSubmission, languageQuality: e.target.value})} className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg h-20 resize-none bg-white dark:bg-gray-800" placeholder="Comment on language quality and readability..." />
-                                </div>
-
-                                <div>
-                                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                    General/Optional Comments *
-                                  </label>
-                                  <textarea value={reviewSubmission.generalComments} onChange={(e) => setReviewSubmission({...reviewSubmission, generalComments: e.target.value})} className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg h-28 resize-none bg-white dark:bg-gray-800" placeholder="Provide detailed feedback and any additional comments..." data-testid="textarea-general-comments" />
-                                </div>
-                              </div>
-                            </div>
-
-                            <div className="border-t pt-4">
-                              <h3 className="text-lg font-semibold text-blue-700 dark:text-blue-300 mb-4 flex items-center gap-2">
-                                <AlertCircle className="w-5 h-5" />
-                                PART 2: Ethics & Integrity
-                              </h3>
-                              
-                              <div className="grid md:grid-cols-3 gap-4">
-                                <div>
-                                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Are there ethical issues?</label>
-                                  <select value={reviewSubmission.ethicalIssues} onChange={(e) => setReviewSubmission({...reviewSubmission, ethicalIssues: e.target.value})} className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800">
-                                    <option value="">Select</option>
-                                    <option value="Yes">Yes</option>
-                                    <option value="No">No</option>
-                                  </select>
-                                </div>
-                                <div>
-                                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Competing interest issues?</label>
-                                  <select value={reviewSubmission.competingInterests} onChange={(e) => setReviewSubmission({...reviewSubmission, competingInterests: e.target.value})} className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800">
-                                    <option value="">Select</option>
-                                    <option value="Yes">Yes</option>
-                                    <option value="No">No</option>
-                                  </select>
-                                </div>
-                                <div>
-                                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Plagiarism suspected?</label>
-                                  <select value={reviewSubmission.plagiarismSuspected} onChange={(e) => setReviewSubmission({...reviewSubmission, plagiarismSuspected: e.target.value})} className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800">
-                                    <option value="">Select</option>
-                                    <option value="Yes">Yes</option>
-                                    <option value="No">No</option>
-                                  </select>
-                                </div>
-                              </div>
-
-                              {reviewSubmission.ethicalIssues === 'Yes' && (
-                                <div className="mt-4">
-                                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Describe the ethical issues in detail</label>
-                                  <textarea value={reviewSubmission.ethicalIssuesDetails} onChange={(e) => setReviewSubmission({...reviewSubmission, ethicalIssuesDetails: e.target.value})} className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg h-20 resize-none bg-white dark:bg-gray-800" placeholder="Please describe the ethical issues..." />
-                                </div>
-                              )}
-
-                              {reviewSubmission.plagiarismSuspected === 'Yes' && (
-                                <div className="mt-4">
-                                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Provide proofs or web links for suspected plagiarism</label>
-                                  <textarea value={reviewSubmission.plagiarismDetails} onChange={(e) => setReviewSubmission({...reviewSubmission, plagiarismDetails: e.target.value})} className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg h-20 resize-none bg-white dark:bg-gray-800" placeholder="Provide related proofs or web links..." />
-                                </div>
-                              )}
-                            </div>
-
-                            <div className="border-t pt-4">
-                              <h3 className="text-lg font-semibold text-blue-700 dark:text-blue-300 mb-4 flex items-center gap-2">
-                                <CheckCircle className="w-5 h-5" />
-                                PART 3: Declaration of Competing Interest
-                              </h3>
-                              
-                              <div className="flex items-start gap-3 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
-                                <input type="checkbox" checked={reviewSubmission.competingInterestDeclaration} onChange={(e) => setReviewSubmission({...reviewSubmission, competingInterestDeclaration: e.target.checked})} className="mt-1 w-5 h-5" data-testid="checkbox-declaration" />
-                                <label className="text-sm text-gray-700 dark:text-gray-300">
-                                  <span className="font-semibold">I declare that I have no competing interest as a reviewer.</span>
-                                  <span className="block text-xs text-gray-500 mt-1">This declaration is mandatory to submit your review.</span>
-                                </label>
-                              </div>
-                            </div>
-
-                            <div className="border-t pt-4">
-                              <h3 className="text-lg font-semibold text-blue-700 dark:text-blue-300 mb-4 flex items-center gap-2">
-                                <Award className="w-5 h-5" />
-                                PART 4: Objective Evaluation
-                              </h3>
-                              
-                              <div className="grid md:grid-cols-2 gap-6">
-                                <div>
-                                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Overall Marks (0-10) *</label>
-                                  <input type="range" min="0" max="10" value={reviewSubmission.overallMarks} onChange={(e) => setReviewSubmission({...reviewSubmission, overallMarks: parseInt(e.target.value)})} className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700" />
-                                  <div className="flex justify-between text-xs text-gray-500 mt-2">
-                                    <span>0 (Reject)</span>
-                                    <span className="text-2xl font-bold text-blue-600 dark:text-blue-400">{reviewSubmission.overallMarks}</span>
-                                    <span>10 (Accept)</span>
-                                  </div>
-                                </div>
-
-                                <div>
-                                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Recommendation *</label>
-                                  <select value={reviewSubmission.recommendation} onChange={(e) => setReviewSubmission({...reviewSubmission, recommendation: e.target.value})} className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800" data-testid="select-recommendation">
-                                    <option value="">-- Select Recommendation --</option>
-                                    <option value="Accept As It Is">Accept As It Is (Score: 9-10)</option>
-                                    <option value="Minor Revision">Minor Revision (Score: 8-9)</option>
-                                    <option value="Major Revision">Major Revision (Score: 7-8)</option>
-                                    <option value="Serious Major Revision">Serious Major Revision (Score: 5-7)</option>
-                                    <option value="Rejected (Repairable)">Rejected with Repairable Deficiencies (Score: 3-5)</option>
-                                    <option value="Strongly Rejected">Strongly Rejected (Irreparable Deficiencies) (Score: 0-3)</option>
-                                  </select>
-                                </div>
-                              </div>
-
-                              <div className="mt-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg p-3">
-                                <h4 className="font-semibold text-blue-800 dark:text-blue-200 text-sm mb-2">Scoring Guidelines:</h4>
-                                <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-xs text-blue-700 dark:text-blue-300">
-                                  <div>Accept As It Is: 9-10</div>
-                                  <div>Minor Revision: 8-9</div>
-                                  <div>Major Revision: 7-8</div>
-                                  <div>Serious Major Revision: 5-7</div>
-                                  <div>Rejected (Repairable): 3-5</div>
-                                  <div>Strongly Rejected: 0-3</div>
-                                </div>
-                              </div>
-                            </div>
-
-                            <Button type="submit" disabled={isSubmittingReview} className="w-full bg-blue-600 hover:bg-blue-700 py-3 text-lg" data-testid="button-submit-review">
-                              {isSubmittingReview ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <Upload className="w-5 h-5 mr-2" />}
-                              Submit Peer Review
-                            </Button>
-                          </>
-                        )}
-                      </form>
-                    )}
-                  </CardContent>
-                </Card>
-              )}
-
-              {currentMenu === 'deadlines' && (
-                <Card className="shadow-lg border-0">
-                  <CardHeader className="bg-gradient-to-r from-blue-600 to-blue-700 text-white py-4">
-                    <CardTitle className="flex items-center gap-2 text-lg">
-                      <Calendar className="w-5 h-5" />
-                      Upcoming Deadlines
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-4 md:p-6">
-                    {upcomingDeadlines.length === 0 && overdueWorks.length === 0 ? (
-                      <div className="text-center py-8">
-                        <CheckCircle className="w-12 h-12 mx-auto text-green-500 mb-3" />
-                        <p className="text-gray-600 dark:text-gray-300 font-medium">No pending work</p>
-                        <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">All reviews completed or no assignments yet</p>
-                      </div>
-                    ) : (
-                      <div className="space-y-4">
-                        {overdueWorks.length > 0 && (
-                          <div className="mb-4">
-                            <h4 className="font-semibold text-red-700 dark:text-red-400 mb-2 flex items-center gap-2">
-                              <AlertCircle className="w-4 h-4" />
-                              Overdue ({overdueWorks.length})
-                            </h4>
-                            <div className="space-y-2">
-                              {overdueWorks.map((work, idx) => (
-                                <div key={idx} className="flex items-center justify-between p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-lg">
-                                  <div>
-                                    <p className="font-semibold text-gray-900 dark:text-gray-100">{work.manuscriptId}</p>
-                                    <p className="text-sm text-gray-600 dark:text-gray-400 truncate max-w-xs">{work.title || 'Untitled'}</p>
-                                  </div>
-                                  <div className="text-right">
-                                    <p className="text-sm font-bold text-red-600">Overdue</p>
-                                    <p className="text-xs text-gray-500">{work.dueDate ? new Date(work.dueDate).toLocaleDateString('en-IN') : 'N/A'}</p>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                        {upcomingDeadlines.length > 0 && (
-                          <div>
-                            <h4 className="font-semibold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
-                              <Clock className="w-4 h-4" />
-                              Upcoming ({upcomingDeadlines.length})
-                            </h4>
-                            <div className="space-y-2">
-                              {upcomingDeadlines.map((work, idx) => {
-                                const daysLeft = getDaysRemaining(work.dueDate || '');
-                                return (
-                                  <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
-                                    <div>
-                                      <p className="font-semibold text-gray-900 dark:text-gray-100">{work.manuscriptId}</p>
-                                      <p className="text-sm text-gray-600 dark:text-gray-400 truncate max-w-xs">{work.title || 'Untitled'}</p>
-                                    </div>
-                                    <div className="text-right">
-                                      <p className={`text-sm font-bold ${daysLeft <= 3 ? 'text-amber-600' : 'text-green-600'}`}>
-                                        {daysLeft} day{daysLeft !== 1 ? 's' : ''} left
-                                      </p>
-                                      <p className="text-xs text-gray-500">{work.dueDate ? new Date(work.dueDate).toLocaleDateString('en-IN') : 'N/A'}</p>
-                                    </div>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              )}
-
-              {currentMenu === 'messages' && (
-                <Card className="shadow-lg border-0">
-                  <CardHeader className="bg-gradient-to-r from-blue-600 to-blue-700 text-white py-4">
-                    <CardTitle className="flex items-center gap-2 text-lg">
-                      <MessageCircle className="w-5 h-5" />
-                      Messages
-                      {unreadMessageCount > 0 && (
-                        <Badge className="bg-red-500 text-white ml-2">{unreadMessageCount} unread</Badge>
-                      )}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-4 md:p-6">
-                    <div className="grid md:grid-cols-2 gap-4">
-                      <div className="border rounded-lg overflow-hidden">
-                        <div className="bg-gray-100 dark:bg-gray-800 px-3 py-2 border-b font-semibold text-sm">
-                          Conversations ({threads.length})
-                        </div>
-                        {threads.length === 0 ? (
-                          <div className="p-4 text-center text-gray-500 dark:text-gray-400 text-sm">
-                            <Mail className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                            <p>No messages yet</p>
-                            <p className="text-xs mt-1 text-gray-400 dark:text-gray-500">Start a conversation about your assignments</p>
-                          </div>
-                        ) : (
-                          <div className="max-h-64 overflow-y-auto">
-                            {threads.map((thread, idx) => {
-                              const latestMsg = thread.messages?.[thread.messages.length - 1];
-                              const hasUnread = latestMsg?.type === 'admin' && !latestMsg?.isRead;
-                              return (
-                                <button
-                                  key={idx}
-                                  onClick={() => {
-                                    setSelectedThread(thread);
-                                    if (hasUnread) markMessageAsRead(thread.manuscriptId);
-                                  }}
-                                  className={`w-full p-3 text-left border-b hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors ${
-                                    selectedThread?.manuscriptId === thread.manuscriptId ? 'bg-blue-50 dark:bg-blue-900/20' : ''
-                                  }`}
-                                  data-testid={`button-thread-${idx}`}
-                                >
-                                  <div className="flex items-center justify-between">
-                                    <div>
-                                      <p className="font-medium text-sm flex items-center gap-1">
-                                        {hasUnread && <Bell className="w-3 h-3 text-red-500" />}
-                                        MS: {thread.manuscriptId}
-                                      </p>
-                                      <p className="text-xs text-gray-500">{thread.messages?.length || 0} messages</p>
-                                    </div>
-                                    {hasUnread && <span className="w-2 h-2 bg-red-500 rounded-full"></span>}
-                                  </div>
-                                </button>
-                              );
-                            })}
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="border rounded-lg overflow-hidden">
-                        <div className="bg-gray-100 dark:bg-gray-800 px-3 py-2 border-b font-semibold text-sm">
-                          {selectedThread ? `Conversation: ${selectedThread.manuscriptId}` : 'Select a conversation'}
-                        </div>
-                        {selectedThread ? (
-                          <div>
-                            <div className="h-48 overflow-y-auto p-3 space-y-2">
-                              {selectedThread.messages?.map((msg, idx) => (
-                                <div key={idx} className={`flex ${msg.type === 'reviewer' ? 'justify-end' : 'justify-start'}`}>
-                                  <div className={`max-w-[80%] rounded-lg px-3 py-2 text-sm ${
-                                    msg.type === 'reviewer'
-                                      ? 'bg-blue-600 text-white'
-                                      : 'bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100'
-                                  }`}>
-                                    <p>{msg.message}</p>
-                                    <p className="text-xs opacity-70 mt-1">{msg.submittedAt}</p>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                            <div className="p-3 border-t flex gap-2">
-                              <Input
-                                value={newMessage}
-                                onChange={(e) => setNewMessage(e.target.value)}
-                                placeholder="Type a message..."
-                                className="flex-1"
-                                data-testid="input-message"
-                              />
-                              <Button onClick={handleSendMessage} disabled={sendingMessage || !newMessage.trim()} size="sm" data-testid="button-send-message">
-                                {sendingMessage ? <Loader2 className="w-4 h-4 animate-spin" /> : <SendIcon className="w-4 h-4" />}
-                              </Button>
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="h-64 flex flex-col items-center justify-center text-gray-500">
-                            <MessageCircle className="w-8 h-8 mb-2 opacity-50" />
-                            <p className="text-sm">Select a conversation to view</p>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="mt-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                      <h4 className="font-semibold text-sm mb-2">Start New Conversation</h4>
-                      <div className="flex gap-2">
-                        <select value={selectedManuscript} onChange={(e) => setSelectedManuscript(e.target.value)} className="flex-1 px-3 py-2 border rounded-lg text-sm bg-white dark:bg-gray-700">
-                          <option value="">Select Manuscript</option>
-                          {assignedWorks.map((work, idx) => (
-                            <option key={idx} value={work.manuscriptId}>{work.manuscriptId}</option>
-                          ))}
-                        </select>
-                        <Input value={newMessage} onChange={(e) => setNewMessage(e.target.value)} placeholder="Your message..." className="flex-1" />
-                        <Button onClick={handleSendMessage} disabled={sendingMessage || !selectedManuscript || !newMessage.trim()} size="sm">
-                          <SendIcon className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
-          </div>
-        </div>
-      </main>
-
-      <Footer />
     </div>
   );
 }

@@ -13,6 +13,7 @@ import CommerceJournal from "@/pages/CommerceJournal";
 import HumanitiesJournal from "@/pages/HumanitiesJournal";
 import SocialSciencesJournal from "@/pages/SocialSciencesJournal";
 import DynamicJournalPage from "@/pages/DynamicJournalPage";
+import AllJournalsPage from "@/pages/AllJournalsPage";
 import SubmitManuscriptPage from "@/pages/SubmitManuscriptPage";
 import BookPublicationInfo from "@/pages/BookPublicationInfo";
 import CallForBooks from "@/pages/CallForBooks";
@@ -56,6 +57,7 @@ function Router() {
       <Route path="/humanities" component={HumanitiesJournal} />
       <Route path="/social-sciences" component={SocialSciencesJournal} />
       <Route path="/humanities-social-sciences" component={HumanitiesJournal} />
+      <Route path="/journals" component={AllJournalsPage} />
       <Route path="/journals/humanities" component={HumanitiesJournal} />
       <Route path="/journals/commerce" component={CommerceJournal} />
       <Route path="/journal/:slug" component={DynamicJournalPage} />

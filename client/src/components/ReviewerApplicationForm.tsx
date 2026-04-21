@@ -379,7 +379,8 @@ export default function ReviewerApplicationForm({ journalTitle, onCancel }: Revi
           nationality: formData.nationality,
           message_to_editor: formData.messageToEditor,
           profile_pdf_link: s3Url,
-          status: 'pending'
+          status: 'pending',
+          submitted_at: new Date().toISOString()
         }])
         .select();
 
@@ -397,6 +398,33 @@ export default function ReviewerApplicationForm({ journalTitle, onCancel }: Revi
         title: "Application submitted successfully!",
         description: `Your ID is: ${uniqueId}. Please save this for tracking.`,
       });
+
+      // ── Trigger Confirmation Email ──────────────────────────────────────────
+      const MAIL_SERVER_URL = "https://scholar-hub-server-seven.vercel.app";
+      const MAIL_API_KEY = "scholar_india_mail_secret_2026";
+
+      try {
+        const mailRes = await fetch(`${MAIL_SERVER_URL}/send/reviewer-applied`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-api-key': MAIL_API_KEY },
+          body: JSON.stringify({
+            name: formData.name,
+            email: formData.email,
+            reviewerId: uniqueId,
+            role: formData.role,
+            journal: formData.journal
+          })
+        });
+
+        if (!mailRes.ok) {
+           const errorData = await mailRes.json();
+           console.error("Mail server returned error:", errorData);
+        } else {
+           console.log("Reviewer acknowledgement mail sent.");
+        }
+      } catch (mailErr) {
+        console.error("Mail acknowledgement fetch failed:", mailErr);
+      }
 
       // Reset form
       setFormData({

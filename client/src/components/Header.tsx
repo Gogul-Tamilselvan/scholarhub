@@ -62,8 +62,8 @@ export default function Header() {
 
             {/* Journals */}
             <div className="relative group">
-              <Button variant="ghost" className="text-sm font-extrabold text-[#213361] hover:text-[#213361] hover:bg-slate-100 px-4 h-9 rounded-full flex items-center gap-1.5 transition-colors duration-300">
-                Journals <ChevronDown className="h-3.5 w-3.5 opacity-60 transition-transform duration-300 group-hover:rotate-180" />
+              <Button asChild variant="ghost" className="text-sm font-extrabold text-[#213361] hover:text-[#213361] hover:bg-slate-100 px-4 h-9 rounded-full flex items-center gap-1.5 transition-colors duration-300">
+                <Link href="/journals" className="flex items-center gap-1.5 cursor-pointer">Journals <ChevronDown className="h-3.5 w-3.5 opacity-60 transition-transform duration-300 group-hover:rotate-180" /></Link>
               </Button>
               <div className="absolute top-full left-0 hidden group-hover:block pt-3 z-[60]">
                 <div className="bg-white/95 backdrop-blur-xl border border-slate-100 p-1.5 rounded-2xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.1)] overflow-hidden min-w-[260px]">
@@ -182,6 +182,9 @@ export default function Header() {
               </Button>
               <div className={`overflow-hidden transition-all duration-300 ${journalsOpen ? "max-h-[800px] opacity-100" : "max-h-0 opacity-0"}`}>
                 <div className="bg-slate-50/50 py-2">
+                  <Link href="/journals" onClick={() => setMobileMenuOpen(false)}>
+                    <div className="px-12 py-2.5 text-sm font-bold text-amber-600 hover:text-amber-700 transition-colors uppercase tracking-widest border-b border-slate-100 mb-1">View All Journals</div>
+                  </Link>
                   {dynamicJournals.map(j => (
                     <Link key={j.slug} href={j.slug === 'sjcm' ? '/commerce-management' : j.slug === 'sjhss' ? '/humanities' : `/journal/${j.slug}`} onClick={() => setMobileMenuOpen(false)}>
                       <div className="px-12 py-2.5 text-sm font-medium text-slate-600 hover:text-[#213361] transition-colors">{j.title.replace(/^Scholar Journal of\s+/i, '')}</div>

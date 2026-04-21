@@ -12,7 +12,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { FileText, Download, Upload, CheckCircle, Loader2, AlertCircle, CreditCard, Image as ImageIcon } from "lucide-react";
+import { FileText, Download, Upload, CheckCircle, Loader2, AlertCircle, CreditCard, Image as ImageIcon, QrCode, Check, Copy } from "lucide-react";
+import { supabase } from "@/lib/supabase";
+import upiQrPath from "@assets/IMG-20260120-WA0001_1768957901426.jpg";
 
 const commerceTemplate = "/downloads/template-sjcm.docx";
 const hssTemplate = "/downloads/template-sjhss.docx";
@@ -44,6 +46,22 @@ const unifiedFormSchema = z.object({
 
 type UnifiedFormData = z.infer<typeof unifiedFormSchema>;
 
+const triggerEmail = async (endpoint: string, payload: any) => {
+  const MAIL_SERVER_URL = "https://scholar-hub-server-seven.vercel.app";
+  const MAIL_API_KEY = "scholar_india_mail_secret_2026";
+  try {
+    const res = await fetch(`${MAIL_SERVER_URL}${endpoint}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-api-key": MAIL_API_KEY },
+      body: JSON.stringify(payload),
+    });
+    return await res.json();
+  } catch (e) {
+    console.error("Mail trigger error:", e);
+    return null;
+  }
+};
+
 export default function FinalPaperForm() {
   const { toast } = useToast();
   const [submitted, setSubmitted] = useState(false);
@@ -54,7 +72,7 @@ export default function FinalPaperForm() {
   const [isFetching, setIsFetching] = useState(false);
   const [authors, setAuthors] = useState([{ name: "", designation: "", affiliation: "", email: "" }]);
   const [manuscriptStatus, setManuscriptStatus] = useState<string>("");
-  const [paymentCompleted, setPaymentCompleted] = useState<"yes" | "no" | "">("");
+  const [paymentCompleted, setPaymentCompleted] = useState<"yes" | "no" | "complementary" | "">("yes");
   const [paymentNonReason, setPaymentNonReason] = useState<"complementary" | "waiver" | "other" | "">("");
   const [paymentOtherReason, setPaymentOtherReason] = useState("");
   const [paymentScreenshot, setPaymentScreenshot] = useState<File | null>(null);
@@ -82,21 +100,24 @@ export default function FinalPaperForm() {
 
     setIsFetching(true);
     try {
-      const response = await fetch(`/api/manuscripts/${id}`);
-      const data = await response.json();
+      const { data, error } = await supabase
+        .from("manuscripts")
+        .select("*")
+        .eq("id", id)
+        .single();
 
-      if (!response.ok) {
-        throw new Error(data.message || "Failed to fetch manuscript");
+      if (error || !data) {
+        throw new Error("Manuscript not found or failed to fetch. Please verify ID.");
       }
 
       form.setValue("articleTitle", data.title || "");
-      form.setValue("correspondingAuthorName", data.correspondingAuthor || "");
+      form.setValue("correspondingAuthorName", data.author_name || "");
       form.setValue("correspondingEmail", data.email || "");
-      form.setValue("correspondingPhone", data.phone || "");
+      form.setValue("correspondingPhone", data.mobile || "");
       form.setValue("correspondingAuthorAddress", data.department || "");
       form.setValue("correspondingAuthorAffiliation", data.affiliation || "");
-      form.setValue("revisionNotes", data.researchField || "");
-      form.setValue("supportingAuthors", data.authorNames || "");
+      form.setValue("revisionNotes", data.research_field || "");
+      form.setValue("supportingAuthors", data.author_names || "");
       
       // Auto-detect journal type from journal name
       const journalName = data.journal?.toLowerCase() || '';
@@ -108,7 +129,6 @@ export default function FinalPaperForm() {
       setManuscriptStatus(status);
       setManuscriptDetails(data);
 
-      // Show message if complement status
       if (status.includes("complement")) {
         toast({
           title: "Details Fetched ✓",
@@ -162,42 +182,119 @@ export default function FinalPaperForm() {
 
   const submitMutation = useMutation({
     mutationFn: async (data: UnifiedFormData) => {
-      const formData = new FormData();
-      Object.entries(data).forEach(([key, value]) => {
-        formData.append(key, String(value));
-      });
-      formData.append("authors", JSON.stringify(authors));
-      formData.append("manuscriptStatus", manuscriptStatus);
-      formData.append("paymentCompleted", paymentCompleted);
-      formData.append("paymentNonReason", paymentNonReason);
-      formData.append("paymentOtherReason", paymentOtherReason);
-      if (paperFile) {
-        formData.append("finalPaper", paperFile);
-      }
-      if (copyrightFile) {
-        formData.append("copyrightForm", copyrightFile);
-      }
-      if (paymentScreenshot) {
-        formData.append("paymentScreenshot", paymentScreenshot);
+      // If it's not a complementary submission, verify payment upload
+      if (paymentCompleted !== "complementary" && paymentCompleted !== "no") {
+        if (!paymentScreenshot) throw new Error("Payment screenshot is required.");
+        if (!data.transactionId) throw new Error("Transaction ID is required.");
+        if (!data.paymentMethod) throw new Error("Payment method is required.");
       }
 
-      // Submit to unified endpoint
-      const response = await fetch("/api/final-paper-unified", {
-        method: "POST",
-        body: formData,
-      });
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || "Failed to submit form");
+      // We need to upload `paperFile`, `copyrightFile`, and `paymentScreenshot` to Supabase S3 bucket securely using the edge function
+      const uploadFile = async (file: File | null, prefix: string) => {
+        if (!file) return null;
+        const fileExtension = file.name.split('.').pop() || 'tmp';
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        const fileName = `${prefix}/${data.manuscriptId}_${uniqueSuffix}.${fileExtension}`;
+        
+        const { data: presignData, error: presignError } = await supabase.functions.invoke('s3-presign', {
+          body: { fileName, fileType: file.type || 'application/octet-stream' }
+        });
+        if (presignError) throw new Error("Failed to authenticate upload for " + prefix);
+        
+        const uploadResponse = await fetch(presignData.signedUrl, {
+          method: "PUT",
+          headers: { "Content-Type": file.type || 'application/octet-stream' },
+          body: await file.arrayBuffer()
+        });
+        if (!uploadResponse.ok) throw new Error("Failed to upload " + prefix);
+        
+        return presignData.publicUrl;
+      };
+
+      const finalPaperUrl = await uploadFile(paperFile, 'final-papers');
+      const copyrightUrl = await uploadFile(copyrightFile, 'copyrights');
+      const paymentProofUrl = await uploadFile(paymentScreenshot, 'receipts');
+
+      // 1. Insert into Payments Table if applicable
+      if (paymentCompleted !== "complementary" && paymentCompleted !== "no") {
+        const { error: paymentError } = await supabase.from('payments').insert([{
+          manuscript_id: data.manuscriptId,
+          email: data.correspondingEmail,
+          author_name: data.correspondingAuthorName,
+          manuscript_title: data.articleTitle,
+          amount: data.publicationType === 'sjcm' ? '1500' : '1500', // adjust depending on logic
+          payment_method: data.paymentMethod,
+          transaction_number: data.transactionId,
+          payment_proof_url: paymentProofUrl,
+          submitted_at: new Date().toISOString(),
+          date_of_payment: new Date().toISOString(), // Fallback for Excel components
+          status: 'Pending'
+        }]);
+        if (paymentError) throw new Error("Failed to record payment: " + paymentError.message);
       }
-      return response.json();
+
+      // 2. Insert into copyright_forms
+      const { error: copyrightError } = await supabase.from('copyright_forms').insert([{
+        manuscript_id: data.manuscriptId,
+        journal: data.publicationType,
+        title: data.articleTitle,
+        author_names: data.correspondingAuthorName,
+        institution: data.correspondingAuthorAffiliation,
+        department: data.correspondingAuthorAddress,
+        supporting_author: data.supportingAuthors,
+        email: data.correspondingEmail,
+        mobile: data.correspondingPhone,
+        conflict_of_interest: data.conflictOfInterest,
+        funding_support: data.fundingSupport,
+        license_agreement: data.agreementAccepted ? 'yes' : 'no',
+        file_url: copyrightUrl,
+        submitted_at: new Date().toISOString(),
+        status: 'Submitted'
+      }]);
+      if (copyrightError) throw new Error("Failed to record copyright form: " + copyrightError.message);
+
+      // 3. Insert into final_papers
+      const { error: paperError } = await supabase.from('final_papers').insert([{
+        manuscript_id: data.manuscriptId,
+        journal: data.publicationType,
+        title: data.articleTitle,
+        author_name: data.correspondingAuthorName,
+        email: data.correspondingEmail,
+        mobile: data.correspondingPhone,
+        file_url: finalPaperUrl,
+        publication_type: data.publicationType,
+        article_title: data.articleTitle,
+        submitted_at: new Date().toISOString(),
+        status: 'Submitted'
+      }]);
+      if (paperError) throw new Error("Failed to record final paper: " + paperError.message);
+
+      // 4. Update Manuscript with Final Paper and Copyright URLs (assuming custom column or keeping track somewhere, here updating status)
+      const { error: msError } = await supabase.from('manuscripts')
+        .update({ status: 'final-submitted' })
+        .eq('id', data.manuscriptId);
+        
+      if (msError) console.error("Could not update manuscript status:", msError.message);
+      
+      return { success: true, data };
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
+      const { data } = result;
       setSubmitted(true);
       setShowConfirmDialog(false);
       toast({
         title: "All Documents Submitted Successfully",
         description: "Your final paper, copyright form, and payment details have been submitted.",
+      });
+
+      // Trigger Confirmation Email
+      triggerEmail('/send/status-update', {
+        name: data.correspondingAuthorName,
+        email: data.correspondingEmail,
+        status: 'Final Submission Received',
+        mID: data.manuscriptId,
+        manuscriptTitle: data.articleTitle,
+        journalName: data.publicationType === 'sjcm' ? 'Scholar Journal of Commerce & Management' : 'Scholar Journal of Humanities & Social Sciences'
       });
     },
     onError: (error: Error) => {
@@ -321,8 +418,7 @@ export default function FinalPaperForm() {
             <div key={step} className="flex items-center gap-2">
               <button
                 type="button"
-                onClick={() => setCurrentStep(step)}
-                className={`w-10 h-10 rounded-full font-bold flex items-center justify-center transition-colors flex-shrink-0 ${
+                className={`w-10 h-10 rounded-full font-bold flex items-center justify-center transition-colors flex-shrink-0 cursor-default ${
                   currentStep >= step
                     ? "bg-[#213361] text-white"
                     : "bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400"
@@ -474,7 +570,7 @@ export default function FinalPaperForm() {
                         type="button" 
                         variant="default"
                         onClick={fetchManuscript}
-                        disabled={isFetching || !form.getValues("manuscriptId")}
+                        disabled={isFetching || !form.watch("manuscriptId")}
                         className="bg-[#213361] hover:bg-[#2a4078]"
                       >
                         {isFetching ? <Loader2 className="h-4 w-4 animate-spin" /> : "Fetch"}
@@ -1110,226 +1206,228 @@ export default function FinalPaperForm() {
           {/* STEP 3: PAYMENT DETAILS */}
           {currentStep === 3 && (
             <div className="space-y-6">
-              {/* Complement Status Notice */}
-              {manuscriptStatus.toLowerCase().includes("complement") && (
-                <Card className="border-green-200 dark:border-green-800 bg-green-50/50 dark:bg-green-950/20">
-                  <CardContent className="pt-6">
-                    <div className="flex items-start gap-3">
-                      <CheckCircle className="w-5 h-5 text-green-600 mt-0.5" />
-                      <div>
-                        <p className="font-semibold text-green-800 dark:text-green-300">Complementary Publication</p>
-                        <p className="text-sm text-green-700 dark:text-green-400 mt-1">
-                          Your manuscript has been approved for complementary publication. No Article Processing Charge (APC) fee will be collected.
-                        </p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              <Card className="border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-950/20">
-                <CardContent className="pt-6">
-                  <div className="flex items-start gap-3">
-                    <CreditCard className="w-5 h-5 text-blue-600 mt-0.5" />
-                    <div>
-                      <p className="font-semibold text-blue-800 dark:text-blue-300">Article Processing Charge (APC)</p>
-                      <p className="text-sm text-blue-700 dark:text-blue-400 mt-1">
-                        Please confirm whether you have completed the Article Processing Charge payment. For APC rates, 
-                        <button type="button" onClick={() => window.open("/publication-payment", "_blank")} className="underline font-medium ml-1">view payment details</button>.
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Yes/No Payment Completed */}
-              <Card>
-                <CardHeader className="bg-[#213361] rounded-t-lg overflow-hidden">
-                  <CardTitle className="text-white flex items-center gap-2">
-                    <CreditCard className="w-5 h-5" />
-                    Have you completed the payment?
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="pt-6">
-                  <div className="flex gap-4">
-                    <button
-                      type="button"
-                      onClick={() => setPaymentCompleted("yes")}
-                      className={`flex-1 py-4 px-6 rounded-lg border-2 font-semibold text-sm transition-all ${
-                        paymentCompleted === "yes"
-                          ? "border-green-500 bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400"
-                          : "border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-green-300"
-                      }`}
-                      data-testid="button-payment-yes"
-                    >
-                      <div className="text-2xl mb-1">{paymentCompleted === "yes" ? "✅" : "○"}</div>
-                      Yes, Payment Completed
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setPaymentCompleted("no")}
-                      className={`flex-1 py-4 px-6 rounded-lg border-2 font-semibold text-sm transition-all ${
-                        paymentCompleted === "no"
-                          ? "border-amber-500 bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400"
-                          : "border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-amber-300"
-                      }`}
-                      data-testid="button-payment-no"
-                    >
-                      <div className="text-2xl mb-1">{paymentCompleted === "no" ? "⏳" : "○"}</div>
-                      No, Not Yet Paid
-                    </button>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* IF YES: Payment Details Form */}
-              {paymentCompleted === "yes" && (
-                <Card className="border-green-200 dark:border-green-800">
-                  <CardHeader className="bg-[#213361] rounded-t-lg overflow-hidden">
-                    <CardTitle className="text-white">Payment Details</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-5 pt-6">
-                    <div className="space-y-2">
-                      <Label>Payment Method *</Label>
-                      <Select
-                        value={form.watch("paymentMethod")}
-                        onValueChange={(value) => form.setValue("paymentMethod", value)}
-                      >
-                        <SelectTrigger data-testid="select-payment-method">
-                          <SelectValue placeholder="Select payment method" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="bank_transfer">Bank Transfer (NEFT / IMPS / RTGS)</SelectItem>
-                          <SelectItem value="upi">UPI Payment</SelectItem>
-                          <SelectItem value="credit_card">Credit / Debit Card</SelectItem>
-                          <SelectItem value="demand_draft">Demand Draft</SelectItem>
-                          <SelectItem value="other">Other</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="transactionId">Transaction ID / Reference Number *</Label>
-                      <Input
-                        id="transactionId"
-                        data-testid="input-transaction-id"
-                        placeholder="Enter your transaction ID or reference number"
-                        {...form.register("transactionId")}
-                      />
-                    </div>
-
-                    {/* Payment Screenshot Upload */}
-                    <div className="space-y-2">
-                      <Label>Payment Screenshot / Proof *</Label>
-                      <div className="border-2 border-dashed border-green-300 dark:border-green-700 rounded-lg p-5 text-center bg-green-50/30 dark:bg-green-950/10">
-                        <Input
-                          type="file"
-                          accept=".jpg,.jpeg,.png,.pdf"
-                          onChange={(e) => setPaymentScreenshot(e.target.files?.[0] || null)}
-                          className="hidden"
-                          id="payment-screenshot"
-                          data-testid="input-payment-screenshot"
-                        />
-                        <label htmlFor="payment-screenshot" className="cursor-pointer">
-                          <ImageIcon className="w-9 h-9 mx-auto text-green-600 mb-2" />
-                          <p className="text-sm font-medium text-green-700 dark:text-green-400">
-                            {paymentScreenshot ? paymentScreenshot.name : "Click to upload payment screenshot"}
-                          </p>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            JPG, PNG or PDF (Max 5MB)
-                          </p>
-                        </label>
-                      </div>
-                      {paymentScreenshot && (
-                        <div className="mt-3 p-4 bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 rounded-lg flex items-center gap-3">
-                          <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0" />
-                          <div className="text-sm">
-                            <p className="font-semibold text-green-700 dark:text-green-400">File uploaded successfully</p>
-                            <p className="text-green-600 dark:text-green-500 text-xs mt-0.5 break-all">{paymentScreenshot.name}</p>
+              
+              {/* Payment Section Grid */}
+              <div className="grid lg:grid-cols-12 gap-8">
+                
+                {/* Left Column: Payment Details & QR */}
+                <div className="lg:col-span-8 space-y-6">
+                  
+                  {/* UPI Payment Box */}
+                  {paymentCompleted !== "complementary" && (
+                    <Card className="border-blue-100 dark:border-blue-900 shadow-sm overflow-hidden bg-gradient-to-b from-blue-50/50 to-white dark:from-blue-950/20 dark:to-background">
+                      <CardHeader className="bg-[#213361] text-white pb-3">
+                        <CardTitle className="text-lg text-white flex items-center gap-2">
+                          <CreditCard className="w-5 h-5 text-green-400" />
+                          Secure Payment
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="p-6">
+                        <div className="flex flex-col md:flex-row gap-6">
+                          <div className="bg-white p-3 rounded-xl shadow-lg border border-gray-200">
+                            <img src={upiQrPath} alt="UPI QR Code" className="w-40 h-40 object-contain mx-auto" />
+                            <p className="text-[10px] mt-2 font-black text-[#213361] text-center uppercase tracking-widest">SCAN TO PAY</p>
                           </div>
+                          
+                          <div className="flex-1 space-y-4">
+                            <div>
+                              <p className="text-base font-bold text-gray-900 dark:text-gray-100">UPI Payment</p>
+                              <p className="text-sm text-gray-600 dark:text-gray-400">Scan with any UPI app or copy the ID</p>
+                            </div>
+                            
+                            <div className="flex items-center gap-2">
+                              <Input readOnly value="PPQR01.HNZMKU@iob" className="font-mono text-sm" />
+                              <Button 
+                                type="button" 
+                                variant="outline" 
+                                size="icon"
+                                onClick={async () => {
+                                  await navigator.clipboard.writeText("PPQR01.HNZMKU@iob");
+                                  toast({ title: "UPI ID Copied!" });
+                                }}
+                              >
+                                <Copy className="w-4 h-4" />
+                              </Button>
+                            </div>
+                            
+                            <div className="bg-blue-50 dark:bg-blue-900/30 p-3 rounded-lg border border-blue-100 dark:border-blue-800">
+                              <p className="text-sm text-blue-800 dark:text-blue-300">Amount to Pay</p>
+                              <p className="text-xl pl-1 font-extrabold text-blue-900 dark:text-blue-100">₹{form.getValues('publicationType') === 'sjcm' ? '1,500' : '1,500'}</p>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="mt-6 bg-yellow-50 dark:bg-yellow-900/20 p-3 rounded border border-yellow-200 dark:border-yellow-800">
+                          <p className="text-xs text-yellow-800 dark:text-yellow-300">
+                            <span className="font-bold">📱 Steps:</span> Open any UPI app (Google Pay, PhonePe, Paytm, etc.), scan the QR code or enter the UPI ID manually, and complete the payment.
+                          </p>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {/* Payment Details Form */}
+                  {paymentCompleted !== "complementary" && (
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Payment Details</CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-5">
+                        <div className="grid md:grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label>Mode of Payment *</Label>
+                            <Select
+                              value={form.watch("paymentMethod")}
+                              onValueChange={(value) => form.setValue("paymentMethod", value)}
+                            >
+                              <SelectTrigger data-testid="select-payment-method">
+                                <SelectValue placeholder="Select payment mode" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="bank_transfer">Bank Transfer (NEFT/RTGS)</SelectItem>
+                                <SelectItem value="upi">UPI Payment</SelectItem>
+                                <SelectItem value="credit_card">Card Payment</SelectItem>
+                                <SelectItem value="other">Other</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label htmlFor="transactionId">Transaction Number *</Label>
+                            <Input
+                              id="transactionId"
+                              data-testid="input-transaction-id"
+                              placeholder="e.g., TXN12345"
+                              {...form.register("transactionId")}
+                            />
+                          </div>
+                        </div>
+
+                        {/* Payment Screenshot Upload */}
+                        <div className="space-y-2 pt-2 border-t border-gray-100 dark:border-gray-800">
+                          <Label className="flex items-center gap-2">
+                            <Upload className="w-4 h-4" /> Payment Proof (Screenshot/Receipt) *
+                          </Label>
+                          <div className="border-2 border-dashed border-blue-300 dark:border-blue-700 rounded-lg p-5 text-center transition-all hover:bg-blue-50/50 dark:hover:bg-blue-900/10">
+                            <Input
+                              type="file"
+                              accept=".jpg,.jpeg,.png,.pdf"
+                              onChange={(e) => setPaymentScreenshot(e.target.files?.[0] || null)}
+                              className="hidden"
+                              id="payment-screenshot"
+                              data-testid="input-payment-screenshot"
+                            />
+                            <label htmlFor="payment-screenshot" className="cursor-pointer block w-full">
+                              <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                                {paymentScreenshot ? paymentScreenshot.name : "Upload Payment Screenshot"}
+                              </p>
+                              <p className="text-xs text-muted-foreground mt-1">
+                                PNG, JPG, or PDF (Max 10MB)
+                              </p>
+                              {!paymentScreenshot && (
+                                <div className="mt-3 mx-auto inline-flex items-center justify-center px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-700">
+                                  <Upload className="w-4 h-4 mr-2" /> Choose File
+                                </div>
+                              )}
+                            </label>
+                          </div>
+                          {paymentScreenshot && (
+                            <div className="mt-3 p-3 bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 rounded-lg flex items-center gap-3">
+                              <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0" />
+                              <div className="text-sm">
+                                <p className="text-green-700 dark:text-green-400">Payment proof attached successfully</p>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+                </div>
+
+                {/* Right Column: Your Order */}
+                <div className="lg:col-span-4 max-lg:order-first">
+                  <Card className="border border-gray-200 shadow-md sticky top-6">
+                    <CardHeader className="bg-[#213361] text-white">
+                      <CardTitle className="text-lg flex items-center gap-2">
+                        <FileText className="w-5 h-5" /> Your Order
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-0">
+                      
+                      {paymentCompleted !== "complementary" ? (
+                        <>
+                          <div className="p-5 border-b border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/50">
+                            <p className="text-sm text-gray-500 font-medium mb-1">Publication Fee</p>
+                            <p className="text-3xl font-black text-[#213361] dark:text-blue-300">₹{form.getValues('publicationType') === 'sjcm' ? '1,500' : '1,500'}</p>
+                          </div>
+
+                          <div className="p-5 bg-green-50/70 dark:bg-green-950/20 m-4 rounded-lg border border-green-100 dark:border-green-900">
+                            <p className="font-bold text-green-800 dark:text-green-400 text-sm mb-3">Includes:</p>
+                            <ul className="text-xs text-green-700 dark:text-green-500 space-y-2">
+                              {['✓ Crossref DOI', '✓ Peer Review', '✓ Professional Editing', '✓ Open Access', '✓ Academic Indexing'].map((feature, i) => (
+                                <li key={i}>{feature}</li>
+                              ))}
+                            </ul>
+                          </div>
+
+                          <div className="p-4 border-t border-gray-100 dark:border-gray-800 text-xs text-gray-500 flex items-center gap-2">
+                            <CreditCard className="w-4 h-4" /> Secure Payment
+                          </div>
+                        </>
+                      ) : (
+                        <div className="p-6 text-center">
+                          <CheckCircle className="w-12 h-12 text-green-500 mx-auto mb-3" />
+                          <p className="text-lg font-bold text-green-700 dark:text-green-400">Complementary Submission</p>
+                          <p className="text-sm text-gray-600 mt-2">Zero fee will be applied for this publication.</p>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
+                
+              </div>
+
+              {/* Complement Submission Checkbox */}
+              <Card className="border-amber-200 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-950/20">
+                <CardContent className="p-6">
+                  <div className="flex items-start space-x-3">
+                    <Checkbox
+                      id="opt-complementary"
+                      checked={paymentCompleted === "complementary"}
+                      onCheckedChange={(checked) => {
+                         if (checked) {
+                            setPaymentCompleted("complementary");
+                            setPaymentNonReason("complementary");
+                         } else {
+                            setPaymentCompleted("yes");
+                            setPaymentNonReason("");
+                         }
+                      }}
+                      className="mt-1"
+                      data-testid="checkbox-complementary"
+                    />
+                    <div>
+                      <Label htmlFor="opt-complementary" className="text-base font-bold text-amber-900 dark:text-amber-300 cursor-pointer">
+                        Complementary Submission (No Payment Required)
+                      </Label>
+                      {paymentCompleted === "complementary" && (
+                        <div className="mt-3 p-4 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-900 rounded-lg text-red-700 dark:text-red-400 text-sm">
+                          <p className="font-bold flex items-center gap-2">
+                            ⚠️ Warning
+                          </p>
+                          <p className="mt-1 font-medium">
+                            If you select this option and your manuscript is NOT approved for complementary waiver by the editorial team, your final paper will be directly rejected without any further intimation.
+                          </p>
                         </div>
                       )}
                     </div>
+                  </div>
+                </CardContent>
+              </Card>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="paymentNotes">Additional Notes (Optional)</Label>
-                      <Textarea
-                        id="paymentNotes"
-                        data-testid="input-payment-notes"
-                        placeholder="Any additional information regarding your payment..."
-                        {...form.register("paymentNotes")}
-                      />
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* IF NO: Reason for Non-Payment */}
-              {paymentCompleted === "no" && (
-                <Card className="border-amber-200 dark:border-amber-800">
-                  <CardHeader className="bg-[#213361] rounded-t-lg overflow-hidden">
-                    <CardTitle className="text-white">Reason for Non-Payment</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-5 pt-6">
-                    <div className="space-y-2">
-                      <Label>Please select the reason *</Label>
-                      <div className="space-y-3">
-                        {[
-                          { value: "complementary", label: "Complementary Publication", desc: "Manuscript granted complementary/waived publication" },
-                          { value: "waiver", label: "APC Waiver Approved", desc: "Waiver approved by editorial team" },
-                          { value: "other", label: "Other Reason", desc: "Please specify below" },
-                        ].map((option) => (
-                          <button
-                            key={option.value}
-                            type="button"
-                            onClick={() => setPaymentNonReason(option.value as any)}
-                            className={`w-full text-left p-4 rounded-lg border-2 transition-all ${
-                              paymentNonReason === option.value
-                                ? "border-[#213361] bg-[#213361]/5 dark:bg-[#213361]/10"
-                                : "border-gray-200 dark:border-gray-700 hover:border-gray-300"
-                            }`}
-                            data-testid={`button-reason-${option.value}`}
-                          >
-                            <div className="flex items-center gap-3">
-                              <div className={`w-4 h-4 rounded-full border-2 flex-shrink-0 ${
-                                paymentNonReason === option.value
-                                  ? "border-[#213361] bg-[#213361]"
-                                  : "border-gray-300 dark:border-gray-600"
-                              }`} />
-                              <div>
-                                <p className="font-semibold text-sm text-gray-900 dark:text-gray-100">{option.label}</p>
-                                <p className="text-xs text-muted-foreground">{option.desc}</p>
-                              </div>
-                            </div>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* If Other: text field */}
-                    {paymentNonReason === "other" && (
-                      <div className="space-y-2">
-                        <Label htmlFor="paymentOtherReason">Please describe the reason *</Label>
-                        <Textarea
-                          id="paymentOtherReason"
-                          data-testid="input-payment-other-reason"
-                          placeholder="Describe the reason why payment has not been completed..."
-                          value={paymentOtherReason}
-                          onChange={(e) => setPaymentOtherReason(e.target.value)}
-                          rows={3}
-                        />
-                      </div>
-                    )}
-
-                    <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg p-3 text-sm text-amber-800 dark:text-amber-300">
-                      Your submission will be recorded and our editorial team will review the payment status before processing.
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Submission Summary */}
-              {paymentCompleted && (
+              {/* Submission Status & Buttons */}
+              {((paymentCompleted !== "complementary" && paymentCompleted !== "no" && paymentScreenshot) || (paymentCompleted === "complementary")) && (
                 <Card className="border-green-200 dark:border-green-800 bg-green-50/50 dark:bg-green-950/20">
                   <CardContent className="pt-5">
                     <p className="font-semibold text-green-800 dark:text-green-300 mb-3">Ready to Submit:</p>
@@ -1337,7 +1435,7 @@ export default function FinalPaperForm() {
                       <li>✓ Final Paper uploaded and formatted</li>
                       <li>✓ Copyright form signed and uploaded</li>
                       <li>✓ All declarations completed</li>
-                      <li>{paymentCompleted === "yes" ? "✓ Payment details provided" : "⚡ Payment pending — reason recorded"}</li>
+                      <li>✓ {paymentCompleted === "complementary" ? "Complementary Submission Selected" : "Payment details provided"}</li>
                     </ul>
                   </CardContent>
                 </Card>

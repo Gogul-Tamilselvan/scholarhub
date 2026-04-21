@@ -7,14 +7,24 @@ import {
   LogOut, User, FileText, Upload, Mail, Phone, 
   Building, Globe, Award, Calendar, CheckCircle,
   Clock, AlertCircle, Loader2, Download, Send as SendIcon, Lock,
-  MessageCircle, Bell, LayoutDashboard, Menu, X, CheckCheck, ListTodo, FileCheck2, Inbox, ChevronRight
+  MessageCircle, Bell, LayoutDashboard, Menu, X, CheckCheck, ListTodo, FileCheck2, Inbox, ChevronRight,
+  Shield, Star, Info, Check, BarChart3
 } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useLocation } from "wouter";
 import logoImage from "@assets/Untitled design (1)_1760793768867.png";
-import { supabase } from "@/lib/supabase";
+import { supabase, supabaseAdmin } from "@/lib/supabase";
 
 interface ReviewerProfile {
   reviewerId: string;
@@ -85,6 +95,27 @@ interface MessageThread {
   hasUnread?: boolean;
 }
 
+interface PasswordForm {
+  currentPassword: '';
+  newPassword: '';
+  confirmPassword: '';
+}
+const triggerEmail = async (endpoint: string, payload: any) => {
+  const MAIL_SERVER_URL = "https://scholar-hub-server-seven.vercel.app";
+  const MAIL_API_KEY = "scholar_india_mail_secret_2026";
+  try {
+    const res = await fetch(`${MAIL_SERVER_URL}${endpoint}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-api-key": MAIL_API_KEY },
+      body: JSON.stringify(payload),
+    });
+    return await res.json();
+  } catch (e) {
+    console.error("Mail trigger error:", e);
+    return null;
+  }
+};
+
 export default function ReviewerDashboard() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
@@ -126,21 +157,34 @@ export default function ReviewerDashboard() {
   });
 
   useEffect(() => {
-    const session = localStorage.getItem('reviewerSession');
-    if (!session) {
-      setLocation('/reviewer-login');
-      return;
-    }
+    const checkAuth = async () => {
+      const { data: { session: authSession } } = await supabase.auth.getSession();
+      const localSession = localStorage.getItem('reviewerSession');
 
-    try {
-      const sessionData = JSON.parse(session);
-      const showPopupOnce = !sessionStorage.getItem('popupShownInSession');
-      fetchProfileData(sessionData.email, sessionData.reviewerId, showPopupOnce);
-      loadMessageCount(sessionData.reviewerId);
-    } catch (err) {
-      localStorage.removeItem('reviewerSession');
-      setLocation('/reviewer-login');
-    }
+      if (!authSession) {
+        if (localSession) handleLogout();
+        else setLocation('/reviewer-login');
+        return;
+      }
+
+      if (localSession) {
+        try {
+          const sessionData = JSON.parse(localSession);
+          const showPopupOnce = !sessionStorage.getItem('popupShownInSession');
+          fetchProfileData(sessionData.email, sessionData.reviewerId, showPopupOnce);
+          loadMessageCount(sessionData.reviewerId);
+        } catch (err) {
+          handleLogout();
+        }
+      }
+    };
+
+    checkAuth();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_OUT') handleLogout();
+    });
 
     const pollInterval = setInterval(() => {
       const s = localStorage.getItem('reviewerSession');
@@ -155,9 +199,12 @@ export default function ReviewerDashboard() {
           console.error("Error parsing session in poll:", e);
         }
       }
-    }, 30000);
+    }, 60000); // 1 minute is enough for background sync
 
-    return () => clearInterval(pollInterval);
+    return () => {
+      subscription.unsubscribe();
+      clearInterval(pollInterval);
+    };
   }, []);
 
   const loadMessageCount = async (reviewerId: string) => {
@@ -214,7 +261,9 @@ export default function ReviewerDashboard() {
         .from('admin_messages')
         .select('*')
         .eq('active', true)
-        .eq('target_role', profileData.role || 'Reviewer')
+        .or(`target_role.eq.All,target_role.eq.${profileData.role || 'Reviewer'}`)
+        .order('created_at', { ascending: false })
+        .limit(1)
         .maybeSingle();
 
       const { data: assignmentsData } = await supabase
@@ -250,7 +299,7 @@ export default function ReviewerDashboard() {
         status: a.status || 'Pending',
         dueDate: a.due_date,
         manuscriptLink: a.manuscript_link,
-        reviewSubmitted: !!a.recommendation || !!a.overall_marks,
+        reviewSubmitted: a.status === 'Completed',
         reviewStatus: a.status
       }));
       setAssignedWorks(formatted);
@@ -267,8 +316,10 @@ export default function ReviewerDashboard() {
     }
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
     localStorage.removeItem('reviewerSession');
+    sessionStorage.clear();
     toast({ title: "Logged Out", description: "You have been successfully logged out." });
     setLocation('/reviewer-login');
   };
@@ -280,22 +331,106 @@ export default function ReviewerDashboard() {
     }
     setChangingPassword(true);
     try {
-      const { error } = await supabase.from('reviewers')
+      // Update secure Supabase Auth password
+      const { error: authError } = await supabase.auth.updateUser({
+        password: passwordForm.newPassword
+      });
+
+      if (authError) throw authError;
+
+      // Update the legacy display password if needed, but not necessary for auth
+      const { error: dbError } = await supabase.from('reviewers')
         .update({ new_password: passwordForm.newPassword })
         .eq('id', profile?.reviewerId);
         
-      if (error) {
-        setPasswordErrors([error.message]);
-      } else {
-        toast({ title: 'Success', description: 'Password changed successfully!' });
-        setShowPasswordDialog(false);
-        setPasswordForm({ newPassword: '', confirmPassword: '' });
-        setPasswordErrors([]);
-      }
+      if (dbError) console.error('Error syncing display password:', dbError);
+
+      toast({ title: "Password Updated", description: "Your secure credentials have been updated." });
+      setIsChangePasswordOpen(false);
+      setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
     } catch (error: any) {
       setPasswordErrors(['Failed to change password']);
     } finally {
       setChangingPassword(false);
+    }
+  };
+
+  const handleSubmitReview = async () => {
+    if (!reviewSubmission.selectedManuscriptForReview) return;
+    if (!reviewSubmission.competingInterestDeclaration) {
+      toast({ title: "Required", description: "Please accept the declaration to submit your review.", variant: "destructive" });
+      return;
+    }
+    if (!reviewSubmission.recommendation) {
+      toast({ title: "Required", description: "Please select a recommendation.", variant: "destructive" });
+      return;
+    }
+
+    setIsSubmittingReview(true);
+    try {
+      const { error, data: updatedRows } = await supabaseAdmin
+        .from('assignments')
+        .update({
+          status: 'Completed',
+          recommendation: reviewSubmission.recommendation,
+          overall_marks: String(reviewSubmission.overallMarks || 0),
+          notes: JSON.stringify(reviewSubmission)
+        })
+        .eq('reviewer_id', profile?.reviewerId)
+        .eq('manuscript_id', reviewSubmission.selectedManuscriptForReview)
+        .select('id');
+
+      if (error) throw error;
+      if (!updatedRows || updatedRows.length === 0) {
+        throw new Error(`No matching assignment found. reviewer_id=${profile?.reviewerId}, manuscript_id=${reviewSubmission.selectedManuscriptForReview}`);
+      }
+
+      toast({ 
+        title: "Review Submitted", 
+        description: "Your review has been successfully recorded. Thank you for your contribution." 
+      });
+
+      // Trigger Confirmation Email for Reviewer
+      triggerEmail('/send/reviewer-assignment-update', {
+        email: profile?.email,
+        type: 'COMPLETED',
+        details: {
+          rName: `${profile?.firstName} ${profile?.lastName}`,
+          mID: reviewSubmission.selectedManuscriptForReview,
+          mTitle: assignedWorks.find(w => w.manuscriptId === reviewSubmission.selectedManuscriptForReview)?.title || 'Manuscript'
+        }
+      });
+
+      // Update local state
+      setAssignedWorks(prev => prev.map(w => 
+        w.manuscriptId === reviewSubmission.selectedManuscriptForReview 
+          ? { ...w, reviewSubmitted: true, status: 'Completed' } 
+          : w
+      ));
+
+      setReviewSubmission({
+        selectedManuscriptForReview: '',
+        importanceOfManuscript: '',
+        titleSuitability: '',
+        abstractComprehensive: '',
+        scientificCorrectness: '',
+        referencesSufficient: '',
+        languageQuality: '',
+        generalComments: '',
+        ethicalIssues: '',
+        ethicalIssuesDetails: '',
+        competingInterests: '',
+        plagiarismSuspected: '',
+        plagiarismDetails: '',
+        competingInterestDeclaration: false,
+        overallMarks: 50,
+        recommendation: ''
+      });
+
+    } catch (err: any) {
+      toast({ title: "Submission Failed", description: err.message, variant: "destructive" });
+    } finally {
+      setIsSubmittingReview(false);
     }
   };
 
@@ -401,7 +536,8 @@ export default function ReviewerDashboard() {
   const getInitials = () => `${(profile.firstName || 'U').charAt(0)}${(profile.lastName || 'A').charAt(0)}`;
 
   return (
-    <div className="min-h-screen flex bg-[#f8fafc] font-sans">
+    <>
+      <div className="min-h-screen flex bg-[#f8fafc] font-sans">
       
       {/* Mobile Sidebar Overlay */}
       {mobileMenuOpen && (
@@ -777,72 +913,161 @@ export default function ReviewerDashboard() {
             </div>
           )}
 
-          {/* TAB: MY PROFILE */}
+          {/* TAB: MY PROFILE (Redesigned) */}
           {currentMenu === 'profile' && (
-            <div className="max-w-4xl mx-auto">
-              <Card className="border-0 shadow-lg">
-                <CardHeader className="bg-white border-b border-slate-200 py-6">
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <CardTitle className="text-xl font-bold text-slate-800">My Profile</CardTitle>
-                      <CardDescription>View your registered portal profile details</CardDescription>
+            <div className="max-w-7xl mx-auto space-y-6">
+              <div className="mb-6">
+                <h1 className="text-2xl font-bold text-slate-800">My Profile</h1>
+                <p className="text-slate-500 text-sm">View your profile details and update your password</p>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                {/* Profile Details Card */}
+                <Card className="lg:col-span-6 border-0 shadow-sm overflow-hidden">
+                  <CardHeader className="bg-white border-b border-slate-50 flex flex-row items-center gap-2 py-4">
+                    <User className="w-4 h-4 text-blue-600" />
+                    <CardTitle className="text-sm font-bold text-slate-800">Profile Details</CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-6">
+                    <div className="flex items-center gap-4 mb-8">
+                       <div className="w-16 h-16 rounded-full bg-[#1e40af] text-white flex items-center justify-center font-bold text-xl shadow-lg ring-4 ring-blue-50">
+                          {getInitials()}
+                       </div>
+                       <div>
+                          <h3 className="text-lg font-bold text-slate-800 leading-none mb-1.5">{profile.firstName} {profile.lastName}</h3>
+                          <Badge className="bg-blue-100 text-blue-700 border-none font-bold text-[10px] uppercase tracking-wider px-2 py-0.5">
+                            {profile.role}
+                          </Badge>
+                       </div>
                     </div>
-                    <Button onClick={() => setShowPasswordDialog(true)} variant="outline" className="shadow-sm">
-                      <Lock className="w-4 h-4 mr-2" /> Change Password
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent className="p-6 md:p-8">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12">
-                    <div className="space-y-6">
-                      <h4 className="text-sm font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100 pb-2">Personal Details</h4>
-                      <div className="space-y-4">
-                        <div>
-                          <p className="text-xs text-slate-500 font-medium mb-1">Full Name</p>
-                          <p className="font-semibold text-slate-800">{profile.firstName} {profile.lastName}</p>
+
+                    <div className="space-y-4">
+                      {[
+                        { label: 'Reviewer ID', value: profile.reviewerId },
+                        { label: 'Email', value: profile.email },
+                        { label: 'Mobile', value: profile.mobile || '-' },
+                        { label: 'Designation', value: profile.designation || '-' },
+                        { label: 'Institution', value: profile.institution || '-' },
+                        { label: 'Journal', value: profile.journal || '-' },
+                        { label: 'Status', value: profile.status, isStatus: true },
+                      ].map((item, i) => (
+                        <div key={i} className="flex items-center justify-between py-1 border-b border-slate-50 last:border-0">
+                          <span className="text-xs font-semibold text-slate-400">{item.label}</span>
+                          {item.isStatus ? (
+                            <Badge className={`${item.value === 'Active' ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'} border-none font-bold text-[10px] px-3`}>
+                              {item.value}
+                            </Badge>
+                          ) : (
+                            <span className="text-xs font-bold text-slate-700">{item.value}</span>
+                          )}
                         </div>
-                        <div>
-                          <p className="text-xs text-slate-500 font-medium mb-1">Email / Member ID</p>
-                          <p className="font-semibold text-slate-800">{profile.email} <span className="text-slate-400 font-normal">({profile.reviewerId})</span></p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-slate-500 font-medium mb-1">Mobile Number</p>
-                          <p className="font-semibold text-slate-800">{profile.mobile || '-'}</p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-slate-500 font-medium mb-1">Status & Role</p>
-                          <div className="flex gap-2 items-center mt-1">
-                             <Badge className={profile.status === 'Active' ? 'bg-green-100 text-green-800 border-none' : 'bg-yellow-100 text-yellow-800 border-none'}>{profile.status}</Badge>
-                             <Badge variant="outline" className="text-blue-600 border-blue-200 bg-blue-50">{profile.role}</Badge>
-                          </div>
-                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Change Password Card */}
+                <Card className="lg:col-span-6 border-0 shadow-sm overflow-hidden">
+                  <CardHeader className="bg-white border-b border-slate-50 flex flex-row items-center gap-2 py-4">
+                    <Lock className="w-4 h-4 text-amber-600" />
+                    <CardTitle className="text-sm font-bold text-slate-800">Change Password</CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-6 space-y-5">
+                    <div className="bg-blue-50 border border-blue-100 rounded-lg p-3 flex items-start gap-3">
+                       <AlertCircle className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
+                       <p className="text-[11px] text-blue-800 leading-snug font-medium">
+                         Your default password is your Reviewer/Editor ID. Change it to something secure.
+                       </p>
+                    </div>
+
+                    <div className="space-y-4">
+                      <div className="space-y-1.5">
+                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Current Password</label>
+                        <Input 
+                          type="password"
+                          value={passwordForm.currentPassword}
+                          onChange={e => setPasswordForm({...passwordForm, currentPassword: e.target.value})}
+                          placeholder="Current password" 
+                          className="bg-slate-50/50 border-slate-200 h-10" 
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">New Password</label>
+                        <Input 
+                          type="password"
+                          value={passwordForm.newPassword}
+                          onChange={e => setPasswordForm({...passwordForm, newPassword: e.target.value})}
+                          placeholder="Min 6 characters" 
+                          className="bg-slate-50/50 border-slate-200 h-10" 
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Confirm New Password</label>
+                        <Input 
+                          type="password"
+                          value={passwordForm.confirmPassword}
+                          onChange={e => setPasswordForm({...passwordForm, confirmPassword: e.target.value})}
+                          placeholder="Repeat new password" 
+                          className="bg-slate-50/50 border-slate-200 h-10" 
+                        />
                       </div>
                     </div>
                     
-                    <div className="space-y-6">
-                      <h4 className="text-sm font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100 pb-2">Academic Profile</h4>
-                      <div className="space-y-4">
-                        <div>
-                          <p className="text-xs text-slate-500 font-medium mb-1">Institution</p>
-                          <p className="font-semibold text-slate-800">{profile.institution} <span className="text-slate-500 font-normal">({profile.designation})</span></p>
+                    <Button 
+                      onClick={handleChangePassword} 
+                      disabled={changingPassword}
+                      className="w-full bg-[#1e40af] hover:bg-blue-800 text-white font-bold h-10 gap-2 shadow-lg shadow-blue-900/10"
+                    >
+                      {changingPassword ? <Loader2 className="w-4 h-4 animate-spin" /> : <Lock className="w-4 h-4" />}
+                      Update Password
+                    </Button>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Review Performance Card */}
+              <Card className="border-0 shadow-sm overflow-hidden">
+                <CardHeader className="bg-white border-b border-slate-50 flex flex-row items-center gap-2 py-4">
+                  <BarChart3 className="w-4 h-4 text-emerald-600" />
+                  <CardTitle className="text-sm font-bold text-slate-800">Review Performance</CardTitle>
+                </CardHeader>
+                <CardContent className="p-6 space-y-8">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {[
+                      { label: 'Total Assigned', value: assignedWorks.length, icon: ListTodo, color: 'blue' },
+                      { label: 'Completed', value: completedWorks.length, icon: CheckCircle, color: 'emerald' },
+                      { label: 'Pending', value: pendingWorks.length, icon: Clock, color: 'amber' },
+                      { label: 'Revoked', value: assignedWorks.filter(w => w.status?.toLowerCase() === 'revoked').length, icon: AlertCircle, color: 'rose' },
+                    ].map((stat, i) => (
+                      <div key={i} className="bg-slate-50 border border-slate-100 rounded-xl p-4 flex items-center gap-4 transition-all hover:shadow-md">
+                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${
+                          stat.color === 'blue' ? 'bg-blue-100/50 text-blue-600' :
+                          stat.color === 'emerald' ? 'bg-emerald-100/50 text-emerald-600' :
+                          stat.color === 'amber' ? 'bg-amber-100/50 text-amber-600' :
+                          'bg-rose-100/50 text-rose-600'
+                        }`}>
+                          <stat.icon className="w-5 h-5" />
                         </div>
                         <div>
-                          <p className="text-xs text-slate-500 font-medium mb-1">Journal Assigned</p>
-                          <p className="font-semibold text-slate-800">{profile.journal || '-'}</p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-slate-500 font-medium mb-1">Area of Interest</p>
-                          <p className="font-semibold text-slate-800">{profile.areaOfInterest || '-'}</p>
-                        </div>
-                        <div className="flex gap-6 pt-2">
-                           {profile.orcid && (
-                             <a href={profile.orcid} target="_blank" rel="noreferrer" className="text-blue-600 font-medium hover:underline text-sm flex items-center gap-1"><Globe className="w-4 h-4"/> ORCID Profile</a>
-                           )}
-                           {profile.googleScholar && (
-                             <a href={profile.googleScholar} target="_blank" rel="noreferrer" className="text-blue-600 font-medium hover:underline text-sm flex items-center gap-1"><Award className="w-4 h-4"/> Google Scholar</a>
-                           )}
+                           <h4 className="text-xl font-black text-slate-800 leading-none mb-1">{stat.value}</h4>
+                           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{stat.label}</p>
                         </div>
                       </div>
+                    ))}
+                  </div>
+
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-end">
+                       <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">Completion Rate</span>
+                       <span className="text-xs font-black text-slate-800">
+                         {assignedWorks.length > 0 ? Math.round((completedWorks.length / assignedWorks.length) * 100) : 0}%
+                       </span>
+                    </div>
+                    <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                       <div 
+                         className="h-full bg-blue-600 rounded-full transition-all duration-1000"
+                         style={{ width: `${assignedWorks.length > 0 ? (completedWorks.length / assignedWorks.length) * 100 : 0}%` }}
+                       />
                     </div>
                   </div>
                 </CardContent>
@@ -852,116 +1077,6 @@ export default function ReviewerDashboard() {
 
         </main>
       </div>
-
-      {/* Review Submission Dialog Modal */}
-      <Dialog open={!!reviewSubmission.selectedManuscriptForReview} onOpenChange={(open) => !open && setReviewSubmission({ ...reviewSubmission, selectedManuscriptForReview: '' })}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader className="border-b border-slate-200 pb-4 mb-4">
-            <DialogTitle className="text-2xl font-bold text-slate-800 flex items-center gap-2"><Upload className="w-5 h-5 text-blue-600" /> Submit Peer Review</DialogTitle>
-            <DialogDescription>
-              Complete your evaluation for Manuscript {reviewSubmission.selectedManuscriptForReview}
-            </DialogDescription>
-          </DialogHeader>
-          
-          <form className="space-y-8" onSubmit={async (e) => {
-              e.preventDefault();
-              if (!reviewSubmission.importanceOfManuscript.trim() || !reviewSubmission.generalComments.trim() || !reviewSubmission.recommendation) {
-                toast({ title: 'Error', description: 'Please fill all required fields and select a recommendation', variant: 'destructive' });
-                return;
-              }
-              if (!reviewSubmission.competingInterestDeclaration) {
-                toast({ title: 'Error', description: 'You must declare competing interests before submitting.', variant: 'destructive' });
-                return;
-              }
-              setIsSubmittingReview(true);
-              try {
-                const { error } = await supabase.from('assignments').update({
-                  recommendation: reviewSubmission.recommendation,
-                  overall_marks: String(reviewSubmission.overallMarks),
-                  importance: reviewSubmission.importanceOfManuscript,
-                  title_feedback: reviewSubmission.titleSuitability,
-                  abstract_feedback: reviewSubmission.abstractComprehensive,
-                  scientific_correctness: reviewSubmission.scientificCorrectness,
-                  references_feedback: reviewSubmission.referencesSufficient,
-                  language_quality: reviewSubmission.languageQuality,
-                  general_comments: reviewSubmission.generalComments,
-                  ethical_issues: reviewSubmission.ethicalIssues,
-                  ethical_details: reviewSubmission.ethicalIssuesDetails,
-                  competing_interests: reviewSubmission.competingInterests,
-                  plagiarism_suspected: reviewSubmission.plagiarismSuspected,
-                  status: 'Completed'
-                }).eq('manuscript_id', reviewSubmission.selectedManuscriptForReview)
-                  .eq('reviewer_id', profile?.reviewerId);
-
-                if (!error) {
-                   toast({ title: 'Success', description: 'Your review has been submitted successfully!' });
-                   setReviewSubmission({...reviewSubmission, selectedManuscriptForReview: ''});
-                   window.location.reload();
-                } else {
-                   toast({ title: 'Error', description: error.message || 'Submission failed.', variant: 'destructive' });
-                }
-              } catch (err) {
-                toast({ title: 'Error', description: 'Network error occurred.', variant: 'destructive' });
-              } finally {
-                setIsSubmittingReview(false);
-              }
-          }}>
-            <div className="grid md:grid-cols-2 gap-6 bg-slate-50 p-6 rounded-xl border border-slate-100">
-               <div className="space-y-3">
-                  <label className="text-sm font-bold text-slate-700">Importance of Manuscript *</label>
-                  <Textarea placeholder="Rate the importance and relevance..." value={reviewSubmission.importanceOfManuscript} onChange={e => setReviewSubmission({...reviewSubmission, importanceOfManuscript: e.target.value})} className="bg-white" required />
-               </div>
-               <div className="space-y-3">
-                  <label className="text-sm font-bold text-slate-700">Title Suitability</label>
-                  <Textarea placeholder="Comments on title..." value={reviewSubmission.titleSuitability} onChange={e => setReviewSubmission({...reviewSubmission, titleSuitability: e.target.value})} className="bg-white" />
-               </div>
-               <div className="space-y-3">
-                  <label className="text-sm font-bold text-slate-700">Abstract Comprehensiveness</label>
-                  <Textarea placeholder="Is the abstract complete?" value={reviewSubmission.abstractComprehensive} onChange={e => setReviewSubmission({...reviewSubmission, abstractComprehensive: e.target.value})} className="bg-white" />
-               </div>
-               <div className="space-y-3">
-                  <label className="text-sm font-bold text-slate-700">Scientific Correctness</label>
-                  <Textarea placeholder="Methodology, logic, correctness..." value={reviewSubmission.scientificCorrectness} onChange={e => setReviewSubmission({...reviewSubmission, scientificCorrectness: e.target.value})} className="bg-white" />
-               </div>
-            </div>
-
-            <div className="space-y-3">
-               <label className="text-sm font-bold text-slate-700">General Comments to Editor/Author *</label>
-               <Textarea placeholder="Provide detailed review comments..." value={reviewSubmission.generalComments} onChange={e => setReviewSubmission({...reviewSubmission, generalComments: e.target.value})} className="min-h-[120px]" required />
-            </div>
-
-            <div className="grid md:grid-cols-2 gap-6 bg-amber-50/50 p-6 rounded-xl border border-amber-100">
-               <div className="space-y-3">
-                 <label className="text-sm font-bold text-slate-700">Overall Rating (1-10)</label>
-                 <Input type="number" min="1" max="10" value={reviewSubmission.overallMarks} onChange={e => setReviewSubmission({...reviewSubmission, overallMarks: parseInt(e.target.value) || 0})} className="bg-white" />
-               </div>
-               <div className="space-y-3">
-                 <label className="text-sm font-bold text-slate-700">Final Recommendation *</label>
-                 <select className="w-full h-10 border border-slate-200 rounded-md px-3 bg-white text-sm" value={reviewSubmission.recommendation} onChange={e => setReviewSubmission({...reviewSubmission, recommendation: e.target.value})} required>
-                    <option value="">Select an option</option>
-                    <option value="accept">Accept Submission</option>
-                    <option value="minor_revisions">Revisions Required (Minor)</option>
-                    <option value="major_revisions">Revisions Required (Major)</option>
-                    <option value="reject">Decline Submission</option>
-                 </select>
-               </div>
-            </div>
-
-            <div className="p-4 bg-slate-100 rounded-lg flex items-start gap-3 border border-slate-200">
-               <input type="checkbox" id="compete" className="mt-1 w-4 h-4" checked={reviewSubmission.competingInterestDeclaration} onChange={e => setReviewSubmission({...reviewSubmission, competingInterestDeclaration: e.target.checked})} />
-               <label htmlFor="compete" className="text-sm text-slate-700 font-medium">I declare that I have evaluated this manuscript strictly ethically, and I have no conflict of interest with the authors.</label>
-            </div>
-
-            <div className="flex justify-end gap-3 pt-4 border-t border-slate-200">
-               <Button type="button" variant="outline" onClick={() => setReviewSubmission({...reviewSubmission, selectedManuscriptForReview: ''})}>Cancel</Button>
-               <Button type="submit" className="bg-blue-600 hover:bg-blue-700" disabled={isSubmittingReview}>
-                 {isSubmittingReview ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <SendIcon className="w-4 h-4 mr-2" />}
-                 Submit Review Result
-               </Button>
-            </div>
-          </form>
-        </DialogContent>
-      </Dialog>
 
       {/* Utilities Dialogs */}
       <Dialog open={showPasswordDialog} onOpenChange={setShowPasswordDialog}>
@@ -991,5 +1106,243 @@ export default function ReviewerDashboard() {
       </Dialog>
 
     </div>
+
+    {/* Submit Review Modal (Redesigned) */}
+    <Dialog 
+      open={!!reviewSubmission.selectedManuscriptForReview} 
+      onOpenChange={(open) => !open && setReviewSubmission({...reviewSubmission, selectedManuscriptForReview: ''})}
+    >
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0 border-none shadow-2xl rounded-2xl bg-white">
+        <DialogHeader className="p-6 bg-white border-b border-slate-50 sticky top-0 z-20">
+          <DialogTitle className="flex items-center gap-2 text-slate-800">
+             <FileCheck2 className="w-5 h-5 text-blue-600" /> Submit Review
+          </DialogTitle>
+        </DialogHeader>
+
+        <div className="p-6 space-y-8">
+          {/* Info Banner */}
+          <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 flex items-center gap-3">
+             <Info className="w-5 h-5 text-blue-600 shrink-0" />
+             <p className="text-sm text-blue-800 font-bold">
+               Manuscript: {assignedWorks.find(w => w.manuscriptId === reviewSubmission.selectedManuscriptForReview)?.title || 'Selected Paper'} 
+               <span className="text-blue-600 font-medium ml-2">({reviewSubmission.selectedManuscriptForReview})</span>
+             </p>
+          </div>
+
+          {/* Part 1: Review Comments */}
+          <section className="space-y-4">
+            <h3 className="flex items-center gap-2 text-sm font-black text-slate-800 uppercase tracking-widest border-b border-slate-100 pb-2">
+              <MessageCircle className="w-4 h-4 text-blue-500" /> Part 1: Review Comments
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <Label className="text-xs font-bold text-slate-500">Importance / Relevance</Label>
+                <Select value={reviewSubmission.importanceOfManuscript} onValueChange={v => setReviewSubmission({...reviewSubmission, importanceOfManuscript: v})}>
+                  <SelectTrigger className="bg-slate-50 border-slate-200">
+                    <SelectValue placeholder="Select..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="High">High</SelectItem>
+                    <SelectItem value="Moderate">Moderate</SelectItem>
+                    <SelectItem value="Low">Low</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs font-bold text-slate-500">Language Quality</Label>
+                <Select value={reviewSubmission.languageQuality} onValueChange={v => setReviewSubmission({...reviewSubmission, languageQuality: v})}>
+                  <SelectTrigger className="bg-slate-50 border-slate-200">
+                    <SelectValue placeholder="Select..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Excellent">Excellent</SelectItem>
+                    <SelectItem value="Good">Good</SelectItem>
+                    <SelectItem value="Average">Average</SelectItem>
+                    <SelectItem value="Poor">Poor</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-xs font-bold text-slate-500">Title Feedback</Label>
+              <Textarea 
+                placeholder="Comment on the title clarity and accuracy..."
+                value={reviewSubmission.titleSuitability}
+                onChange={e => setReviewSubmission({...reviewSubmission, titleSuitability: e.target.value})}
+                className="bg-slate-50 border-slate-200 min-h-[80px]"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-xs font-bold text-slate-500">Abstract Feedback</Label>
+              <Textarea 
+                placeholder="Comment on the abstract..."
+                value={reviewSubmission.abstractComprehensive}
+                onChange={e => setReviewSubmission({...reviewSubmission, abstractComprehensive: e.target.value})}
+                className="bg-slate-50 border-slate-200 min-h-[80px]"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-xs font-bold text-slate-500">Scientific Correctness</Label>
+              <Select value={reviewSubmission.scientificCorrectness} onValueChange={v => setReviewSubmission({...reviewSubmission, scientificCorrectness: v})}>
+                <SelectTrigger className="bg-slate-50 border-slate-200">
+                  <SelectValue placeholder="Select..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="High">High Confidence</SelectItem>
+                  <SelectItem value="Reliable">Reliable</SelectItem>
+                  <SelectItem value="Questionable">Questionable</SelectItem>
+                  <SelectItem value="Inaccurate">Inaccurate</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-xs font-bold text-slate-500">References Feedback</Label>
+              <Textarea 
+                placeholder="Comment on references..."
+                value={reviewSubmission.referencesSufficient}
+                onChange={e => setReviewSubmission({...reviewSubmission, referencesSufficient: e.target.value})}
+                className="bg-slate-50 border-slate-200 min-h-[80px]"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-xs font-bold text-slate-500">General Comments</Label>
+              <Textarea 
+                placeholder="Overall comments and suggestions for the author..."
+                value={reviewSubmission.generalComments}
+                onChange={e => setReviewSubmission({...reviewSubmission, generalComments: e.target.value})}
+                className="bg-slate-50 border-slate-200 min-h-[120px]"
+              />
+            </div>
+          </section>
+
+          {/* Part 2: Ethics & Integrity */}
+          <section className="space-y-4 pt-4">
+            <h3 className="flex items-center gap-2 text-sm font-black text-slate-800 uppercase tracking-widest border-b border-slate-100 pb-2">
+              <Shield className="w-4 h-4 text-orange-500" /> Part 2: Ethics & Integrity
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <Label className="text-xs font-bold text-slate-500">Ethical Issues Identified?</Label>
+                <Select value={reviewSubmission.ethicalIssues} onValueChange={v => setReviewSubmission({...reviewSubmission, ethicalIssues: v})}>
+                  <SelectTrigger className="bg-slate-50 border-slate-200">
+                    <SelectValue placeholder="Select..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="No">No Issues</SelectItem>
+                    <SelectItem value="Yes">Yes, Minor Issues</SelectItem>
+                    <SelectItem value="Serious">Yes, Serious Concerns</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs font-bold text-slate-500">Competing Interests</Label>
+                <Select value={reviewSubmission.competingInterests} onValueChange={v => setReviewSubmission({...reviewSubmission, competingInterests: v})}>
+                  <SelectTrigger className="bg-slate-50 border-slate-200">
+                    <SelectValue placeholder="Select..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="None">None</SelectItem>
+                    <SelectItem value="Yes">Yes (Disclosed)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-xs font-bold text-slate-500">Ethical Details (if any)</Label>
+              <Textarea 
+                placeholder="Describe any ethical concerns..."
+                value={reviewSubmission.ethicalIssuesDetails}
+                onChange={e => setReviewSubmission({...reviewSubmission, ethicalIssuesDetails: e.target.value})}
+                className="bg-slate-50 border-slate-200"
+              />
+            </div>
+            <div className="space-y-2">
+                <Label className="text-xs font-bold text-slate-500">Plagiarism Suspected?</Label>
+                <Select value={reviewSubmission.plagiarismSuspected} onValueChange={v => setReviewSubmission({...reviewSubmission, plagiarismSuspected: v})}>
+                  <SelectTrigger className="bg-slate-50 border-slate-200">
+                    <SelectValue placeholder="Select..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="No">No suspicion</SelectItem>
+                    <SelectItem value="Yes">Yes, suspected</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+          </section>
+
+          {/* Part 3: Objective Evaluation */}
+          <section className="space-y-4 pt-4">
+            <h3 className="flex items-center gap-2 text-sm font-black text-slate-800 uppercase tracking-widest border-b border-slate-100 pb-2">
+              <Star className="w-4 h-4 text-emerald-500" /> Part 3: Objective Evaluation
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <Label className="text-xs font-bold text-slate-500">Overall Marks (out of 100)</Label>
+                <Input 
+                  type="number"
+                  min="0"
+                  max="100"
+                  value={reviewSubmission.overallMarks}
+                  onChange={e => setReviewSubmission({...reviewSubmission, overallMarks: parseInt(e.target.value) || 0})}
+                  className="bg-slate-50 border-slate-200"
+                  placeholder="e.g., 75"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs font-bold text-slate-500">Recommendation <span className="text-rose-500">*</span></Label>
+                <Select value={reviewSubmission.recommendation} onValueChange={v => setReviewSubmission({...reviewSubmission, recommendation: v})}>
+                  <SelectTrigger className="bg-slate-50 border-slate-200">
+                    <SelectValue placeholder="Select recommendation..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Accept">Accept</SelectItem>
+                    <SelectItem value="Minor Revision">Minor Revision</SelectItem>
+                    <SelectItem value="Major Revision">Major Revision</SelectItem>
+                    <SelectItem value="Reject">Reject</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </section>
+
+          {/* Part 4: Declaration */}
+          <section className="space-y-4 pt-4">
+            <h3 className="flex items-center gap-2 text-sm font-black text-slate-800 uppercase tracking-widest border-b border-slate-100 pb-2">
+              <User className="w-4 h-4 text-purple-500" /> Part 4: Declaration
+            </h3>
+            <div className="flex items-start gap-3 p-4 bg-slate-50 rounded-xl border border-slate-100">
+              <Checkbox 
+                id="declaration" 
+                checked={reviewSubmission.competingInterestDeclaration}
+                onCheckedChange={(checked) => setReviewSubmission({...reviewSubmission, competingInterestDeclaration: !!checked})}
+                className="mt-1"
+              />
+              <Label htmlFor="declaration" className="text-xs text-slate-600 leading-relaxed font-medium">
+                I declare that I have reviewed this manuscript impartially and have no undisclosed conflict of interest. 
+                The review is my own work and reflects my honest academic judgment.
+              </Label>
+            </div>
+          </section>
+        </div>
+
+        <DialogFooter className="p-6 bg-slate-50 border-t border-slate-100 sticky bottom-0 z-20">
+          <Button variant="ghost" onClick={() => setReviewSubmission({...reviewSubmission, selectedManuscriptForReview: ''})} className="font-bold text-slate-500">Cancel</Button>
+          <Button 
+            onClick={handleSubmitReview} 
+            disabled={isSubmittingReview}
+            className="bg-[#1e40af] hover:bg-blue-800 text-white font-bold px-8 shadow-lg shadow-blue-900/10 gap-2"
+          >
+            {isSubmittingReview ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+            Submit Review
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+    </>
   );
 }

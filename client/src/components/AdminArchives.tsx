@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Plus, ArrowLeft, Edit, Trash, BookOpen, Save, RefreshCw, ChevronRight, Archive, FileText, Calendar } from 'lucide-react';
+import { Loader2, Plus, ArrowLeft, Edit, Trash, BookOpen, Save, RefreshCw, ChevronRight, Archive, FileText, Calendar, UploadCloud, ExternalLink } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
@@ -36,7 +36,30 @@ export function AdminArchives() {
   // Forms
   const [volumeForm, setVolumeForm] = useState({ volumeNumber: '', label: '', period: '', status: 'In Progress' });
   const [issueForm, setIssueForm] = useState({ issueNumber: '', label: '', period: '', isCurrent: false });
-  const [articleForm, setArticleForm] = useState({ articleId: '', title: '', authors: '', affiliation: '', pages: '', doi: '', sortOrder: '0' });
+  const [articleForm, setArticleForm] = useState({ articleId: '', title: '', authors: '', affiliation: '', pages: '', doi: '', abstract: '', pdf_url: '', sortOrder: '0' });
+  const [uploadingPdf, setUploadingPdf] = useState(false);
+
+  const handlePdfUpload = async (file: File) => {
+    setUploadingPdf(true);
+    try {
+      const fileExt = file.name.split('.').pop() || 'pdf';
+      const s3FileName = `articles/${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+      const { data: presignData, error: presignError } = await supabase.functions.invoke('s3-presign', {
+        body: { fileName: s3FileName, fileType: file.type || 'application/pdf' }
+      });
+      if (presignError || !presignData?.signedUrl) throw new Error('Failed to get upload URL');
+      const { signedUrl, publicUrl } = presignData;
+      const buf = await file.arrayBuffer();
+      const res = await fetch(signedUrl, { method: 'PUT', headers: { 'Content-Type': file.type || 'application/pdf' }, body: new Uint8Array(buf) });
+      if (!res.ok) throw new Error('S3 upload failed');
+      setArticleForm(prev => ({ ...prev, pdf_url: publicUrl }));
+      toast({ title: 'PDF Uploaded', description: 'Article PDF uploaded to S3 successfully.' });
+    } catch (err: any) {
+      toast({ title: 'Upload Failed', description: err.message, variant: 'destructive' });
+    } finally {
+      setUploadingPdf(false);
+    }
+  };
 
   // Fetch all journals (including hardcoded ones represented in DB)
   const fetchJournals = async () => {
@@ -270,7 +293,7 @@ export function AdminArchives() {
   const openArticleCreate = () => {
     setEditingItem(null);
     const nextNum = String(articles.length + 1).padStart(3, '0');
-    setArticleForm({ articleId: nextNum, title: '', authors: '', affiliation: '', pages: '', doi: '', sortOrder: String(articles.length + 1) });
+    setArticleForm({ articleId: nextNum, title: '', authors: '', affiliation: '', pages: '', doi: '', abstract: '', pdf_url: '', sortOrder: String(articles.length + 1) });
     setIsArticleModalOpen(true);
   };
 
@@ -283,6 +306,8 @@ export function AdminArchives() {
       affiliation: a.affiliation || '',
       pages: a.pages || '',
       doi: a.doi || '',
+      abstract: a.abstract || '',
+      pdf_url: a.pdf_url || '',
       sortOrder: String(a.sort_order || 0)
     });
     setIsArticleModalOpen(true);
@@ -301,6 +326,8 @@ export function AdminArchives() {
         affiliation: articleForm.affiliation,
         pages: articleForm.pages,
         doi: articleForm.doi,
+        abstract: articleForm.abstract,
+        pdf_url: articleForm.pdf_url,
         sort_order: parseInt(articleForm.sortOrder) || 0,
       };
       if (editingItem) {
@@ -532,10 +559,16 @@ export function AdminArchives() {
                       <div className="flex-1 min-w-0">
                         <h4 className="text-[12px] font-bold text-slate-800 leading-snug uppercase tracking-wide">{a.title}</h4>
                         <p className="text-[11px] text-slate-500 mt-1">{a.authors}</p>
-                        <div className="flex items-center gap-4 mt-2 text-[10px] text-slate-400">
+                        {a.abstract && <p className="text-[11px] text-slate-400 mt-1 line-clamp-2 italic">{a.abstract}</p>}
+                        <div className="flex items-center gap-4 mt-2 text-[10px] text-slate-400 flex-wrap">
                           <span>ID: {a.article_id}</span>
                           <span>Pages: {a.pages || '—'}</span>
                           {a.doi && <span>DOI: {a.doi}</span>}
+                          {a.pdf_url && (
+                            <a href={a.pdf_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-blue-600 font-bold hover:underline">
+                              <ExternalLink size={10} /> View PDF
+                            </a>
+                          )}
                         </div>
                       </div>
                       <div className="flex items-center gap-1.5 shrink-0">
@@ -629,6 +662,53 @@ export function AdminArchives() {
             <DialogTitle className="text-lg font-bold text-slate-800">{editingItem ? 'Edit Article' : 'Add Article'}</DialogTitle>
           </DialogHeader>
           <div className="p-6 space-y-4 max-h-[65vh] overflow-y-auto">
+            {!editingItem && (
+               <div className="bg-blue-50/50 border border-blue-100 p-4 rounded-xl mb-4 text-left">
+                 <label className="text-[11px] font-bold text-blue-900 uppercase tracking-widest mb-2 block">Auto-fill from Manuscript</label>
+                 <div className="flex items-center gap-2">
+                   <Input 
+                      placeholder="Enter Manuscript ID (e.g. MANSJCM...)" 
+                      className="h-9 bg-white text-sm" 
+                      id="fetch-manuscript-id"
+                   />
+                   <Button 
+                      type="button" 
+                      onClick={async () => {
+                         const mId = (document.getElementById('fetch-manuscript-id') as HTMLInputElement)?.value;
+                         if (!mId) return toast({ title: 'Enter manuscript ID', variant: 'destructive' });
+                         setProcessing(true);
+                         try {
+                           const { data, error } = await supabase.from('manuscripts').select('*').eq('id', mId.trim()).single();
+                           if (error || !data) throw new Error('Manuscript not found');
+                           
+                           // Authors might be stored in author_names or author_name
+                           const fetchedAuthors = data.author_names || data.author_name || '';
+                           const fetchedTitle = data.title || data.manuscript_title || '';
+                           const fetchedAffiliation = data.affiliation || '';
+                           const fetchedDoi = data.doi || '';
+
+                           setArticleForm(prev => ({
+                              ...prev,
+                              title: fetchedTitle,
+                              authors: fetchedAuthors,
+                              affiliation: fetchedAffiliation,
+                              doi: fetchedDoi,
+                           }));
+                           toast({ title: 'Manuscript data fetched successfully' });
+                         } catch (err: any) {
+                           toast({ title: 'Error fetching', description: err.message, variant: 'destructive' });
+                         } finally {
+                           setProcessing(false);
+                         }
+                      }}
+                      disabled={processing}
+                      className="h-9 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-sm whitespace-nowrap"
+                   >
+                      <RefreshCw size={14} className={processing ? "animate-spin mr-2" : "mr-2"} /> Fetch Data
+                   </Button>
+                 </div>
+               </div>
+            )}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-700">Article ID <span className="text-rose-500">*</span></label>
@@ -660,6 +740,40 @@ export function AdminArchives() {
                 <label className="text-xs font-bold text-slate-700">DOI</label>
                 <Input value={articleForm.doi} onChange={e => setArticleForm({...articleForm, doi: e.target.value})} placeholder="e.g. 10.65219/sjcm.20260201001" className="h-10 bg-slate-50" />
               </div>
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-700">Abstract</label>
+              <Textarea value={articleForm.abstract} onChange={e => setArticleForm({...articleForm, abstract: e.target.value})} placeholder="Paste the article abstract here..." className="bg-slate-50 min-h-[100px] text-sm" />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-700">Article PDF</label>
+              <div className="flex gap-2 items-center">
+                <Input
+                  value={articleForm.pdf_url}
+                  onChange={e => setArticleForm({...articleForm, pdf_url: e.target.value})}
+                  placeholder="S3 URL (auto-filled on upload)"
+                  className="h-10 bg-slate-50 text-xs"
+                />
+                <div className="relative shrink-0">
+                  <input type="file" accept=".pdf" id="article-pdf" className="hidden"
+                    onChange={e => e.target.files?.[0] && handlePdfUpload(e.target.files[0])} />
+                  <Button asChild variant="outline" disabled={uploadingPdf} className="h-10 gap-2 border-dashed border-slate-300 hover:border-blue-500 hover:bg-blue-50 whitespace-nowrap">
+                    <label htmlFor="article-pdf" className="cursor-pointer">
+                      {uploadingPdf ? <Loader2 className="h-4 w-4 animate-spin" /> : <UploadCloud size={14} />}
+                      {uploadingPdf ? 'Uploading...' : 'Upload PDF'}
+                    </label>
+                  </Button>
+                </div>
+                {articleForm.pdf_url && (
+                  <a href={articleForm.pdf_url} target="_blank" rel="noopener noreferrer"
+                    className="shrink-0 text-blue-600 hover:text-blue-800">
+                    <ExternalLink size={16} />
+                  </a>
+                )}
+              </div>
+              {articleForm.pdf_url && (
+                <p className="text-[10px] text-emerald-600 font-medium mt-1">✓ PDF uploaded successfully</p>
+              )}
             </div>
           </div>
           <div className="px-6 py-4 bg-slate-50/80 border-t border-slate-100 flex justify-end gap-3">

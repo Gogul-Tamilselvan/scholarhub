@@ -202,6 +202,36 @@ export default function ManuscriptSubmissionForm({ journalName }: ManuscriptSubm
         description: `Your manuscript has been submitted successfully. Manuscript ID: ${id}. You will receive a confirmation email shortly.`,
       });
 
+      // ── Trigger Confirmation Email ──────────────────────────────────────────
+      const MAIL_SERVER_URL = "https://scholar-hub-server-seven.vercel.app";
+      const MAIL_API_KEY = "scholar_india_mail_secret_2026";
+
+      try {
+        const payload = {
+          name: firstAuthor.name,
+          email: firstAuthor.email,
+          manuscriptId: id,
+          title: formData.manuscriptTitle,
+          journal: formData.journal || journalName
+        };
+        console.log("📤 Sending Manuscript Payload:", payload);
+
+        const mailRes = await fetch(`${MAIL_SERVER_URL}/send/manuscript-submitted`, {
+           method: 'POST',
+           headers: { 'Content-Type': 'application/json', 'x-api-key': MAIL_API_KEY },
+           body: JSON.stringify(payload)
+        });
+        
+        if (!mailRes.ok) {
+          const errorData = await mailRes.json();
+          console.error("Mail server returned error:", errorData);
+        } else {
+          console.log("Confirmation email sent successfully.");
+        }
+      } catch (mailErr) {
+        console.error("Manuscript confirmation email fetch failed:", mailErr);
+      }
+
       // Scroll to top to show the success message with Manuscript ID
       window.scrollTo({ top: 0, behavior: 'smooth' });
 

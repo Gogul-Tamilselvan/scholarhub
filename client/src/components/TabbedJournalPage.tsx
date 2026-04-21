@@ -55,6 +55,8 @@ interface Article {
   affiliation: string;
   pages: string;
   doi?: string;
+  pdf_url?: string;
+  abstract?: string;
 }
 
 interface TabbedJournalPageProps {
@@ -93,6 +95,7 @@ interface TabbedJournalPageProps {
   } | null;
   currentIssueArticles?: Article[];
   currentIssueMeta?: { volume: string; issue: string; period: string };
+  indexingPartners?: { name: string; subtext: string; imageUrl: string; }[];
 }
 
 export default function TabbedJournalPage({
@@ -119,6 +122,11 @@ export default function TabbedJournalPage({
   journalParticulars = null,
   currentIssueArticles = [],
   currentIssueMeta,
+  indexingPartners = [
+    { name: "Crossref", subtext: "DOI Partner", imageUrl: "" },
+    { name: "ResearchGate", subtext: "Academic Network", imageUrl: "" },
+    { name: "Academia.edu", subtext: "Repository", imageUrl: "" }
+  ],
 }: TabbedJournalPageProps) {
   const [location] = useLocation();
   const [activeTab, setActiveTab] = useState(() => {
@@ -626,11 +634,13 @@ export default function TabbedJournalPage({
                                       <Search className="h-3.5 w-3.5 mr-2" /> Abstract
                                     </Link>
                                   </Button>
-                                  <Button asChild variant="ghost" className="h-8 text-xs font-bold text-blue-900 hover:text-blue-800 hover:bg-blue-50 px-3 border border-transparent hover:border-blue-100">
-                                        <a href={`/downloads/${article.articleId}.pdf`} target="_blank" rel="noopener noreferrer">
-                                      <FileText className="h-3.5 w-3.5 mr-2" /> Full PDF
-                                    </a>
-                                  </Button>
+                                  {(article as any).pdf_url && (
+                                    <Button asChild variant="ghost" className="h-8 text-xs font-bold text-blue-900 hover:text-blue-800 hover:bg-blue-50 px-3 border border-transparent hover:border-blue-100">
+                                      <a href={(article as any).pdf_url} target="_blank" rel="noopener noreferrer" download>
+                                        <FileText className="h-3.5 w-3.5 mr-2" /> Full PDF
+                                      </a>
+                                    </Button>
+                                  )}
                                 </div>
                               </div>
                             </div>
@@ -680,6 +690,8 @@ export default function TabbedJournalPage({
                             affiliation: a.affiliation || '',
                             pages: a.pages || '',
                             doi: a.doi || '',
+                            pdf_url: a.pdf_url || '',
+                            abstract: a.abstract || '',
                           }));
                         return {
                           num: i.issue_number,
@@ -901,17 +913,13 @@ export default function TabbedJournalPage({
                                             <Search className="h-3.5 w-3.5 mr-2" /> Abstract
                                           </Link>
                                         </Button>
-                                        <Button asChild variant="ghost" className="h-8 text-xs font-bold text-blue-900 hover:text-blue-800 hover:bg-blue-50 px-3 border border-transparent hover:border-blue-100">
-                                        <a href={
-                                          article.articleId === "sjhss-v1i2-001"
-                                            ? "/downloads/SIPHSv1i201.pdf"
-                                            : article.articleId === "sjhss-v1i2-002"
-                                              ? "/downloads/SIPHSv1i202.pdf"
-                                              : `/downloads/${article.articleId}.pdf`
-                                        } target="_blank" rel="noopener noreferrer">
-                                            <FileText className="h-3.5 w-3.5 mr-2" /> Full PDF
-                                          </a>
-                                        </Button>
+                                        {article.pdf_url && (
+                                          <Button asChild variant="ghost" className="h-8 text-xs font-bold text-blue-900 hover:text-blue-800 hover:bg-blue-50 px-3 border border-transparent hover:border-blue-100">
+                                            <a href={article.pdf_url} target="_blank" rel="noopener noreferrer" download>
+                                              <FileText className="h-3.5 w-3.5 mr-2" /> Full PDF
+                                            </a>
+                                          </Button>
+                                        )}
                                       </div>
                                     </div>
                                   </div>
@@ -1475,24 +1483,30 @@ export default function TabbedJournalPage({
               <CardHeader className="bg-[#213361] border-0">
                 <CardTitle className="text-2xl font-serif text-white">Indexing & Abstracting</CardTitle>
               </CardHeader>
-              <CardContent className="pt-8">
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-8">
-                  <div className="flex flex-col items-center p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-100 dark:border-gray-700 hover-elevate transition-all">
-                    <Database className="h-12 w-12 text-blue-600 mb-2" />
-                    <span className="text-sm font-bold text-blue-900 dark:text-blue-300">Crossref</span>
-                    <span className="text-[10px] text-gray-500 uppercase tracking-wider">DOI Partner</span>
+              <CardContent className="pt-8 bg-blue-50/10">
+                {indexingPartners.length > 0 ? (
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-8">
+                    {indexingPartners.map((idx, i) => (
+                      <div key={i} className="flex flex-col items-center p-6 bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 hover-elevate transition-all shadow-sm">
+                        {idx.imageUrl ? (
+                           <div className="h-16 w-32 mb-4 flex items-center justify-center">
+                              <img src={idx.imageUrl} alt={idx.name} className="max-h-full max-w-full object-contain" />
+                           </div>
+                        ) : (
+                           <Database className="h-12 w-12 text-blue-600 mb-4" />
+                        )}
+                        <span className="text-base font-bold text-[#213361] dark:text-blue-300 text-center">{idx.name}</span>
+                        {idx.subtext && <span className="text-[11px] text-gray-500 uppercase tracking-widest mt-1 text-center">{idx.subtext}</span>}
+                      </div>
+                    ))}
                   </div>
-                  <div className="flex flex-col items-center p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-100 dark:border-gray-700 hover-elevate transition-all">
-                    <Users className="h-12 w-12 text-blue-600 mb-2" />
-                    <span className="text-sm font-bold text-blue-900 dark:text-blue-300">ResearchGate</span>
-                    <span className="text-[10px] text-gray-500 uppercase tracking-wider">Academic Network</span>
+                ) : (
+                  <div className="text-center p-12 bg-white dark:bg-gray-900 rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-700">
+                    <Database className="h-12 w-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+                    <h3 className="text-lg font-bold text-gray-500 dark:text-gray-400">Indexing Information Pending</h3>
+                    <p className="text-sm text-gray-400 mt-1">This journal's indexing partners will be updated shortly.</p>
                   </div>
-                  <div className="flex flex-col items-center p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-100 dark:border-gray-700 hover-elevate transition-all">
-                    <BookOpen className="h-12 w-12 text-blue-600 mb-2" />
-                    <span className="text-sm font-bold text-blue-900 dark:text-blue-300">Academia.edu</span>
-                    <span className="text-[10px] text-gray-500 uppercase tracking-wider">Repository</span>
-                  </div>
-                </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>

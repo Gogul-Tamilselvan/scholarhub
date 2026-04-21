@@ -57,54 +57,100 @@ export default function BookPublicationForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-
     try {
-      const submissionData = new FormData();
-      
-      Object.entries(formData).forEach(([key, value]) => {
-        if (key === 'manuscript' && value) {
-          submissionData.append(key, value);
-        } else if (key !== 'manuscript') {
-          submissionData.append(key, value as string);
-        }
-      });
+      // 1. Prepare data for Supabase
+      const uniqueId = `BRN${Date.now().toString().slice(-6)}${Math.floor(Math.random() * 1000)}`;
 
-      const response = await fetch('/api/submit-book-publication', {
-        method: 'POST',
-        body: submissionData,
-      });
+      // Upload file to S3 if exists
+      let s3Url = null;
+      if (formData.manuscript) {
+          const fileExt = formData.manuscript.name.split('.').pop() || 'pdf';
+          const s3FileName = `proposals/${uniqueId}.${fileExt}`;
+          
+          const { data: presignData, error: presignError } = await supabase.functions.invoke('s3-presign', {
+            body: {
+              fileName: s3FileName,
+              fileType: formData.manuscript.type || 'application/pdf',
+            }
+          });
 
-      const result = await response.json();
-
-      if (response.ok && result.success) {
-        toast({
-          title: "Submission successful!",
-          description: result.message || "Your book publication proposal has been submitted successfully. We will contact you soon.",
-          duration: 5000,
-        });
-
-        setFormData({
-          publicationType: "",
-          publicationFormat: "",
-          name: "",
-          email: "",
-          mobile: "",
-          designation: "",
-          institution: "",
-          bookTitle: "",
-          subject: "",
-          numberOfPages: "",
-          abstract: "",
-          coAuthors: "",
-          manuscript: null
-        });
-        
-        const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
-        if (fileInput) fileInput.value = '';
-
-      } else {
-        throw new Error(result.error || result.message || 'Submission failed');
+          if (!presignError && presignData?.signedUrl) {
+              const arrayBuffer = await formData.manuscript.arrayBuffer();
+              const uploadResponse = await fetch(presignData.signedUrl, {
+                method: 'PUT',
+                headers: { 'Content-Type': formData.manuscript.type || 'application/pdf' },
+                body: new Uint8Array(arrayBuffer),
+              });
+              if (uploadResponse.ok) s3Url = presignData.publicUrl;
+          }
       }
+
+      // 2. Insert into Supabase
+      const { data, error } = await supabase
+        .from('books')
+        .insert([{
+          id: uniqueId,
+          book_title: formData.bookTitle,
+          publication_type: formData.publicationType,
+          publication_format: formData.publicationFormat,
+          author_name: formData.name,
+          email: formData.email,
+          mobile: formData.mobile,
+          institution: formData.institution,
+          designation: formData.designation,
+          subject_area: formData.subject,
+          expected_pages: formData.numberOfPages,
+          abstract: formData.abstract,
+          co_authors_details: formData.coAuthors,
+          proposal_link: s3Url,
+          status: 'Submitted'
+        }]);
+
+      if (error) throw error;
+
+      toast({
+        title: "Submission successful!",
+        description: "Your book publication proposal has been submitted successfully.",
+        duration: 5000,
+      });
+
+      // 3. Trigger Confirmation Email
+      const MAIL_SERVER_URL = "https://scholar-hub-server-seven.vercel.app";
+      const MAIL_API_KEY = "scholar_india_mail_secret_2026";
+
+      fetch(`${MAIL_SERVER_URL}/send/book-submission-received`, {
+         method: 'POST',
+         headers: { 'Content-Type': 'application/json', 'x-api-key': MAIL_API_KEY },
+         body: JSON.stringify({
+           name: formData.name,
+           email: formData.email,
+           details: {
+             bID: uniqueId,
+             title: formData.bookTitle,
+             type: formData.publicationType
+           }
+         })
+      }).catch(e => console.error("Book confirmation email failed:", e));
+
+      // Reset form
+      setFormData({
+        publicationType: "",
+        publicationFormat: "",
+        name: "",
+        email: "",
+        mobile: "",
+        designation: "",
+        institution: "",
+        bookTitle: "",
+        subject: "",
+        numberOfPages: "",
+        abstract: "",
+        coAuthors: "",
+        manuscript: null
+      });
+      
+      const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+      if (fileInput) fileInput.value = '';
 
     } catch (error) {
       console.error("Submission error:", error);

@@ -43,7 +43,48 @@ export function AdminPayments() {
         .order('submitted_at', { ascending: false });
 
       if (error) throw error;
-      if (payments) setData(payments);
+      if (payments) {
+          const sorted = [...payments].sort((a,b) => {
+             
+              const getTs = (v: any) => {
+                if(!v) return 0;
+                const s = String(v).trim();
+                const n = Number(s);
+                // Excel numeric
+                if(!isNaN(n) && n > 10000 && n < 100000) return Math.round((n - 25569) * 86400 * 1000);
+                
+                // Try standard JS parse
+                let d = new Date(s);
+                if (!isNaN(d.getTime())) return d.getTime();
+                
+                // Try DD/MM/YYYY parsing (e.g. "21/4/2026, 5:33:39 pm")
+                if (s.includes('/')) {
+                   const parts = s.split(', ');
+                   const dateParts = parts[0].split('/');
+                   if (dateParts.length === 3) {
+                      // Construct ISO-like or standard recognizable MM/DD/YYYY
+                      // Format: MM/DD/YYYY
+                      const [day, month, year] = dateParts;
+                      const timePart = parts[1] ? ` ${parts[1]}` : '';
+                      const reformatted = `${month}/${day}/${year}${timePart}`;
+                      const d2 = new Date(reformatted);
+                      if (!isNaN(d2.getTime())) return d2.getTime();
+                   }
+                }
+                return 0;
+              };
+
+              // Safely use fallback for missing date_of_payment
+              const getVal = (item: any) => {
+                 const v = item.date_of_payment;
+                 if (v && String(v).trim() !== '' && String(v).trim() !== '—') return getTs(v);
+                 return getTs(item.submitted_at);
+              };
+
+              return getVal(b) - getVal(a);
+          });
+          setData(sorted);
+      }
     } catch (err) {
       console.error(err);
       toast({ title: 'Error fetching payments', variant: 'destructive' });
@@ -58,15 +99,30 @@ export function AdminPayments() {
 
   const parseExcelDate = (serial: string | number) => {
     if (!serial) return '—';
-    const num = Number(serial);
+    const s = String(serial).trim();
+    const num = Number(s);
     if (!isNaN(num) && num > 10000) {
       // Excel serial date starting from Jan 1 1900
       const d = new Date(Math.round((num - 25569) * 86400 * 1000));
       return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
     }
-    const d = new Date(serial);
+    
+    // Try DD/MM/YYYY text parsing
+    if (s.includes('/')) {
+       const parts = s.split(', ');
+       const dateParts = parts[0].split('/');
+       if (dateParts.length === 3) {
+          const [day, month, year] = dateParts;
+          const reformatted = `${month}/${day}/${year}`;
+          const d2 = new Date(reformatted);
+          if (!isNaN(d2.getTime())) return d2.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+       }
+    }
+
+    const d = new Date(s);
     if (!isNaN(d.getTime())) return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
-    return String(serial);
+    
+    return s;
   };
 
   const exportCSV = () => {
@@ -80,7 +136,7 @@ export function AdminPayments() {
       item.amount || '',
       item.payment_method || item.payment_mode || '',
       item.transaction_number || '',
-      parseExcelDate(item.date_of_payment),
+      parseExcelDate(item.date_of_payment || item.submitted_at),
       item.status || 'Pending'
     ].join(','));
     const csvContent = [headers.join(','), ...csvData].join('\n');
@@ -113,16 +169,86 @@ export function AdminPayments() {
 
   const totalAmount = filteredData.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0);
 
+  // ── Mail Server Trigger Helper ──────────────────────────────────────────────
+  const MAIL_SERVER_URL = "https://scholar-hub-server-seven.vercel.app";
+  const MAIL_API_KEY = "scholar_india_mail_secret_2026";
+
+  const triggerEmail = async (endpoint: string, payload: any) => {
+    try {
+      const res = await fetch(`${MAIL_SERVER_URL}${endpoint}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': MAIL_API_KEY
+        },
+        body: JSON.stringify(payload)
+      });
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || 'Mail failed');
+      return true;
+    } catch (e: any) {
+      console.error(`❌ Mail trigger error [${endpoint}]:`, e.message);
+      return false;
+    }
+  };
+
   const updateStatus = async (id: string, newStatus: string) => {
     if (!confirm(`Set payment status to "${newStatus}"?`)) return;
     try {
+      const { data: pay } = await supabase.from('payments').select('*').eq('id', id).single();
       const { error } = await supabase.from('payments').update({ status: newStatus }).eq('id', id);
       if (error) throw error;
+      
       toast({ title: `Payment ${newStatus} successfully` });
+      
+      // Trigger Email Notification
+      if (newStatus === 'Approved') {
+        triggerEmail('/send/payment-status-update', {
+          name: pay.author_name || 'Author',
+          email: pay.email,
+          mode: 'receipt',
+          details: {
+            mID: pay.manuscript_id,
+            mTitle: pay.manuscript_title,
+            amount: pay.amount,
+            pMode: pay.payment_method || pay.payment_mode,
+            tID: pay.transaction_number,
+            date: parseExcelDate(pay.date_of_payment || pay.submitted_at),
+            pubType: pay.publication_type || (pay.manuscript_id?.includes('BSIP') ? 'book' : 'journal')
+          }
+        });
+      } else if (newStatus === 'Rejected' || newStatus === 'Failed') {
+        triggerEmail('/send/payment-status-update', {
+          name: pay.author_name || 'Author',
+          email: pay.email,
+          mode: 'failed',
+          details: {
+            mID: pay.manuscript_id,
+            mTitle: pay.manuscript_title,
+            tID: pay.transaction_number
+          }
+        });
+      }
+
       fetchData();
     } catch(e) {
       toast({ title: 'Failed to update status', variant: 'destructive' });
     }
+  };
+
+  const manuallySendInvoice = (pay: any) => {
+    triggerEmail('/send/payment-status-update', {
+      name: pay.author_name || 'Author',
+      email: pay.email,
+      mode: 'invoice',
+      details: {
+        mID: pay.manuscript_id,
+        mTitle: pay.manuscript_title,
+        amount: pay.amount || (pay.manuscript_id?.includes('BSIP') ? '15000' : '1500'),
+        pubType: pay.publication_type || (pay.manuscript_id?.includes('BSIP') ? 'book' : 'journal')
+      }
+    });
+    toast({ title: 'Invoice sent successfully' });
   };
 
   const handleEditSave = async () => {
@@ -284,7 +410,7 @@ export function AdminPayments() {
                       {item.transaction_number || '—'}
                    </div>
                    <div className="col-span-1 text-[12px] font-bold text-slate-600 whitespace-nowrap">
-                      {parseExcelDate(item.date_of_payment)}
+                      {parseExcelDate(item.date_of_payment && String(item.date_of_payment).trim() !== '' && String(item.date_of_payment).trim() !== '—' ? item.date_of_payment : item.submitted_at)}
                    </div>
                    <div className="col-span-2">
                       {getStatusBadge(item.status)}
@@ -302,6 +428,9 @@ export function AdminPayments() {
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => openEdit(item)} className="focus:bg-slate-50 cursor-pointer text-xs rounded-lg py-2">
                                <Edit className="mr-2 h-4 w-4 text-slate-400" /> Edit Record
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => manuallySendInvoice(item)} className="focus:bg-blue-50 cursor-pointer text-xs rounded-lg py-2 focus:text-blue-700">
+                                <Mail className="mr-2 h-4 w-4 text-blue-600" /> Send Invoice
                             </DropdownMenuItem>
                             <DropdownMenuSeparator className="bg-slate-100 my-1" />
                             <DropdownMenuItem onClick={() => updateStatus(item.id, 'Approved')} className="focus:bg-emerald-50 cursor-pointer text-xs rounded-lg py-2 focus:text-emerald-700">

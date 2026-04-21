@@ -58,6 +58,7 @@ export default function GeneralManuscriptSubmissionForm({ journalTitle, subject 
     journal: journalTitle || "",
     manuscriptTitle: "",
     researchField: subject || "",
+    doi: "",
     manuscript: null as File | null
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -215,6 +216,25 @@ export default function GeneralManuscriptSubmissionForm({ journalTitle, subject 
     setIsSubmitting(true);
 
     try {
+      if (formData.doi && formData.doi.trim() !== '') {
+        const { data: existingDois, error: doiError } = await supabase
+          .from('manuscripts')
+          .select('id, status')
+          .eq('doi', formData.doi.trim())
+          .in('status', ['Published', 'published', 'Accepted', 'accepted']);
+
+        if (doiError) console.error("DOI check error", doiError);
+        
+        if (existingDois && existingDois.length > 0) {
+          toast({
+            title: "DOI already exists",
+            description: "DOI is already published.",
+            variant: "destructive"
+          });
+          setIsSubmitting(false);
+          return;
+        }
+      }
       if (!formData.manuscript) {
         throw new Error("Please upload a manuscript file");
       }
@@ -301,7 +321,9 @@ export default function GeneralManuscriptSubmissionForm({ journalTitle, subject 
           author_count: authors.length,
           author_names: authorNames,
           file_url: s3Url,
-          status: 'submitted'
+          status: 'submitted',
+          doi: formData.doi.trim() || null,
+          submitted_at: new Date().toISOString()
         }])
         .select();
 
@@ -329,6 +351,7 @@ export default function GeneralManuscriptSubmissionForm({ journalTitle, subject 
         journal: "",
         manuscriptTitle: "",
         researchField: "",
+        doi: "",
         manuscript: null
       });
       
@@ -632,6 +655,22 @@ export default function GeneralManuscriptSubmissionForm({ journalTitle, subject 
             <p className="text-xs text-gray-700 dark:text-gray-300">
               Enter the research field or keywords that describe your manuscript topic
             </p>
+          </div>
+
+          <div className="space-y-4 border p-4 rounded-md bg-gray-50 dark:bg-gray-800/50">
+            <div className="space-y-2">
+              <Label className="text-blue-600 dark:text-blue-400" htmlFor="doi">DOI Link (If Re-submitting / Existing)</Label>
+              <Input
+                id="doi"
+                type="text"
+                value={formData.doi}
+                onChange={(e) => setFormData(prev => ({ ...prev, doi: e.target.value }))}
+                placeholder="e.g., https://doi.org/10.1234/abc.567"
+              />
+              <p className="text-xs text-muted-foreground text-gray-700 dark:text-gray-300">
+                Optional: Provide the DOI if this manuscript is an update to an existing publication.
+              </p>
+            </div>
           </div>
 
           <div className="space-y-2">

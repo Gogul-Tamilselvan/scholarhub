@@ -157,6 +157,11 @@ export default function DynamicJournalPage() {
   const managingEditorData = editorialBoard.find((m: any) => m.role === 'managing-editor');
   const associateEditorsList = editorialBoard.filter((m: any) => m.role === 'associate-editor').map(toMember);
   const boardMembersList = editorialBoard.filter((m: any) => m.role === 'board-member').map(toMember);
+  const indexingPartnersList = editorialBoard.filter((m: any) => m.role === 'indexing').map((m: any) => ({
+    name: m.name,
+    subtext: m.designation || '',
+    imageUrl: m.institution || '',
+  }));
 
   // Journal particulars from DB
   const journalParticulars = {
@@ -247,6 +252,7 @@ export default function DynamicJournalPage() {
         journalParticulars={journalParticulars}
         currentIssueArticles={currentIssueArticles}
         currentIssueMeta={currentIssueMeta || undefined}
+        indexingPartners={indexingPartnersList.length > 0 ? indexingPartnersList : undefined}
       />
     </>
   );

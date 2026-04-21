@@ -15,11 +15,13 @@ import {
   ListChecks, List, Book, Printer, FileDown, Phone,
   ChevronsUpDown, Building, Eye, FileSearch,
   Medal, Ban, GraduationCap, FileWarning, Wallet, Zap,
-  Edit, Check, X, Pause, PlusCircle, Globe, Archive, BookMarked
+  Edit, Check, X, Pause, PlusCircle, Globe, Archive, BookMarked, ScrollText, Shield
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { supabaseAdmin as supabase } from '@/lib/supabase';
+import { supabase as authClient, supabaseAdmin as supabase } from '@/lib/supabase';
 import SEO from '@/components/SEO';
+import { AdminSubAdmins } from '@/components/AdminSubAdmins';
+import { SubAdminTasks } from '@/components/SubAdminTasks';
 import { ReviewApprovals } from '@/components/ReviewApprovals';
 import { SubmissionComparison } from '@/components/SubmissionComparison';
 import { AdminPayments } from '@/components/AdminPayments';
@@ -32,6 +34,9 @@ import { AdminLogs } from '@/components/AdminLogs';
 import { AdminUsers } from '@/components/AdminUsers';
 import { AdminJournals } from '@/components/AdminJournals';
 import { AdminArchives } from '@/components/AdminArchives';
+import { AdminCertificates } from '@/components/AdminCertificates';
+import { AdminBroadcast } from '@/components/AdminBroadcast';
+import { AdminMessages } from '@/components/AdminMessages';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { 
@@ -60,6 +65,33 @@ export default function AdminDashboard() {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [adminEmail, setAdminEmail] = useState('');
+  // Sub-admin state
+  const [isMainAdmin, setIsMainAdmin] = useState(true);
+  const [subAdminTabs, setSubAdminTabs] = useState<string[]>([]);
+  
+  // ── Mail Server Trigger Helper ──────────────────────────────────────────────
+  const MAIL_SERVER_URL = "https://scholar-hub-server-seven.vercel.app";
+  const MAIL_API_KEY = "scholar_india_mail_secret_2026";
+
+  const triggerEmail = async (endpoint: string, payload: any) => {
+    try {
+      const res = await fetch(`${MAIL_SERVER_URL}${endpoint}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': MAIL_API_KEY
+        },
+        body: JSON.stringify(payload)
+      });
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || 'Mail failed');
+      console.log(`✅ Email sent to ${endpoint}:`, result);
+      return true;
+    } catch (e: any) {
+      console.error(`❌ Mail trigger error [${endpoint}]:`, e.message);
+      return false;
+    }
+  };
   const [loading, setLoading] = useState(false);
   const [selectedManuscript, setSelectedManuscript] = useState<any>(null);
   const [selectedReviewer, setSelectedReviewer] = useState<any>(null);
@@ -73,6 +105,69 @@ export default function AdminDashboard() {
   const [filterStatus, setFilterStatus] = useState('All');
   const [showPublished, setShowPublished] = useState(true);
   const [showRejected, setShowRejected] = useState(true);
+  
+  // Custom Reject State
+  const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
+  const [rejectReason, setRejectReason] = useState('');
+  const [rejectingManuscriptId, setRejectingManuscriptId] = useState('');
+
+  // Notifications State
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [viewedNotifIds, setViewedNotifIds] = useState<string[]>([]);
+
+  useEffect(() => {
+    const stored = localStorage.getItem('scholarViewedNotifications');
+    if (stored) {
+       try { setViewedNotifIds(JSON.parse(stored)); } catch(e){}
+    }
+  }, []);
+
+  const markNotificationAsViewed = (id: string) => {
+    setViewedNotifIds(prev => {
+      if (prev.includes(id)) return prev;
+      const next = [...prev, id].slice(-1000); // retain last 1000 to avoid infinite growth
+      localStorage.setItem('scholarViewedNotifications', JSON.stringify(next));
+      return next;
+    });
+  };
+
+  const markAllNotificationsAsViewed = () => {
+    const allIds = notifications.map(n => n.id);
+    const newViewed = [...new Set([...viewedNotifIds, ...allIds])].slice(-1000);
+    setViewedNotifIds(newViewed);
+    localStorage.setItem('scholarViewedNotifications', JSON.stringify(newViewed));
+  };
+
+  const fetchGlobalNotifications = async () => {
+    try {
+        const [
+            { data: mData },
+            { data: rData }
+        ] = await Promise.all([
+            supabase.from('manuscripts').select('id, manuscript_title, status, submitted_at').in('status', ['Submitted', 'Under Process']).order('submitted_at', { ascending: false }).limit(20),
+            supabase.from('reviewers').select('id, first_name, last_name, role, status, submitted_at').in('status', ['Pending', 'Submitted', 'pending', 'PENDING']).order('submitted_at', { ascending: false }).limit(20)
+        ]);
+
+        const notifs: any[] = [];
+        mData?.forEach((m: any) => notifs.push({
+            id: `m_${m.id}`, realId: m.id, type: 'manuscript', 
+            title: 'New Manuscript', subtitle: m.manuscript_title || 'Untitled', 
+            date: parseDateToTimestamp(m.submitted_at)
+        }));
+        rData?.forEach((r: any) => notifs.push({
+            id: `r_${r.id}`, realId: r.id, type: 'reviewer', 
+            title: 'New Application', subtitle: `${r.first_name} ${r.last_name || ''} - ${r.role || 'Reviewer'}`, 
+            date: parseDateToTimestamp(r.submitted_at)
+        }));
+
+        notifs.sort((a, b) => b.date - a.date);
+        setNotifications(notifs);
+    } catch(e) {}
+  };
+
+  useEffect(() => {
+    if (localStorage.getItem('adminSession')) fetchGlobalNotifications();
+  }, []);
 
   const exportManuscriptsCSV = () => {
     if (allManuscripts.length === 0) return;
@@ -144,11 +239,11 @@ export default function AdminDashboard() {
 
   const CACHE_TTL = 5 * 60 * 1000;
   const [allManuscripts, setAllManuscripts] = useState<any[]>([]);
-  const [manuscriptsLimit, setManuscriptsLimit] = useState(10);
+  const [manuscriptsLimit, setManuscriptsLimit] = useState(100);
   const [loadingManuscripts, setLoadingManuscripts] = useState(false);
 
   const [allReviewers, setAllReviewers] = useState<any[]>([]);
-  const [reviewersLimit, setReviewersLimit] = useState(10);
+  const [reviewersLimit, setReviewersLimit] = useState(100);
   const [loadingReviewers, setLoadingReviewers] = useState(false);
   const [reviewerSearchTerm, setReviewerSearchTerm] = useState('');
   const [filterReviewerRole, setFilterReviewerRole] = useState('All Roles');
@@ -179,6 +274,33 @@ export default function AdminDashboard() {
   const [assignmentsFilterStatus, setAssignmentsFilterStatus] = useState('All Statuses');
   const [showRevoked, setShowRevoked] = useState(false);
 
+  const parseDateString = (dateVal: string | number | null | undefined): string => {
+        if (!dateVal) return '—';
+        const strVal = String(dateVal);
+        const parsedNum = Number(strVal);
+        if (!isNaN(parsedNum) && parsedNum > 10000 && parsedNum < 100000) {
+          // Handle Excel serial date format (eg: 45993)
+          const date = new Date(Math.round((parsedNum - 25569) * 86400 * 1000));
+          return date.toLocaleDateString('en-GB');
+        }
+        // Handle standard ISO date string fallback
+        const parsedDate = new Date(strVal);
+        return !isNaN(parsedDate.getTime()) ? parsedDate.toLocaleDateString('en-GB') : strVal;
+      };
+
+  // Helper: converts any date value (Excel serial OR ISO string) to a timestamp for sorting
+  const parseDateToTimestamp = (dateVal: string | number | null | undefined): number => {
+        if (!dateVal) return 0;
+        const strVal = String(dateVal);
+        const parsedNum = Number(strVal);
+        if (!isNaN(parsedNum) && parsedNum > 10000 && parsedNum < 100000) {
+          // Excel serial date
+          return Math.round((parsedNum - 25569) * 86400 * 1000);
+        }
+        const parsedDate = new Date(strVal);
+        return !isNaN(parsedDate.getTime()) ? parsedDate.getTime() : 0;
+  };
+
   const fetchManuscripts = async (forceRefetch = false) => {
     if (!forceRefetch) {
        const cached = sessionStorage.getItem('adminManuscriptsCache');
@@ -195,7 +317,7 @@ export default function AdminDashboard() {
 
     setLoadingManuscripts(true);
     try {
-      const { data, error } = await supabase.from('manuscripts').select('*').order('submitted_at', { ascending: false }).limit(manuscriptsLimit);
+      const { data, error } = await supabase.from('manuscripts').select('*').order('submitted_at', { ascending: false, nullsFirst: false }).limit(manuscriptsLimit);
       if (!error && data) {
          const formatted = data.map(m => ({
             id: m.id || "UNKNOWN",   // manuscripts.id IS the custom MANSJCM... ID
@@ -205,10 +327,11 @@ export default function AdminDashboard() {
             phone: m.mobile || "-",
             journal: m.journal || "Not Specified",
             status: m.status || "Submitted",
-            date: m.submitted_at ? new Date(m.submitted_at).toLocaleDateString('en-GB') : "-",
+            date: parseDateString(m.submitted_at),
             isNew: false,
             raw: m
          }));
+         formatted.sort((a, b) => parseDateToTimestamp(b.raw.submitted_at) - parseDateToTimestamp(a.raw.submitted_at));
          setAllManuscripts(formatted);
          sessionStorage.setItem('adminManuscriptsCache', JSON.stringify({ data: formatted, timestamp: Date.now() }));
       }
@@ -232,16 +355,21 @@ export default function AdminDashboard() {
 
     setLoadingReviewers(true);
     try {
-      const { data, error } = await supabase.from('reviewers').select('*').order('submitted_at', { ascending: false }).limit(reviewersLimit);
+      const { data, error } = await supabase.from('reviewers').select('*').order('submitted_at', { ascending: false, nullsFirst: false }).limit(reviewersLimit);
       if (!error && data) {
-         setAllReviewers(data);
-         sessionStorage.setItem('adminReviewersCache', JSON.stringify({ data, timestamp: Date.now() }));
+         const formatted = [...data];
+         // Client-side sort: handles both Excel serials and ISO strings correctly
+         formatted.sort((a, b) => parseDateToTimestamp(b.submitted_at) - parseDateToTimestamp(a.submitted_at));
+         setAllReviewers(formatted);
+         sessionStorage.setItem('adminReviewersCache', JSON.stringify({ data: formatted, timestamp: Date.now() }));
       }
     } catch(err) { console.error(err); }
     finally { setLoadingReviewers(false); }
   };
 
   const fetchReviews = async (forceRefetch = false) => {
+    // Always clear old cache to prevent stale data from blocking fresh queries
+    if (forceRefetch) sessionStorage.removeItem('adminReviewsCache');
     if (!forceRefetch) {
        const cached = sessionStorage.getItem('adminReviewsCache');
        if (cached) {
@@ -259,16 +387,39 @@ export default function AdminDashboard() {
     try {
       const { data, error } = await supabase
         .from('assignments')
-        .select('id, assigned_at, manuscript_id, manuscript_title, reviewer_id, reviewer_full_name, reviewer_email, recommendation, overall_marks, submission_date, status, importance, title_feedback, abstract_feedback, scientific_correctness, references_feedback, language_quality, general_comments, ethical_issues, ethical_details, competing_interests, plagiarism_suspected, notes')
+        .select('*')
         .order('assigned_at', { ascending: false })
         .limit(reviewsLimit);
-        
+
       if (error) {
         console.error('fetchReviews error:', error);
       }
       if (!error && data) {
-         setAllReviews(data);
-         sessionStorage.setItem('adminReviewsCache', JSON.stringify({ data, timestamp: Date.now() }));
+         const formatted = (data as any[]).map((a) => {
+           // Parse notes JSON stored by reviewer submit form (camelCase keys)
+           let notesData: any = {};
+           try { notesData = a.notes ? JSON.parse(a.notes) : {}; } catch {}
+           return {
+             ...a,
+             manuscript_title: a.manuscript_title || a.manuscript_id || '—',
+             reviewer_full_name: a.reviewer_full_name || a.reviewer_id || '—',
+             // Map camelCase notes fields → snake_case fields expected by the Review Details modal
+             importance:           notesData.importanceOfManuscript || notesData.importance || '',
+             title_feedback:       notesData.titleSuitability       || notesData.title_feedback || '',
+             abstract_feedback:    notesData.abstractComprehensive  || notesData.abstract_feedback || '',
+             scientific_correctness: notesData.scientificCorrectness || notesData.scientific_correctness || '',
+             references_feedback:  notesData.referencesSufficient   || notesData.references_feedback || '',
+             language_quality:     notesData.languageQuality        || notesData.language_quality || '',
+             general_comments:     notesData.generalComments        || notesData.general_comments || '',
+             ethical_issues:       notesData.ethicalIssues          || notesData.ethical_issues || '',
+             ethical_details:      notesData.ethicalIssuesDetails   || notesData.ethical_details || '',
+             competing_interests:  notesData.competingInterests     || notesData.competing_interests || '',
+             plagiarism_suspected: notesData.plagiarismSuspected    || notesData.plagiarism_suspected || '',
+           };
+         });
+         formatted.sort((a: any, b: any) => parseDateToTimestamp(b.assigned_at) - parseDateToTimestamp(a.assigned_at));
+         setAllReviews(formatted);
+         sessionStorage.setItem('adminReviewsCache', JSON.stringify({ data: formatted, timestamp: Date.now() }));
       }
     } catch(err) { console.error(err); }
     finally { setLoadingReviews(false); }
@@ -302,19 +453,64 @@ export default function AdminDashboard() {
     }
   };
 
-  const updateManuscriptStatus = async (id: string, newStatus: string) => {
+  const updateManuscriptStatus = async (id: string, newStatus: string, reason?: string) => {
     try {
-      const { error } = await supabase.from('manuscripts').update({ status: newStatus }).eq('id', id);
-      if (error) throw error;
+      const { data: manuscript, error: fetchErr } = await supabase.from('manuscripts').select('*').eq('id', id).single();
+      if (fetchErr) throw fetchErr;
+
+      const updateData: any = { status: newStatus };
+      if (newStatus === 'Rejected' && reason) {
+        updateData.rejection_reason = reason;
+      }
+
+      const { error } = await supabase.from('manuscripts').update(updateData).eq('id', id);
+      if (error) {
+         console.warn("DB Update error. Alter DB if needed. Falling back to status update only.");
+         await supabase.from('manuscripts').update({ status: newStatus }).eq('id', id);
+      }
       
       toast({ title: `Manuscript marked as ${newStatus}`, variant: 'default' });
-      setAllManuscripts(prev => prev.map(m => m.id === id ? { ...m, status: newStatus } : m));
-      // Refresh the Dashboard counters if needed, but not necessarily mandatory for the list view update
+      setAllManuscripts(prev => prev.map(m => m.id === id ? { ...m, ...updateData, status: newStatus } : m));
+      
+      // Trigger Email Notification
+      const modeMap: Record<string, string> = {
+        'Under Review': 'under_review',
+        'Accepted': 'accepted',
+        'Rejected': 'rejected',
+        'Published': 'published',
+        'Complement': 'complement',
+        'Under Process': 'under_process'
+      };
+
+      if (modeMap[newStatus]) {
+        triggerEmail('/send/status-update', {
+          name: manuscript.author_name || 'Author',
+          email: manuscript.email,
+          status: modeMap[newStatus],
+          details: {
+            mID: manuscript.id,
+            mTitle: manuscript.manuscript_title || manuscript.title,
+            journal: manuscript.journal,
+            doi: manuscript.doi || 'Pending',
+            reason: reason || ''
+          }
+        });
+      }
+
       fetchDashboardData(true);
     } catch (error) {
       console.error(error);
       toast({ title: 'Failed to update status', variant: 'destructive' });
     }
+  };
+
+  const submitRejection = () => {
+    if (!rejectReason.trim()) {
+      toast({ title: 'Please provide a rejection reason', variant: 'destructive' });
+      return;
+    }
+    updateManuscriptStatus(rejectingManuscriptId, 'Rejected', rejectReason);
+    setIsRejectModalOpen(false);
   };
 
   const fetchDashboardData = async (forceRefetch = false) => {
@@ -361,26 +557,14 @@ export default function AdminDashboard() {
         // Books count from books table
         supabase.from('books').select('*', { count: 'exact', head: true }),
         // Reviewers: only pending status (case-insensitive), latest 5
-        supabase.from('reviewers').select('id, first_name, last_name, email, role, status, submitted_at').or('status.eq.Pending,status.eq.pending,status.eq.PENDING').order('id', { ascending: false }).limit(5),
+        supabase.from('reviewers').select('id, first_name, last_name, email, role, status, submitted_at').or('status.eq.Pending,status.eq.pending,status.eq.PENDING').order('submitted_at', { ascending: false, nullsFirst: false }).limit(5),
         // Manuscripts latest 5
         supabase.from('manuscripts').select('id, manuscript_title, author_name, status').order('submitted_at', { ascending: false }).limit(5),
         // Assignments: direct columns, pending only
         supabase.from('assignments').select('id, status, due_date, manuscript_title, reviewer_full_name, reviewer_email').or('status.eq.Pending,status.eq.pending').order('assigned_at', { ascending: false }).limit(5)
       ]);
 
-      const parseDateString = (dateVal: string | number | null | undefined): string => {
-        if (!dateVal) return '—';
-        const strVal = String(dateVal);
-        const parsedNum = Number(strVal);
-        if (!isNaN(parsedNum) && parsedNum > 10000) {
-          // Handle Excel serial date format (eg: 45993)
-          const date = new Date(Math.round((parsedNum - 25569) * 86400 * 1000));
-          return date.toLocaleDateString('en-GB');
-        }
-        // Handle standard ISO date string fallback
-        const parsedDate = new Date(strVal);
-        return !isNaN(parsedDate.getTime()) ? parsedDate.toLocaleDateString('en-GB') : strVal;
-      };
+
 
       const newData = {
         stats: {
@@ -408,15 +592,13 @@ export default function AdminDashboard() {
           reviewer: a.reviewer_full_name || a.reviewer_email || 'Unknown',
           due: parseDateString(a.due_date)
         })) || [],
-        pendingReviewerApprovals: reviewers?.map(r => {
-          const dateStr = parseDateString(r.submitted_at);
-          return {
-            name: `${r.first_name || ''} ${r.last_name || ''}`.trim() || 'Unknown',
-            email: r.email || '',
-            role: r.role || 'Reviewer',
-            applied: dateStr !== '—' ? dateStr : (r.id ? `#${r.id}` : '—')
-          };
-        }) || []
+        pendingReviewerApprovals: reviewers?.map(r => ({
+           id: r.id,
+           name: (r.first_name || '') + ' ' + (r.last_name || ''),
+           email: r.email,
+           role: r.role,
+           applied: parseDateString(r.submitted_at || r.submitted_date)
+        })) || []
       };
 
       setDashboardData(newData);
@@ -430,20 +612,59 @@ export default function AdminDashboard() {
   };
 
   useEffect(() => {
-    const session = localStorage.getItem('adminSession');
-    if (!session) {
-      setLocation('/admin/login');
-      return;
-    }
-    const sessionData = JSON.parse(session);
-    setAdminEmail(sessionData.email);
-    
-    // Clear any stale cache from before the RLS fix, then fetch fresh
-    sessionStorage.removeItem('adminDashboardCache');
-    sessionStorage.removeItem('adminManuscriptsCache');
-    sessionStorage.removeItem('adminReviewersCache');
-    sessionStorage.removeItem('adminReviewsCache');
-    fetchDashboardData(true);
+    const checkSession = async () => {
+      // 1. Check Supabase session first (High security)
+      const { data: { session } } = await authClient.auth.getSession();
+      
+      const adminSession = localStorage.getItem('adminSession');
+      const subAdminSession = localStorage.getItem('subAdminSession');
+
+      if (!session) {
+        // If no auth session but we have local storage, it's either stale or faked
+        if (adminSession || subAdminSession) {
+          handleLogout();
+        } else {
+          setLocation('/admin/login');
+        }
+        return;
+      }
+
+      // 2. We have a valid Supabase session
+      if (adminSession) {
+        const sessionData = JSON.parse(adminSession);
+        setAdminEmail(sessionData.email);
+        setIsMainAdmin(true);
+        setSubAdminTabs([]);
+      } else if (subAdminSession) {
+        const sub = JSON.parse(subAdminSession);
+        setAdminEmail(sub.email);
+        setIsMainAdmin(false);
+        setSubAdminTabs(sub.allowed_tabs || []);
+        if (sub.allowed_tabs?.length > 0 && activeTab === 'dashboard') {
+          setActiveTab(sub.allowed_tabs[0]);
+        }
+      } else {
+        // Logged into Auth but no local permission state? 
+        // Force relogin to re-fetch profile
+        handleLogout();
+        return;
+      }
+
+      sessionStorage.removeItem('adminDashboardCache');
+      sessionStorage.removeItem('adminManuscriptsCache');
+      sessionStorage.removeItem('adminReviewersCache');
+      sessionStorage.removeItem('adminReviewsCache');
+      fetchDashboardData(true);
+    };
+
+    checkSession();
+
+    // Listen for auth changes (logout from other tab, etc)
+    const { data: { subscription } } = authClient.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_OUT') handleLogout();
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   // Fetch manuscripts whenever the limit changes (server-side limits)
@@ -467,27 +688,34 @@ export default function AdminDashboard() {
     }
   }, [reviewsLimit, activeTab]);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await authClient.auth.signOut();
     localStorage.removeItem('adminSession');
+    localStorage.removeItem('subAdminSession');
+    sessionStorage.clear();
     setLocation('/admin/login');
   };
 
   // RESTORED DYNAMIC DATA FOR MANUSCRIPTS
 
-  const NavItem = ({ icon: Icon, label, id }: any) => (
-    <button
-      onClick={() => setActiveTab(id)}
-      className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg transition-all duration-200 ${
-        activeTab === id 
-          ? 'bg-blue-600 text-white shadow-md' 
-          : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-100'
-      }`}
-    >
-      <Icon size={16} />
-      <span className="text-[13px] font-medium whitespace-nowrap overflow-hidden text-ellipsis">{label}</span>
-      {activeTab === id && <ChevronRight size={12} className="ml-auto flex-shrink-0" />}
-    </button>
-  );
+  const NavItem = ({ icon: Icon, label, id }: any) => {
+    // If sub-admin, only show tabs they have access to
+    if (!isMainAdmin && !subAdminTabs.includes(id)) return null;
+    return (
+      <button
+        onClick={() => setActiveTab(id)}
+        className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg transition-all duration-200 ${
+          activeTab === id 
+            ? 'bg-blue-600 text-white shadow-md' 
+            : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-100'
+        }`}
+      >
+        <Icon size={16} />
+        <span className="text-[13px] font-medium whitespace-nowrap overflow-hidden text-ellipsis">{label}</span>
+        {activeTab === id && <ChevronRight size={12} className="ml-auto flex-shrink-0" />}
+      </button>
+    );
+  };
 
   const StatCard = ({ label, value, icon: Icon, gradient }: any) => (
     <Card className={`border-none shadow ${gradient} overflow-hidden p-4 group relative cursor-pointer`}>
@@ -505,10 +733,53 @@ export default function AdminDashboard() {
 
   const updateReviewerStatus = async (id: string, newStatus: string) => {
     try {
-      const { error } = await supabase.from('reviewers').update({ status: newStatus }).eq('id', id);
+      const { data: rev, error: fetchErr } = await supabase.from('reviewers').select('*').eq('id', id).single();
+      if (fetchErr) throw fetchErr;
+
+      // Handle Supabase Auth creation if approving
+      let authUserId = rev.auth_id;
+      if (!authUserId && (newStatus === 'Active' || newStatus === 'Accepted')) {
+        try {
+          const { data: authUser, error: authError } = await supabase.auth.admin.createUser({
+            email: rev.email,
+            password: rev.id, // Initial password is their Reviewer ID
+            email_confirm: true,
+            user_metadata: { role: 'reviewer', name: `${rev.first_name} ${rev.last_name || ''}`.trim() }
+          });
+          
+          if (authError) {
+             if (!authError.message.includes('already been registered')) throw authError;
+             // If already registered, try to find and link (optional but safe)
+          } else {
+            authUserId = authUser.user?.id;
+          }
+        } catch (authErr: any) {
+          console.error('Auth User Creation Error:', authErr);
+        }
+      }
+
+      const { error } = await supabase.from('reviewers').update({ 
+        status: newStatus,
+        auth_id: authUserId 
+      }).eq('id', id);
+
       if (!error) {
          toast({ title: `Status changed to ${newStatus}` });
          fetchReviewers(true);
+
+         // Trigger Appointment Email if Approved
+         if (newStatus === 'Active' || newStatus === 'Accepted') {
+           triggerEmail('/send/reviewer-status-update', {
+             name: `${rev.first_name} ${rev.last_name || ''}`.trim(),
+             email: rev.email,
+             status: 'accepted',
+             details: {
+               rID: rev.id,
+               role: rev.role || 'Reviewer',
+               journal: rev.journal
+             }
+           });
+         }
       } else { throw error; }
     } catch(e) { toast({ title: "Failed to update status", variant: "destructive" }); }
   };
@@ -605,10 +876,15 @@ export default function AdminDashboard() {
                  ) : filteredReviewers.length === 0 ? (
                     <div className="p-12 text-center text-slate-400 font-medium text-sm">No reviewers found matching filters.</div>
                  ) : (
-                    filteredReviewers.map((r, i) => (
+                    filteredReviewers.map((r, i) => {
+                       const isNewRev = !viewedNotifIds.includes(`r_${r.id}`) && (r.status?.toLowerCase() === 'pending' || r.status?.toLowerCase() === 'submitted');
+                       return (
                        <div key={i} className="grid grid-cols-12 gap-x-4 px-6 py-4 hover:bg-slate-50 items-center">
                           <div className="col-span-3 space-y-1.5">
-                             <div className="text-[9px] font-black text-slate-500 tracking-wider uppercase">{r.id || 'N/A'}</div>
+                             <div className="flex items-center gap-2">
+                                <span className="text-[9px] font-black text-slate-500 tracking-wider uppercase">{r.id || 'N/A'}</span>
+                                {isNewRev && <span className="bg-rose-500 text-white px-1 py-0.5 rounded text-[8px] font-black uppercase shadow-sm">NEW</span>}
+                             </div>
                              <h4 className="text-[13px] font-bold text-slate-800 leading-snug">{r.first_name} {r.last_name || ''}</h4>
                              <div className="flex flex-col gap-y-0.5 mt-1 text-[10px]">
                                 <span className="flex items-center gap-2 text-blue-600 font-bold"><Mail size={12} className="text-slate-600" /> {r.email}</span>
@@ -627,14 +903,14 @@ export default function AdminDashboard() {
                              {r.institution || '-'}
                           </div>
                           <div className="col-span-1 text-[10px] font-medium text-slate-600">
-                             {r.submitted_at ? new Date(r.submitted_at).toLocaleDateString('en-GB') : '-'}
+                             {parseDateString(r.submitted_at)}
                           </div>
                           <div className="col-span-1 flex items-center justify-end gap-3 print:justify-start">
                              <Badge variant="outline" className={`border text-[9px] font-black tracking-wide rounded px-2.5 py-0.5 shadow-sm border-none ${r.status?.toLowerCase() === 'active' || r.status?.toLowerCase() === 'accepted' ? 'bg-emerald-100 text-emerald-600' : r.status?.toLowerCase() === 'rejected' ? 'bg-rose-100 text-rose-600' : 'bg-slate-100 text-slate-600'}`}>
                                 {r.status || 'Active'}
                              </Badge>
                              <div className="print:hidden">
-                                <DropdownMenu>
+                                <DropdownMenu onOpenChange={(o) => { if (o) markNotificationAsViewed(`r_${r.id}`); }}>
                                    <DropdownMenuTrigger asChild>
                                       <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-slate-700 bg-white border border-slate-100 rounded-full transition-colors"><MoreVertical size={14} /></Button>
                                    </DropdownMenuTrigger>
@@ -653,7 +929,7 @@ export default function AdminDashboard() {
                              </div>
                           </div>
                        </div>
-                    ))
+                    )})
                  )}
               </div>
               {allReviewers.length >= reviewersLimit && (
@@ -683,6 +959,43 @@ export default function AdminDashboard() {
             </div>
          </div>
          <div className="flex items-center gap-4">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="relative p-2 text-slate-500 hover:text-slate-800 transition-colors">
+                  <Bell size={20} />
+                  {notifications.filter(n => !viewedNotifIds.includes(n.id)).length > 0 && (
+                    <span className="absolute top-1.5 right-2 w-2 h-2 bg-rose-500 rounded-full animate-pulse border border-white"></span>
+                  )}
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-80 bg-white shadow-xl border-slate-100 rounded-xl p-0 overflow-hidden font-sans">
+                <div className="bg-slate-50 px-4 py-3 flex items-center justify-between border-b border-slate-100">
+                   <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2"><Bell size={12}/> Notifications <span className="bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded text-[9px]">{notifications.filter(n => !viewedNotifIds.includes(n.id)).length} New</span></h3>
+                   <button onClick={markAllNotificationsAsViewed} className="text-[10px] font-bold text-blue-600 hover:text-blue-800">Mark read</button>
+                </div>
+                <div className="max-h-[300px] overflow-y-auto">
+                   {notifications.length === 0 ? (
+                      <div className="p-8 text-center text-xs text-slate-500 font-medium">No recent notifications</div>
+                   ) : notifications.map(notif => {
+                      const isUnread = !viewedNotifIds.includes(notif.id);
+                      return (
+                        <div key={notif.id} onClick={() => { markNotificationAsViewed(notif.id); setActiveTab(notif.type === 'reviewer' ? 'reviewers' : 'manuscripts'); }} className={`p-4 border-b border-slate-50 cursor-pointer transition-colors flex flex-col gap-1 ${isUnread ? 'bg-blue-50/30 hover:bg-blue-50' : 'hover:bg-slate-50'}`}>
+                           <div className="flex justify-between items-start mb-0.5">
+                              <span className={`text-[10px] font-bold uppercase tracking-wider ${notif.type === 'manuscript' ? 'text-blue-600' : 'text-emerald-600'}`}>{notif.title}</span>
+                              {isUnread && <span className="w-1.5 h-1.5 rounded-full bg-blue-600 flex-shrink-0 mt-1 shadow-sm"></span>}
+                           </div>
+                           <p className="text-xs font-semibold text-slate-800 leading-tight truncate">{notif.subtitle}</p>
+                           <p className="text-[9px] text-slate-400 font-medium">{new Date(notif.date).toLocaleDateString('en-GB')} • ID: {notif.realId}</p>
+                        </div>
+                      )
+                   })}
+                </div>
+                <div className="bg-slate-50 p-2 text-center border-t border-slate-100">
+                   <button onClick={fetchGlobalNotifications} className="text-[10px] font-bold text-slate-500 hover:text-slate-800 w-full text-center flex items-center justify-center gap-1"><RefreshCw size={10}/> Fetch Latest Updates</button>
+                </div>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
             <Button onClick={() => fetchDashboardData(true)} disabled={loading} variant="outline" className="gap-2 text-[11px] font-bold h-9 border-blue-200 text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg">
                <RefreshCw size={13} className={loading ? "animate-spin" : ""} /> Refresh
             </Button>
@@ -982,10 +1295,12 @@ export default function AdminDashboard() {
              ) : filteredManuscripts.length === 0 ? (
                 <div className="p-12 text-center text-slate-400 font-medium text-sm">No manuscripts found matching filters.</div>
              ) : (
-                filteredManuscripts.slice(0, manuscriptsLimit).map((m, i) => (
+                filteredManuscripts.slice(0, manuscriptsLimit).map((m, i) => {
+const isNewMan = !viewedNotifIds.includes(`m_${m.id}`) && (m.status === 'Submitted' || m.status === 'Under Process');
+return (
                    <div key={i} className="grid grid-cols-12 gap-x-4 px-6 py-5 hover:bg-slate-50 items-center">
                       <div className="col-span-6 space-y-1.5">
-                         <div className="flex items-center gap-2"><span className="text-[11px] font-black text-slate-600 tracking-wider uppercase">{m.id}</span>{m.isNew && <span className="text-rose-600 text-[9px] font-bold uppercase py-0.5 rounded leading-none italic">NEW</span>}</div>
+                         <div className="flex items-center gap-2"><span className="text-[11px] font-black text-slate-600 tracking-wider uppercase">{m.id}</span>{isNewMan && <span className="bg-rose-500 text-white px-1.5 py-0.5 rounded text-[8px] font-black uppercase shadow-sm">NEW</span>}</div>
                          <h4 className="text-[13px] font-bold text-slate-800 leading-snug pr-4">{m.title}</h4>
                          <div className="flex flex-col gap-y-0.5 mt-1.5 text-[10px]">
                             <span className="flex items-center gap-2 text-slate-500 font-bold uppercase"><Users size={12} className="text-slate-600" /> {m.author}</span>
@@ -997,7 +1312,7 @@ export default function AdminDashboard() {
                       <div className="col-span-3 flex items-center text-[10px] font-medium text-slate-600 leading-tight pr-4">{m.journal}</div>
                       <div className="col-span-1 flex items-center"><Badge variant="outline" className={`border text-[9px] font-black tracking-wide rounded-full px-2.5 py-0.5 shadow-sm bg-opacity-50 ${m.status?.toLowerCase() === 'accepted' || m.status?.toLowerCase() === 'published' ? 'bg-emerald-100 text-emerald-600 border-none' : m.status?.toLowerCase() === 'rejected' ? 'bg-rose-100 text-rose-600 border-none' : 'bg-blue-100 text-blue-600 border-none'}`}>{m.status}</Badge></div>
                       <div className="col-span-1 flex items-center justify-end print:hidden">
-                         <DropdownMenu>
+                         <DropdownMenu onOpenChange={(o) => { if (o) markNotificationAsViewed(`m_${m.id}`); }}>
                             <DropdownMenuTrigger asChild>
                                <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-slate-700 bg-white border border-slate-100 rounded-md transition-colors"><MoreVertical size={14} /></Button>
                             </DropdownMenuTrigger>
@@ -1029,10 +1344,13 @@ export default function AdminDashboard() {
                                <DropdownMenuItem onClick={() => updateManuscriptStatus(m.id, 'Under Review')} className="focus:bg-orange-50 cursor-pointer text-xs rounded-lg py-2 focus:text-orange-700">
                                   <Clock className="mr-2 h-4 w-4 text-orange-600" /> Under Review
                                </DropdownMenuItem>
+                               <DropdownMenuItem onClick={() => updateManuscriptStatus(m.id, 'Under Process')} className="focus:bg-blue-50 cursor-pointer text-xs rounded-lg py-2 focus:text-blue-700">
+                                  <RefreshCw className="mr-2 h-4 w-4 text-blue-600" /> Under Process
+                               </DropdownMenuItem>
                                <DropdownMenuItem onClick={() => updateManuscriptStatus(m.id, 'Accepted')} className="focus:bg-emerald-50 cursor-pointer text-xs rounded-lg py-2 focus:text-emerald-700">
                                   <Check className="mr-2 h-4 w-4 text-emerald-600" /> Accept
                                </DropdownMenuItem>
-                               <DropdownMenuItem onClick={() => updateManuscriptStatus(m.id, 'Rejected')} className="focus:bg-rose-50 cursor-pointer text-xs rounded-lg py-2 focus:text-rose-700">
+                               <DropdownMenuItem onClick={() => { setRejectingManuscriptId(m.id); setRejectReason(''); setIsRejectModalOpen(true); }} className="focus:bg-rose-50 cursor-pointer text-xs rounded-lg py-2 focus:text-rose-700">
                                   <X className="mr-2 h-4 w-4 text-rose-600" /> Reject
                                </DropdownMenuItem>
                                <DropdownMenuItem onClick={() => updateManuscriptStatus(m.id, 'Hold')} className="focus:bg-slate-100 cursor-pointer text-xs rounded-lg py-2">
@@ -1048,7 +1366,7 @@ export default function AdminDashboard() {
                          </DropdownMenu>
                       </div>
                    </div>
-                ))
+                )})
              )}
           </div>
           {allManuscripts.length >= manuscriptsLimit && (
@@ -1098,8 +1416,18 @@ export default function AdminDashboard() {
     document.body.removeChild(link);
   };
 
-  const handleSendReminder = (email: string) => {
-    toast({ title: `Reminder sent to ${email}` });
+  const handleSendReminder = (assignment: any) => {
+    triggerEmail('/send/reviewer-assignment-update', {
+      name: assignment.reviewer_full_name || 'Reviewer',
+      email: assignment.reviewer_email,
+      type: 'REMINDER',
+      details: {
+        mID: assignment.manuscript_id,
+        mTitle: assignment.manuscript_title,
+        dueDate: assignment.due_date
+      }
+    });
+    toast({ title: `Reminder sent to ${assignment.reviewer_email}` });
   };
 
   const renderAssignments = () => {
@@ -1228,10 +1556,10 @@ export default function AdminDashboard() {
                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-1">{r.reviewer_id || '—'}</p>
                      </div>
                      <div className="col-span-2 text-[10px] font-bold text-slate-600">
-                        {r.assigned_at ? new Date(r.assigned_at).toLocaleString('en-GB') : '—'}
+                        {parseDateString(r.assigned_at)}
                      </div>
                      <div className={`col-span-1 text-[10px] font-bold flex items-center gap-1 ${isOverdue ? 'text-rose-600' : 'text-slate-600'}`}>
-                        {r.due_date || '—'}
+                        {parseDateString(r.due_date)}
                         {isOverdue && <AlertCircle size={12} className="text-amber-500" />}
                      </div>
                      <div className="col-span-1">
@@ -1271,7 +1599,7 @@ export default function AdminDashboard() {
                               </Button>
                            </DropdownMenuTrigger>
                            <DropdownMenuContent align="end" className="w-44 bg-white border-slate-100 shadow-xl rounded-xl p-1.5 font-medium text-slate-600">
-                              <DropdownMenuItem onClick={() => handleSendReminder(r.reviewer_email || '')} className="focus:bg-amber-50 cursor-pointer text-xs rounded-lg py-2 focus:text-amber-700">
+                              <DropdownMenuItem onClick={() => handleSendReminder(r)} className="focus:bg-amber-50 cursor-pointer text-xs rounded-lg py-2 focus:text-amber-700">
                                  <Bell className="mr-2 h-4 w-4 text-amber-600" /> Send Reminder
                               </DropdownMenuItem>
                               <DropdownMenuItem onClick={() => updateReviewStatus(r.id, 'Revoked')} className="focus:bg-rose-50 cursor-pointer text-xs rounded-lg py-2 focus:text-rose-700">
@@ -1310,6 +1638,30 @@ export default function AdminDashboard() {
         .eq('id', selectedReview.id);
       if (error) throw error;
       toast({ title: `Review ${action.toLowerCase()} successfully.` });
+
+      if (action === 'Approved') {
+        triggerEmail('/send/reviewer-assignment-update', {
+          name: selectedReview.reviewer_full_name || 'Reviewer',
+          email: selectedReview.reviewer_email,
+          type: 'COMPLETED',
+          details: {
+            mID: selectedReview.manuscript_id,
+            mTitle: selectedReview.manuscript_title
+          }
+        });
+      } else if (action === 'Rejected') {
+        triggerEmail('/send/status-update', {
+          name: selectedReview.reviewer_full_name || 'Reviewer',
+          email: selectedReview.reviewer_email,
+          status: 'Review Rejected',
+          mID: selectedReview.manuscript_id,
+          manuscriptTitle: selectedReview.manuscript_title,
+          details: {
+            note: adminNote || 'Quality standards not met'
+          }
+        });
+      }
+
       setAllReviews(prev => prev.map(r => r.id === selectedReview.id ? { ...r, status: action } : r));
       setIsReviewModalOpen(false);
       setAdminNote('');
@@ -1451,7 +1803,7 @@ export default function AdminDashboard() {
 
                     {/* Submitted date */}
                     <div className="col-span-1">
-                      <span className="text-[11px] font-medium text-slate-500">{r.submission_date || '—'}</span>
+                      <span className="text-[11px] font-medium text-slate-500">{parseDateString(r.submission_date)}</span>
                     </div>
 
                     {/* Status */}
@@ -1468,7 +1820,7 @@ export default function AdminDashboard() {
                         className="h-8 bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-bold px-4 rounded-lg shadow-sm gap-1.5"
                         onClick={() => {
                           setSelectedReview(r);
-                          setAdminNote(r.notes || '');
+                          setAdminNote('');
                           setIsReviewModalOpen(true);
                         }}
                       >
@@ -1573,6 +1925,19 @@ export default function AdminDashboard() {
 
       if (error) throw error;
       toast({ title: 'Assigned successfully.' });
+      
+      // Trigger Email Invitation
+      triggerEmail('/send/reviewer-assignment-update', {
+        name: `${reviewer.first_name || ''} ${reviewer.last_name || ''}`.trim(),
+        email: reviewer.email,
+        type: 'INVITATION',
+        details: {
+          mID: selectedManuscriptForAssign.id,
+          mTitle: selectedManuscriptForAssign.title || selectedManuscriptForAssign.manuscript_title,
+          dueDate: formattedDate
+        }
+      });
+
       setIsAssignModalOpen(false);
       setSelectedManuscriptForAssign(null);
       fetchReviews(true);
@@ -1704,7 +2069,7 @@ export default function AdminDashboard() {
             <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-3 mb-2">Main Navigation</p>
             <NavItem icon={LayoutDashboard} label="Dashboard" id="dashboard" />
             <NavItem icon={FileText} label="Manuscripts" id="manuscripts" />
-            <NavItem icon={Users} label="Approve Reviewers" id="reviewers" />
+            <NavItem icon={Users} label="EB & Reviewers" id="reviewers" />
             <NavItem icon={CheckSquare} label="Approve Reviews" id="reviews" />
             <NavItem icon={ListChecks} label="Assign Work" id="assign" />
             <NavItem icon={List} label="Assignments" id="assignments" />
@@ -1717,6 +2082,7 @@ export default function AdminDashboard() {
             <NavItem icon={Book} label="Books" id="books" />
             <NavItem icon={BookOpen} label="Journals" id="journals" />
             <NavItem icon={Archive} label="Archives" id="archives" />
+            <NavItem icon={ScrollText} label="Certificates" id="certificates" />
           </div>
 
           <div className="mb-5">
@@ -1734,6 +2100,14 @@ export default function AdminDashboard() {
             <NavItem icon={History} label="Login Activity" id="activity" />
             <NavItem icon={Users} label="Users" id="users" />
           </div>
+
+          {/* Sub Admins — main admin only */}
+          {isMainAdmin && (
+            <div className="mb-2">
+              <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-3 mb-2">Admin</p>
+              <NavItem icon={Shield} label="Sub Admins" id="sub_admins" />
+            </div>
+          )}
         </div>
 
         <div className="p-4 border-t border-white/5 bg-slate-950/50 shrink-0 relative z-10 backdrop-blur-md">
@@ -1775,7 +2149,7 @@ export default function AdminDashboard() {
               {activeTab === 'reviews' && renderReviews()}
               {activeTab === 'assign' && renderAssign()}
               {activeTab === 'assignments' && renderAssignments()}
-              {activeTab === 'final_submissions' && <SubmissionComparison />}
+              {activeTab === 'final_submissions' && (isMainAdmin ? <SubmissionComparison /> : <SubAdminTasks />)}
               {activeTab === 'payments' && <AdminPayments />}
               {activeTab === 'books' && <AdminBooks />}
               {activeTab === 'leads' && <AdminContacts />}
@@ -1786,8 +2160,13 @@ export default function AdminDashboard() {
               {activeTab === 'users' && <AdminUsers />}
               {activeTab === 'journals' && <AdminJournals />}
               {activeTab === 'archives' && <AdminArchives />}
+              {activeTab === 'certificates' && <AdminCertificates />}
+              {activeTab === 'broadcast' && <AdminBroadcast />}
+              {activeTab === 'messages' && <AdminMessages />}
+              {activeTab === 'sub_admins' && isMainAdmin && <AdminSubAdmins />}
+
               {/* Placeholders for others while focused on Home RESTORE */}
-              {activeTab !== 'dashboard' && activeTab !== 'manuscripts' && activeTab !== 'reviewers' && activeTab !== 'reviews' && activeTab !== 'assign' && activeTab !== 'assignments' && activeTab !== 'final_submissions' && activeTab !== 'payments' && activeTab !== 'books' && activeTab !== 'leads' && activeTab !== 'newsletter' && activeTab !== 'deadlines' && activeTab !== 'performance' && activeTab !== 'activity' && activeTab !== 'users' && activeTab !== 'journals' && activeTab !== 'archives' && renderPlaceholder(activeTab.toUpperCase(), LayoutDashboard)}
+              {activeTab !== 'dashboard' && activeTab !== 'manuscripts' && activeTab !== 'reviewers' && activeTab !== 'reviews' && activeTab !== 'assign' && activeTab !== 'assignments' && activeTab !== 'final_submissions' && activeTab !== 'payments' && activeTab !== 'books' && activeTab !== 'leads' && activeTab !== 'newsletter' && activeTab !== 'deadlines' && activeTab !== 'performance' && activeTab !== 'activity' && activeTab !== 'users' && activeTab !== 'journals' && activeTab !== 'archives' && activeTab !== 'certificates' && activeTab !== 'broadcast' && activeTab !== 'messages' && renderPlaceholder(activeTab.toUpperCase(), LayoutDashboard)}
            </div>
         </div>
       </main>
@@ -2215,6 +2594,35 @@ export default function AdminDashboard() {
                {assigningReviewer ? <Loader2 className="w-4 h-4 animate-spin"/> : <Check size={16} strokeWidth={3} />} Assign
              </Button>
              <Button variant="outline" onClick={() => setIsAssignModalOpen(false)} className="bg-slate-50 text-slate-700 font-bold border border-slate-200 h-10 px-6 rounded-lg hover:bg-slate-100 transition-colors text-[13px]">Cancel</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isRejectModalOpen} onOpenChange={setIsRejectModalOpen}>
+        <DialogContent className="max-w-md bg-[#F8FAFC] border-slate-200 p-0 overflow-hidden shadow-2xl rounded-2xl">
+          <div className="bg-rose-600 px-6 py-4 flex items-center justify-between border-b border-rose-700 shadow-sm relative">
+            <h2 className="text-[16px] font-black text-white shrink-0 tracking-tight flex items-center gap-2 relative z-10"><Ban size={18} strokeWidth={2.5}/> Reject Manuscript</h2>
+          </div>
+          <div className="px-6 py-6 space-y-5 bg-white relative">
+            <div className="space-y-2.5">
+              <label className="text-[12px] font-bold text-slate-800">Rejection Reason *</label>
+              <textarea
+                rows={4}
+                value={rejectReason}
+                onChange={(e) => setRejectReason(e.target.value)}
+                placeholder="Provide a clear reason for rejection. This will be sent to the author."
+                className="w-full p-4 text-[13px] font-medium bg-white border border-slate-200 rounded-lg text-slate-700 resize-none shadow-sm focus:outline-none focus:ring-1 focus:ring-rose-500 focus:border-rose-500"
+              />
+            </div>
+          </div>
+          <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-3 flex-wrap sm:flex-nowrap">
+            <Button 
+               className="bg-rose-600 hover:bg-rose-700 text-white font-bold px-6 h-10 rounded-lg shadow-md transition-all gap-2 truncate whitespace-nowrap overflow-hidden text-ellipsis flex-1 sm:flex-none text-[13px]"
+               onClick={submitRejection}
+            >
+              Confirm Rejection
+            </Button>
+            <Button variant="outline" onClick={() => setIsRejectModalOpen(false)} className="bg-white text-slate-700 font-bold border border-slate-200 h-10 px-6 rounded-lg hover:bg-slate-50 transition-colors flex-1 sm:flex-none text-[13px] whitespace-nowrap">Cancel</Button>
           </div>
         </DialogContent>
       </Dialog>

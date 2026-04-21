@@ -203,14 +203,14 @@ export default function AdminPortal() {
           ].map(item => (
             <button
               key={item.id}
-              onClick={() =&gt; setActiveTab(item.id)}
+              onClick={() => setActiveTab(item.id)}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold transition-all ${
                 activeTab === item.id 
                   ? 'bg-indigo-600/10 text-indigo-400 border border-indigo-500/20' 
                   : 'hover:bg-slate-800/50 hover:text-white'
               }`}
             >
-              &lt;item.icon className="w-4 h-4" /&gt;
+              <item.icon className="w-4 h-4" />
               {item.label}
             </button>
           ))}
@@ -221,183 +221,183 @@ export default function AdminPortal() {
         {/* Header */}
         <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-8 shadow-sm">
            <div className="flex items-center gap-4">
-              <button onClick={() =&gt; setIsSidebarOpen(!isSidebarOpen)} className="p-2 hover:bg-slate-50 rounded-lg text-slate-500"&gt;
-                {isSidebarOpen ? &lt;X className="w-5 h-5" /&gt; : &lt;Menu className="w-5 h-5" /&gt;}
-              &lt;/button&gt;
-              &lt;h1 className="text-xl font-bold text-slate-800"&gt;
+              <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="p-2 hover:bg-slate-50 rounded-lg text-slate-500">
+                {isSidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              </button>
+              <h1 className="text-xl font-bold text-slate-800">
                 {activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}
-              &lt;/h1&gt;
-           &lt;/div&gt;
-           &lt;div className="flex items-center gap-4"&gt;
-              &lt;Button variant="ghost" size="icon" className="relative"&gt;
-                &lt;Bell className="w-5 h-5 text-slate-500" /&gt;
-                &lt;span className="absolute top-2 right-2 w-2 h-2 bg-rose-500 rounded-full border-2 border-white"&gt;&lt;/span&gt;
-              &lt;/Button&gt;
-              &lt;div className="w-px h-6 bg-slate-200 mx-2"&gt;&lt;/div&gt;
-              &lt;Button variant="ghost" className="font-bold text-slate-700" onClick={() =&gt; setLocation("/login")}&gt;
-                &lt;LogOut className="w-4 h-4 mr-2" /&gt; Log Out
-              &lt;/Button&gt;
-           &lt;/div&gt;
-        &lt;/header&gt;
+              </h1>
+           </div>
+           <div className="flex items-center gap-4">
+              <Button variant="ghost" size="icon" className="relative">
+                <Bell className="w-5 h-5 text-slate-500" />
+                <span className="absolute top-2 right-2 w-2 h-2 bg-rose-500 rounded-full border-2 border-white"></span>
+              </Button>
+              <div className="w-px h-6 bg-slate-200 mx-2"></div>
+              <Button variant="ghost" className="font-bold text-slate-700" onClick={() => setLocation("/login")}>
+                <LogOut className="w-4 h-4 mr-2" /> Log Out
+              </Button>
+           </div>
+        </header>
 
-        &lt;main className="flex-1 overflow-y-auto p-8"&gt;
-          {activeTab === 'dashboard' &amp;&amp; (
-            &lt;div className="space-y-8 animate-in fade-in duration-500"&gt;
+        <main className="flex-1 overflow-y-auto p-8">
+          {activeTab === 'dashboard' && (
+            <div className="space-y-8 animate-in fade-in duration-500">
               {/* Stats Grid */}
-              &lt;div className="grid grid-cols-4 gap-6"&gt;
+              <div className="grid grid-cols-4 gap-6">
                 {[
                   { label: "Total Manuscripts", value: dashboardData?.stats.manuscripts, icon: FileText, color: "text-blue-600", bg: "bg-blue-50" },
                   { label: "Active Reviewers", value: dashboardData?.stats.reviewers, icon: Users, color: "text-emerald-600", bg: "bg-emerald-50" },
                   { label: "Pending Assignments", value: dashboardData?.stats.assignments, icon: Clock, color: "text-amber-600", bg: "bg-amber-50" },
                   { label: "Total Payments", value: dashboardData?.stats.payments, icon: CreditCard, color: "text-indigo-600", bg: "bg-indigo-50" }
-                ].map((stat, i) =&gt; (
-                  &lt;Card key={i} className="p-6 border-none shadow-sm flex items-center gap-4"&gt;
-                    &lt;div className={`w-12 h-12 rounded-xl ${stat.bg} flex items-center justify-center`}&gt;
-                      &lt;stat.icon className={`w-6 h-6 ${stat.color}`} /&gt;
-                    &lt;/div&gt;
-                    &lt;div&gt;
-                      &lt;p className="text-xs font-bold text-slate-400 uppercase tracking-wider"&gt;{stat.label}&lt;/p&gt;
-                      &lt;h3 className="text-2xl font-black text-slate-800 mt-0.5"&gt;{stat.value || 0}&lt;/h3&gt;
-                    &lt;/div&gt;
-                  &lt;/Card&gt;
+                ].map((stat, i) => (
+                  <Card key={i} className="p-6 border-none shadow-sm flex items-center gap-4">
+                    <div className={`w-12 h-12 rounded-xl ${stat.bg} flex items-center justify-center`}>
+                      <stat.icon className={`w-6 h-6 ${stat.color}`} />
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">{stat.label}</p>
+                      <h3 className="text-2xl font-black text-slate-800 mt-0.5">{stat.value || 0}</h3>
+                    </div>
+                  </Card>
                 ))}
-              &lt;/div&gt;
+              </div>
 
-              &lt;div className="grid grid-cols-2 gap-8"&gt;
+              <div className="grid grid-cols-2 gap-8">
                 {/* Recent Items Lists */}
-                &lt;Card className="border-none shadow-sm overflow-hidden"&gt;
-                   &lt;div className="p-4 border-b border-slate-50 bg-slate-50/50 flex justify-between items-center"&gt;
-                      &lt;h3 className="text-sm font-bold text-slate-800 uppercase"&gt;Recent Manuscripts&lt;/h3&gt;
-                      &lt;Button variant="ghost" size="sm" onClick={() =&gt; setActiveTab("manuscripts")}&gt;View All&lt;/Button&gt;
-                   &lt;/div&gt;
-                   &lt;div className="divide-y divide-slate-100"&gt;
-                      {dashboardData?.recentManuscripts.map((m: any) =&gt; (
-                        &lt;div key={m.id} className="p-4 hover:bg-slate-50 transition-colors flex items-center justify-between"&gt;
-                           &lt;div&gt;
-                              &lt;h4 className="text-sm font-bold text-slate-800 line-clamp-1"&gt;{m.manuscript_title}&lt;/h4&gt;
-                              &lt;p className="text-xs text-slate-500"&gt;{m.author_name}&lt;/p&gt;
-                           &lt;/div&gt;
-                           &lt;Badge variant="secondary" className="bg-blue-50 text-blue-600 border-blue-100"&gt;{m.status}&lt;/Badge&gt;
-                        &lt;/div&gt;
+                <Card className="border-none shadow-sm overflow-hidden">
+                   <div className="p-4 border-b border-slate-50 bg-slate-50/50 flex justify-between items-center">
+                      <h3 className="text-sm font-bold text-slate-800 uppercase">Recent Manuscripts</h3>
+                      <Button variant="ghost" size="sm" onClick={() => setActiveTab("manuscripts")}>View All</Button>
+                   </div>
+                   <div className="divide-y divide-slate-100">
+                      {dashboardData?.recentManuscripts.map((m: any) => (
+                        <div key={m.id} className="p-4 hover:bg-slate-50 transition-colors flex items-center justify-between">
+                           <div>
+                              <h4 className="text-sm font-bold text-slate-800 line-clamp-1">{m.manuscript_title}</h4>
+                              <p className="text-xs text-slate-500">{m.author_name}</p>
+                           </div>
+                           <Badge variant="secondary" className="bg-blue-50 text-blue-600 border-blue-100">{m.status}</Badge>
+                        </div>
                       ))}
-                   &lt;/div&gt;
-                &lt;/Card&gt;
+                   </div>
+                </Card>
 
-                &lt;Card className="border-none shadow-sm overflow-hidden"&gt;
-                   &lt;div className="p-4 border-b border-slate-50 bg-slate-50/50 flex justify-between items-center"&gt;
-                      &lt;h3 className="text-sm font-bold text-slate-800 uppercase"&gt;Active Assignments&lt;/h3&gt;
-                   &lt;/div&gt;
-                   &lt;div className="divide-y divide-slate-100"&gt;
-                      {dashboardData?.pendingAssignments.map((a: any) =&gt; (
-                        &lt;div key={a.id} className="p-4 hover:bg-slate-50 transition-colors"&gt;
-                           &lt;h4 className="text-sm font-bold text-slate-800 line-clamp-1"&gt;{a.manuscripts?.manuscript_title}&lt;/h4&gt;
-                           &lt;div className="flex items-center justify-between mt-1"&gt;
-                              &lt;p className="text-xs text-slate-500"&gt;Reviewer: {a.reviewers?.first_name} {a.reviewers?.last_name}&lt;/p&gt;
-                              &lt;p className="text-[10px] font-bold text-amber-600"&gt;Due: {a.due_date}&lt;/p&gt;
-                           &lt;/div&gt;
-                        &lt;/div&gt;
+                <Card className="border-none shadow-sm overflow-hidden">
+                   <div className="p-4 border-b border-slate-50 bg-slate-50/50 flex justify-between items-center">
+                      <h3 className="text-sm font-bold text-slate-800 uppercase">Active Assignments</h3>
+                   </div>
+                   <div className="divide-y divide-slate-100">
+                      {dashboardData?.pendingAssignments.map((a: any) => (
+                        <div key={a.id} className="p-4 hover:bg-slate-50 transition-colors">
+                           <h4 className="text-sm font-bold text-slate-800 line-clamp-1">{a.manuscripts?.manuscript_title}</h4>
+                           <div className="flex items-center justify-between mt-1">
+                              <p className="text-xs text-slate-500">Reviewer: {a.reviewers?.first_name} {a.reviewers?.last_name}</p>
+                              <p className="text-[10px] font-bold text-amber-600">Due: {a.due_date}</p>
+                           </div>
+                        </div>
                       ))}
-                   &lt;/div&gt;
-                &lt;/Card&gt;
-              &lt;/div&gt;
-            &lt;/div&gt;
+                   </div>
+                </Card>
+              </div>
+            </div>
           )}
 
-          {activeTab === 'manuscripts' &amp;&amp; (
-            &lt;div className="space-y-6 animate-in slide-in-from-bottom-4 duration-500"&gt;
-               &lt;div className="flex justify-between items-end"&gt;
-                  &lt;div&gt;
-                    &lt;h2 className="text-2xl font-black text-slate-800"&gt;All Manuscripts&lt;/h2&gt;
-                    &lt;p className="text-slate-500 text-sm font-medium mt-1"&gt;Manage and track all {manuscripts.length} submissions&lt;/p&gt;
-                  &lt;/div&gt;
-                  &lt;div className="flex gap-4"&gt;
-                    &lt;div className="flex items-center gap-4 bg-white p-3 rounded-lg border border-slate-200 shadow-sm"&gt;
-                       &lt;label className="flex items-center gap-2 text-xs font-bold text-slate-600 cursor-pointer"&gt;
-                          &lt;input type="checkbox" checked={showPublished} onChange={() =&gt; setShowPublished(!showPublished)} className="w-4 h-4 rounded text-indigo-600" /&gt;
+          {activeTab === 'manuscripts' && (
+            <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-500">
+               <div className="flex justify-between items-end">
+                  <div>
+                    <h2 className="text-2xl font-black text-slate-800">All Manuscripts</h2>
+                    <p className="text-slate-500 text-sm font-medium mt-1">Manage and track all {manuscripts.length} submissions</p>
+                  </div>
+                  <div className="flex gap-4">
+                    <div className="flex items-center gap-4 bg-white p-3 rounded-lg border border-slate-200 shadow-sm">
+                       <label className="flex items-center gap-2 text-xs font-bold text-slate-600 cursor-pointer">
+                          <input type="checkbox" checked={showPublished} onChange={() => setShowPublished(!showPublished)} className="w-4 h-4 rounded text-indigo-600" />
                           Show Published
-                       &lt;/label&gt;
-                       &lt;label className="flex items-center gap-2 text-xs font-bold text-slate-600 cursor-pointer"&gt;
-                          &lt;input type="checkbox" checked={showRejected} onChange={() =&gt; setShowRejected(!showRejected)} className="w-4 h-4 rounded text-indigo-600" /&gt;
+                       </label>
+                       <label className="flex items-center gap-2 text-xs font-bold text-slate-600 cursor-pointer">
+                          <input type="checkbox" checked={showRejected} onChange={() => setShowRejected(!showRejected)} className="w-4 h-4 rounded text-indigo-600" />
                           Show Rejected
-                       &lt;/label&gt;
-                    &lt;/div&gt;
-                    &lt;Button className="bg-indigo-600 hover:bg-indigo-700 font-bold"&gt;
-                      &lt;Download className="w-4 h-4 mr-2" /&gt; Export CSV
-                    &lt;/Button&gt;
-                  &lt;/div&gt;
-               &lt;/div&gt;
+                       </label>
+                    </div>
+                    <Button className="bg-indigo-600 hover:bg-indigo-700 font-bold">
+                      <Download className="w-4 h-4 mr-2" /> Export CSV
+                    </Button>
+                  </div>
+               </div>
 
-               &lt;Card className="p-4 border-none shadow-sm bg-white"&gt;
-                  &lt;div className="flex gap-4"&gt;
-                    &lt;div className="relative flex-1"&gt;
-                      &lt;Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" /&gt;
-                      &lt;Input 
+               <Card className="p-4 border-none shadow-sm bg-white">
+                  <div className="flex gap-4">
+                    <div className="relative flex-1">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                      <Input 
                         placeholder="Search by title, author, or ID..." 
                         className="pl-10 h-11 border-slate-200 focus:ring-indigo-500"
                         value={manuscriptSearch}
-                        onChange={(e) =&gt; setManuscriptSearch(e.target.value)}
-                      /&gt;
-                    &lt;/div&gt;
-                    &lt;select 
+                        onChange={(e) => setManuscriptSearch(e.target.value)}
+                      />
+                    </div>
+                    <select 
                       className="h-11 px-4 rounded-md border border-slate-200 text-sm font-semibold bg-white outline-none focus:border-indigo-500"
                       value={selectedJournal}
-                      onChange={(e) =&gt; setSelectedJournal(e.target.value)}
-                    &gt;
-                      &lt;option value="all"&gt;All Journals&lt;/option&gt;
-                      &lt;option value="Commerce"&gt;Commerce &amp; Management&lt;/option&gt;
-                      &lt;option value="Humanities"&gt;Humanities &amp; Social Sciences&lt;/option&gt;
-                    &lt;/select&gt;
-                  &lt;/div&gt;
-               &lt;/Card&gt;
+                      onChange={(e) => setSelectedJournal(e.target.value)}
+                    >
+                      <option value="all">All Journals</option>
+                      <option value="Commerce">Commerce & Management</option>
+                      <option value="Humanities">Humanities & Social Sciences</option>
+                    </select>
+                  </div>
+               </Card>
 
-               &lt;div className="space-y-4"&gt;
+               <div className="space-y-4">
                   {loadingManuscripts ? (
-                    &lt;div className="flex flex-col items-center justify-center py-20 gap-4"&gt;
-                      &lt;RefreshCw className="w-8 h-8 text-indigo-500 animate-spin" /&gt;
-                      &lt;p className="font-bold text-slate-400"&gt;Syncing with database...&lt;/p&gt;
-                    &lt;/div&gt;
-                  ) : manuscripts.map((m) =&gt; (
-                    &lt;Card key={m.id} className="p-0 border-none shadow-sm overflow-hidden group hover:shadow-md transition-shadow"&gt;
-                       &lt;div className="flex h-full"&gt;
-                          &lt;div className={`w-1.5 ${m.status?.toLowerCase() === 'accepted' ? 'bg-emerald-500' : m.status?.toLowerCase() === 'rejected' ? 'bg-rose-500' : 'bg-blue-500'}`}&gt;&lt;/div&gt;
-                          &lt;div className="flex-1 p-5 flex items-start justify-between"&gt;
-                             &lt;div className="space-y-3"&gt;
-                                &lt;div className="flex items-center gap-2"&gt;
-                                   &lt;span className="text-[10px] font-black uppercase text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded"&gt;{m.id}&lt;/span&gt;
-                                   &lt;Badge variant="outline" className="text-[10px] font-bold border-slate-200"&gt;{m.journal}&lt;/Badge&gt;
-                                &lt;/div&gt;
-                                &lt;h3 className="text-lg font-bold text-slate-800 leading-tight group-hover:text-indigo-600 transition-colors"&gt;{m.manuscript_title}&lt;/h3&gt;
-                                &lt;div className="flex flex-wrap gap-x-6 gap-y-2"&gt;
-                                   &lt;div className="flex items-center gap-2 text-sm text-slate-600 font-semibold"&gt;
-                                      &lt;User className="w-4 h-4 text-slate-400" /&gt; {m.author_name}
-                                   &lt;/div&gt;
-                                   &lt;div className="flex items-center gap-2 text-sm text-slate-500 font-medium"&gt;
-                                      &lt;Mail className="w-4 h-4 text-slate-400" /&gt; {m.email}
-                                   &lt;/div&gt;
-                                   {m.submitted_at &amp;&amp; (
-                                     &lt;div className="flex items-center gap-2 text-sm text-slate-500"&gt;
-                                        &lt;Clock className="w-4 h-4 text-slate-400" /&gt; {m.submitted_at}
-                                     &lt;/div&gt;
+                    <div className="flex flex-col items-center justify-center py-20 gap-4">
+                      <RefreshCw className="w-8 h-8 text-indigo-500 animate-spin" />
+                      <p className="font-bold text-slate-400">Syncing with database...</p>
+                    </div>
+                  ) : manuscripts.map((m) => (
+                    <Card key={m.id} className="p-0 border-none shadow-sm overflow-hidden group hover:shadow-md transition-shadow">
+                       <div className="flex h-full">
+                          <div className={`w-1.5 ${m.status?.toLowerCase() === 'accepted' ? 'bg-emerald-500' : m.status?.toLowerCase() === 'rejected' ? 'bg-rose-500' : 'bg-blue-500'}`}></div>
+                          <div className="flex-1 p-5 flex items-start justify-between">
+                             <div className="space-y-3">
+                                <div className="flex items-center gap-2">
+                                   <span className="text-[10px] font-black uppercase text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded">{m.id}</span>
+                                   <Badge variant="outline" className="text-[10px] font-bold border-slate-200">{m.journal}</Badge>
+                                </div>
+                                <h3 className="text-lg font-bold text-slate-800 leading-tight group-hover:text-indigo-600 transition-colors">{m.manuscript_title}</h3>
+                                <div className="flex flex-wrap gap-x-6 gap-y-2">
+                                   <div className="flex items-center gap-2 text-sm text-slate-600 font-semibold">
+                                      <User className="w-4 h-4 text-slate-400" /> {m.author_name}
+                                   </div>
+                                   <div className="flex items-center gap-2 text-sm text-slate-500 font-medium">
+                                      <Mail className="w-4 h-4 text-slate-400" /> {m.email}
+                                   </div>
+                                   {m.submitted_at && (
+                                     <div className="flex items-center gap-2 text-sm text-slate-500">
+                                        <Clock className="w-4 h-4 text-slate-400" /> {m.submitted_at}
+                                     </div>
                                    )}
-                                &lt;/div&gt;
-                             &lt;/div&gt;
-                             &lt;div className="flex flex-col items-end justify-between h-full gap-4"&gt;
-                                &lt;Badge className={`px-4 py-1.5 text-xs font-bold ${
+                                </div>
+                             </div>
+                             <div className="flex flex-col items-end justify-between h-full gap-4">
+                                <Badge className={`px-4 py-1.5 text-xs font-bold ${
                                   m.status === 'Accepted' ? 'bg-emerald-100 text-emerald-700' : 
                                   m.status === 'Rejected' ? 'bg-rose-100 text-rose-700' : 
                                   'bg-blue-100 text-blue-700'
-                                }`}&gt;{m.status}&lt;/Badge&gt;
-                                &lt;div className="flex gap-2"&gt;
-                                   &lt;Button variant="outline" size="sm" className="font-bold border-slate-200"&gt;Actions&lt;/Button&gt;
-                                   &lt;Button size="sm" className="bg-slate-800 hover:bg-black font-bold"&gt;Details&lt;/Button&gt;
-                                &lt;/div&gt;
-                             &lt;/div&gt;
-                          &lt;/div&gt;
-                       &lt;/div&gt;
-                    &lt;/Card&gt;
+                                }`}>{m.status}</Badge>
+                                <div className="flex gap-2">
+                                   <Button variant="outline" size="sm" className="font-bold border-slate-200">Actions</Button>
+                                   <Button size="sm" className="bg-slate-800 hover:bg-black font-bold">Details</Button>
+                                </div>
+                             </div>
+                          </div>
+                       </div>
+                    </Card>
                   ))}
-               &lt;/div&gt;
-            &lt;/div&gt;
+               </div>
+            </div>
           )}
 
           {activeTab === 'assignments' && (
@@ -538,8 +538,9 @@ export default function AdminPortal() {
               </div>
             </div>
           )}
-        &lt;/main&gt;
-      &lt;/div&gt;
-    &lt;/div&gt;
+        </main>
+      </div>
+    </div>
   );
 }
+

@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import SEO from "@/components/SEO";
+import { supabase, supabaseAdmin } from "@/lib/supabase";
 
 interface EditorProfile {
   reviewerId: string;
@@ -98,6 +99,8 @@ export default function EditorDashboard() {
   const [newMessage, setNewMessage] = useState('');
   const [sendingMessage, setSendingMessage] = useState(false);
   const [selectedManuscript, setSelectedManuscript] = useState('');
+  const [showPopup, setShowPopup] = useState(false);
+  const [popupMessage, setPopupMessage] = useState<any>(null);
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -186,8 +189,34 @@ export default function EditorDashboard() {
       const result = await response.json();
       if (response.ok && result.success) {
         setEditor(result.profile);
-        setAssignedWorks(result.assignedWorks || []);
+        // Normalize reviewSubmitted from status — server may map it differently
+        const works = (result.assignedWorks || []).map((w: any) => ({
+          ...w,
+          reviewSubmitted: w.status === 'Completed' || w.reviewSubmitted === true
+        }));
+        setAssignedWorks(works);
         setLastUpdated(new Date());
+
+        // Fetch Broadcast message
+        const showPopupOnce = !sessionStorage.getItem('editorPopupShown');
+        if (showPopupOnce) {
+          try {
+            const { data: adminMsg } = await supabase
+              .from('admin_messages')
+              .select('*')
+              .eq('active', true)
+              .or(`target_role.eq.All,target_role.eq.Editor,target_role.eq.${result.profile.role}`)
+              .order('created_at', { ascending: false })
+              .limit(1)
+              .maybeSingle();
+
+            if (adminMsg) {
+              setPopupMessage({ title: adminMsg.title, content: adminMsg.content });
+              setShowPopup(true);
+              sessionStorage.setItem('editorPopupShown', 'true');
+            }
+          } catch (e) { console.error("Broadcast fetch error:", e); }
+        }
       } else if (response.status === 404 || response.status === 401) {
         setError(result.message || 'Failed to load profile');
         handleLogout();
@@ -406,6 +435,26 @@ export default function EditorDashboard() {
             <Input type="password" placeholder="Confirm Password" value={passwordForm.confirmPassword} onChange={(e) => setPasswordForm({...passwordForm, confirmPassword: e.target.value})} data-testid="input-confirm-password" />
             <Button onClick={handleChangePassword} disabled={changingPassword || !passwordForm.newPassword} className="w-full" data-testid="button-submit-password">
               {changingPassword ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}Change Password
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showPopup} onOpenChange={setShowPopup}>
+        <DialogContent className="sm:max-w-md p-0 overflow-hidden border-none shadow-2xl rounded-2xl">
+          <DialogHeader className="p-6 bg-slate-900">
+            <DialogTitle className="text-white flex items-center gap-2">
+              <Bell className="w-5 h-5 text-blue-400" /> {popupMessage?.title || 'Announcement'}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="p-6 bg-white">
+            <p className="text-slate-600 leading-relaxed whitespace-pre-wrap">
+              {popupMessage?.content}
+            </p>
+          </div>
+          <div className="p-4 bg-slate-50 flex justify-end">
+            <Button onClick={() => setShowPopup(false)} className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-8">
+              Understood
             </Button>
           </div>
         </DialogContent>
@@ -766,32 +815,42 @@ export default function EditorDashboard() {
                         }
                         setIsSubmittingReview(true);
                         try {
-                          const payload = {
-                            reviewerId: editor?.reviewerId || '',
-                            reviewerName: `${editor?.firstName} ${editor?.lastName}`,
-                            manuscriptId: reviewSubmission.selectedManuscriptForReview,
-                            ...reviewSubmission
-                          };
-                          const response = await fetch('/api/submit-review', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-                          const result = await response.json();
-                          if (response.ok && result.success) {
-                            toast({ title: 'Success', description: 'Your review has been submitted successfully!' });
-                            setReviewSubmission({
-                              selectedManuscriptForReview: '', importanceOfManuscript: '', titleSuitability: '', abstractComprehensive: '', scientificCorrectness: '', referencesSufficient: '', languageQuality: '', generalComments: '', ethicalIssues: '', ethicalIssuesDetails: '', competingInterests: '', plagiarismSuspected: '', plagiarismDetails: '', competingInterestDeclaration: false, overallMarks: 5, recommendation: ''
-                            });
-                            const s = localStorage.getItem('reviewerSession');
-                            if (s) {
-                              const d = JSON.parse(s);
-                              fetchEditorProfile(d.email, d.reviewerId);
-                            }
-                          } else {
-                            toast({ title: 'Error', description: result.message || 'Failed to submit review', variant: 'destructive' });
+                          const { error, data: updatedRows } = await supabaseAdmin
+                            .from('assignments')
+                            .update({
+                              status: 'Completed',
+                              recommendation: reviewSubmission.recommendation,
+                              overall_marks: String(reviewSubmission.overallMarks || 0),
+                              notes: JSON.stringify(reviewSubmission)
+                            })
+                            .eq('reviewer_id', editor?.reviewerId)
+                            .eq('manuscript_id', reviewSubmission.selectedManuscriptForReview)
+                            .select('id');
+
+                          if (error) throw error;
+                          if (!updatedRows || updatedRows.length === 0) {
+                            throw new Error(`No matching assignment. reviewer_id=${editor?.reviewerId}, manuscript_id=${reviewSubmission.selectedManuscriptForReview}`);
                           }
-                        } catch (error) {
-                          toast({ title: 'Error', description: 'Unable to submit review. Please try again.', variant: 'destructive' });
+                          toast({ title: 'Success', description: 'Your review has been submitted successfully!' });
+                          setReviewSubmission({
+                            selectedManuscriptForReview: '', importanceOfManuscript: '', titleSuitability: '', abstractComprehensive: '', scientificCorrectness: '', referencesSufficient: '', languageQuality: '', generalComments: '', ethicalIssues: '', ethicalIssuesDetails: '', competingInterests: '', plagiarismSuspected: '', plagiarismDetails: '', competingInterestDeclaration: false, overallMarks: 5, recommendation: ''
+                          });
+                          setAssignedWorks(prev => prev.map(w => 
+                            w.manuscriptId === reviewSubmission.selectedManuscriptForReview 
+                              ? { ...w, reviewSubmitted: true, status: 'Completed' } 
+                              : w
+                          ));
+                          const s = localStorage.getItem('reviewerSession');
+                          if (s) {
+                            const d = JSON.parse(s);
+                            fetchEditorProfile(d.email, d.reviewerId);
+                          }
+                        } catch (error: any) {
+                          toast({ title: 'Error', description: error?.message || 'Unable to submit review. Please try again.', variant: 'destructive' });
                         } finally {
                           setIsSubmittingReview(false);
                         }
+
                       }} className="space-y-6">
                         
                         <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg p-4">

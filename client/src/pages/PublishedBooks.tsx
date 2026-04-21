@@ -6,7 +6,6 @@ import { Badge } from "@/components/ui/badge";
 import Header from "@/components/Header";
 import SEO from "@/components/SEO";
 import Footer from "@/components/Footer";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 
 interface Book {
@@ -24,29 +23,6 @@ interface Book {
   description: string;
 }
 
-function DownloadCount({ bookId }: { bookId: string }) {
-  const { data } = useQuery<{ downloads: number }>({
-    queryKey: ["/api/book-downloads", bookId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('book_downloads')
-        .select('downloads')
-        .eq('book_id', bookId)
-        .single();
-      if (error) return { downloads: 0 };
-      return data;
-    },
-    refetchInterval: 15000,
-  });
-  const count = data?.downloads ?? 0;
-  return (
-    <span className="text-xs text-muted-foreground flex items-center gap-1">
-      <Eye className="w-3 h-3" />
-      {count.toLocaleString()} views
-    </span>
-  );
-}
-
 function BookCard({
   book,
   isViewing,
@@ -56,41 +32,8 @@ function BookCard({
   isViewing: boolean;
   onView: () => void;
 }) {
-  const queryClient = useQueryClient();
 
-  const increment = useMutation({
-    mutationFn: async () => {
-      // Check if entry exists
-      const { data: existing } = await supabase
-        .from('book_downloads')
-        .select('downloads')
-        .eq('book_id', book.id)
-        .single();
-
-      if (existing) {
-        await supabase
-          .from('book_downloads')
-          .update({ downloads: (existing.downloads || 0) + 1 })
-          .eq('book_id', book.id);
-      } else {
-        await supabase
-          .from('book_downloads')
-          .insert([{ book_id: book.id, book_title: book.title, downloads: 1 }]);
-      }
-    },
-    onSuccess: () =>
-      queryClient.invalidateQueries({
-        queryKey: ["/api/book-downloads", book.id],
-      }),
-  });
-
-  const handleView = () => {
-    if (!isViewing) {
-      increment.mutate();
-    }
-    onView();
-  };
-
+  const handleView = () => { onView(); };
   const subjects = book.subjects ? book.subjects.split(',').map(s => s.trim()) : [];
 
   return (
@@ -168,7 +111,13 @@ function BookCard({
               </>
             )}
           </Button>
-          <DownloadCount bookId={book.id} />
+          {book.pdf_url && (
+            <a href={book.pdf_url} download target="_blank" rel="noopener noreferrer">
+              <Button size="sm" variant="outline" className="gap-1.5 h-8 font-bold text-xs border-slate-300">
+                <Download className="w-3.5 h-3.5" /> Download
+              </Button>
+            </a>
+          )}
         </div>
       </div>
     </div>

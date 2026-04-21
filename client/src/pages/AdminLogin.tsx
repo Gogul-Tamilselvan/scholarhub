@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useLocation } from 'wouter';
 import { AlertCircle, Lock, Mail, Eye, EyeOff, Shield, BookOpen, Users, FileText } from 'lucide-react';
 import SEO from '@/components/SEO';
-import { supabase } from '@/lib/supabase';
+import { supabase, supabaseAdmin } from '@/lib/supabase';
 
 export default function AdminLogin() {
   const [, setLocation] = useLocation();
@@ -18,32 +18,84 @@ export default function AdminLogin() {
     setError('');
 
     try {
-      const { data, error: dbError } = await supabase
+      // 1. Authenticate with the PUBLIC Supabase client (This allows persistence/refresh)
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+        email: email.trim().toLowerCase(),
+        password: password,
+      });
+
+      if (authError) {
+        // Fallback or explicit error
+        throw new Error(authError.message === 'Invalid login credentials' 
+          ? 'Invalid email or password' 
+          : authError.message);
+      }
+
+      const user = authData.user;
+      if (!user) throw new Error('Authentication failed');
+
+      // 2. Determine if user is Main Admin or Sub-Admin
+      // Check main admin table (users)
+      const { data: adminData } = await supabaseAdmin
         .from('users')
         .select('*')
-        .eq('email', email)
-        .eq('password', password)
-        .eq('role', 'admin')
-        .single();
+        .or(`auth_id.eq.${user.id},email.eq.${user.email}`)
+        .maybeSingle();
 
-      if (dbError) {
-        throw new Error('Invalid email or password');
-      }
+      if (adminData) {
+        // Update auth_id if it's the first time linking
+        if (!adminData.auth_id) {
+          await supabaseAdmin.from('users').update({ auth_id: user.id }).eq('id', adminData.id);
+        }
 
-      if (data) {
         localStorage.setItem('adminSession', JSON.stringify({
-          email: data.email,
-          token: btoa(`${data.email}:${Date.now()}`),
+          email: user.email,
+          token: authData.session?.access_token, // Real JWT
           loginTime: new Date().toISOString()
         }));
+        localStorage.removeItem('subAdminSession');
         setLocation('/admin/dashboard');
+        return;
       }
+
+      // Check sub-admin table
+      const { data: subData } = await supabaseAdmin
+        .from('sub_admins')
+        .select('*')
+        .or(`auth_id.eq.${user.id},email.eq.${user.email}`)
+        .maybeSingle();
+
+      if (subData) {
+        if (!subData.is_active) throw new Error('Account is deactivated');
+        
+        // Update auth_id if linking for the first time
+        if (!subData.auth_id) {
+          await supabaseAdmin.from('sub_admins').update({ auth_id: user.id }).eq('id', subData.id);
+        }
+        
+        // Update last_login timestamp
+        await supabaseAdmin.from('sub_admins').update({ last_login: new Date().toISOString() }).eq('id', subData.id);
+        
+        localStorage.setItem('subAdminSession', JSON.stringify({
+          id: subData.id,
+          email: subData.email,
+          name: subData.name,
+          allowed_tabs: subData.allowed_tabs || [],
+          loginTime: new Date().toISOString()
+        }));
+        localStorage.removeItem('adminSession');
+        setLocation('/admin/dashboard');
+        return;
+      }
+
+      throw new Error('You do not have administrative access.');
     } catch (err: any) {
       setError(err.message || 'Login failed');
     } finally {
       setLoading(false);
     }
   };
+
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', fontFamily: "'Inter', sans-serif" }}>

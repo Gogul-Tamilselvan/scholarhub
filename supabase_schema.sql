@@ -167,8 +167,11 @@ CREATE TABLE IF NOT EXISTS payments (
   submitted_at timestamptz DEFAULT now(),
   manuscript_id text,
   email text,
+  author_name text,
+  manuscript_title text,
   amount text,
   transaction_id text,
   payment_method text,
+  payment_proof_url text,
   status text DEFAULT 'Pending'
 );

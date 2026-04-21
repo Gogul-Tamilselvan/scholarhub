@@ -22,19 +22,10 @@ export default function ReviewerLogin() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!email.trim()) {
+    if (!email.trim() || !password.trim()) {
       toast({
-        title: "Email Required",
-        description: "Please enter your registered email address.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    if (!password.trim()) {
-      toast({
-        title: "Password Required",
-        description: "Please enter your password (Reviewer ID or New Password).",
+        title: "Required fields",
+        description: "Please enter your registered email and password.",
         variant: "destructive"
       });
       return;
@@ -43,40 +34,61 @@ export default function ReviewerLogin() {
     setIsLoading(true);
 
     try {
-      // Query Supabase directly
-      const { data, error: dbError } = await supabase
+      // 1. Authenticate with Supabase Auth (Secure session management)
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+        email: email.trim().toLowerCase(),
+        password: password.trim(),
+      });
+
+      if (authError) {
+        throw new Error(authError.message === 'Invalid login credentials' 
+          ? "Invalid email or password. Please check and try again." 
+          : authError.message);
+      }
+
+      const user = authData.user;
+      if (!user) throw new Error("Authentication failed");
+
+      // 2. Fetch the reviewer profile linked to this Auth ID
+      const { data: reviewerProfile, error: dbError } = await supabase
         .from('reviewers')
         .select('*')
-        .eq('email', email.trim().toLowerCase())
-        .single();
+        .or(`auth_id.eq.${user.id},email.eq.${user.email}`)
+        .maybeSingle();
 
-      if (dbError || !data) {
-        throw new Error("Invalid email or password. Please check and try again.");
+      if (dbError || !reviewerProfile) {
+        // If not found in reviewers table, it might be an admin trying to login here?
+        throw new Error("No reviewer profile found for this account. If you are an admin, please use the Admin Portal.");
       }
 
-      // Check if password matches either Reviewer ID or New Password
-      const isIdMatch = data.id === password.trim();
-      const isNewPasswordMatch = data.new_password === password.trim();
-
-      if (isIdMatch || isNewPasswordMatch) {
-        localStorage.setItem('reviewerSession', JSON.stringify({
-          reviewerId: data.id,
-          email: data.email,
-          name: `${data.first_name} ${data.last_name}`,
-          role: data.role,
-          journal: data.journal,
-          loggedInAt: new Date().toISOString()
-        }));
-
-        toast({
-          title: "Login Successful",
-          description: `Welcome back, ${data.first_name || 'Reviewer'}!`,
-        });
-
-        setLocation('/reviewer-dashboard');
-      } else {
-        throw new Error("Invalid email or password. Please check and try again.");
+      // Link auth_id if it's the first login after migration
+      if (!reviewerProfile.auth_id) {
+         await supabase.from('reviewers').update({ auth_id: user.id }).eq('id', reviewerProfile.id);
       }
+
+      // Check account status
+      if (reviewerProfile.status?.toLowerCase() === 'rejected') {
+        throw new Error("Your application has been declined. Please contact support for more information.");
+      }
+
+      // 3. Create session (keep legacy structure for compatibility if needed, but adding JWT safety)
+      localStorage.setItem('reviewerSession', JSON.stringify({
+        reviewerId: reviewerProfile.id,
+        email: user.email,
+        name: `${reviewerProfile.first_name} ${reviewerProfile.last_name || ''}`.trim(),
+        role: reviewerProfile.role,
+        journal: reviewerProfile.journal,
+        loggedInAt: new Date().toISOString(),
+        token: authData.session?.access_token // JWT added for security checks
+      }));
+
+      toast({
+        title: "Login Successful",
+        description: `Welcome back, ${reviewerProfile.first_name || 'Reviewer'}!`,
+      });
+
+      setLocation('/reviewer-dashboard');
+      
     } catch (error: any) {
       console.error('Login error:', error);
       toast({

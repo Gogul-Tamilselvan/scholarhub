@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Plus, Edit, Trash, BookOpen, Save, RefreshCw, Users, UserPlus, ChevronRight, ArrowLeft } from 'lucide-react';
+import { Loader2, Plus, Edit, Trash, BookOpen, Save, RefreshCw, Users, UserPlus, ChevronRight, ArrowLeft, Download } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
@@ -29,6 +29,90 @@ export function AdminJournals() {
   const [memberForm, setMemberForm] = useState({
     role: 'board-member', name: '', designation: '', institution: '', location: '', email: '', sortOrder: '0'
   });
+  // Indexing state
+  const [indexes, setIndexes] = useState<any[]>([]);
+  const [isIndexModalOpen, setIsIndexModalOpen] = useState(false);
+  const [editingIndexId, setEditingIndexId] = useState<string | null>(null);
+  const [indexForm, setIndexForm] = useState({ name: '', subtext: '', imageUrl: '', sortOrder: '0' });
+  const [downloadingCsv, setDownloadingCsv] = useState(false);
+
+  const downloadMasterCsv = async () => {
+    setDownloadingCsv(true);
+    try {
+      const { data: dbJournals } = await supabase.from('journals').select('id, title, issn');
+      const { data: dbVolumes } = await supabase.from('journal_volumes').select('id, journal_id, volume_number, label');
+      const { data: dbIssues } = await supabase.from('journal_issues').select('id, volume_id, issue_number, label');
+      const { data: dbArticles } = await supabase.from('journal_articles').select('*');
+
+      const rows = [];
+      rows.push(['Journal ID', 'Journal Title', 'ISSN', 'Volume', 'Issue', 'Article ID', 'Article Title', 'Authors', 'Affiliation', 'Pages', 'DOI', 'PDF URL']);
+
+      const hardcodedJournals = [
+        { id: '__sjcm__', title: 'Scholar Journal of Commerce and Management', issn: 'XXXXX' },
+        { id: '__sjhss__', title: 'Scholar Journal of Humanities and Social Sciences', issn: 'XXXXX' },
+      ];
+      
+      const allJournals = [...hardcodedJournals, ...(dbJournals || [])];
+
+      for (const j of allJournals) {
+        const jVols = (dbVolumes || []).filter(v => v.journal_id === j.id);
+        if (jVols.length === 0) {
+          rows.push([j.id, j.title, j.issn || '', '', '', '', '', '', '', '', '', '']);
+          continue;
+        }
+
+        for (const v of jVols) {
+          const vIss = (dbIssues || []).filter(i => i.volume_id === v.id);
+          if (vIss.length === 0) {
+            rows.push([j.id, j.title, j.issn || '', v.label || `Vol ${v.volume_number}`, '', '', '', '', '', '', '', '']);
+            continue;
+          }
+
+          for (const iss of vIss) {
+            const issArts = (dbArticles || []).filter(a => a.issue_id === iss.id);
+            if (issArts.length === 0) {
+              rows.push([j.id, j.title, j.issn || '', v.label || `Vol ${v.volume_number}`, iss.label || `Issue ${iss.issue_number}`, '', '', '', '', '', '', '']);
+              continue;
+            }
+
+            for (const art of issArts) {
+              rows.push([
+                j.id,
+                `"${j.title}"`,
+                j.issn || '',
+                `"${v.label || `Vol ${v.volume_number}`}"`,
+                `"${iss.label || `Issue ${iss.issue_number}`}"`,
+                `"${art.article_id || ''}"`,
+                `"${(art.title || '').replace(/"/g, '""')}"`,
+                `"${(art.authors || '').replace(/"/g, '""')}"`,
+                `"${(art.affiliation || '').replace(/"/g, '""')}"`,
+                `"${art.pages || ''}"`,
+                `"${art.doi || ''}"`,
+                `"${art.pdf_url || ''}"`
+              ]);
+            }
+          }
+        }
+      }
+
+      const csvContent = rows.map(e => e.join(",")).join("\n");
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement("a");
+      const url = URL.createObjectURL(blob);
+      link.setAttribute("href", url);
+      link.setAttribute("download", `master_journal_archive_${new Date().toISOString().split('T')[0]}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      toast({ title: 'Success', description: 'Master CSV downloaded.' });
+    } catch (err: any) {
+      toast({ title: 'Error', description: 'Failed to generate CSV: ' + err.message, variant: 'destructive' });
+    } finally {
+      setDownloadingCsv(false);
+    }
+  };
 
   const [form, setForm] = useState({
     title: '', slug: '', subject: '', startingYear: new Date().getFullYear().toString(),
@@ -174,10 +258,12 @@ export function AdminJournals() {
     try {
       const { data, error } = await supabase.from('editorial_board').select('*').eq('journal_id', journalId).order('sort_order', { ascending: true });
       if (error) throw error;
-      setBoardMembers(data || []);
+      setBoardMembers(data?.filter(m => m.role !== 'indexing') || []);
+      setIndexes(data?.filter(m => m.role === 'indexing') || []);
     } catch (err: any) {
       console.error(err);
       setBoardMembers([]);
+      setIndexes([]);
     } finally {
       setBoardLoading(false);
     }
@@ -230,14 +316,56 @@ export function AdminJournals() {
     }
   };
 
-  const deleteMember = async (id: string) => {
-    if (!confirm('Delete this board member?')) return;
+  const deleteMember = async (id: string, isIndex = false) => {
+    if (!confirm(isIndex ? 'Delete this indexing partner?' : 'Delete this board member?')) return;
     try {
       await supabase.from('editorial_board').delete().eq('id', id);
-      toast({ title: 'Member removed' });
+      toast({ title: isIndex ? 'Indexing partner removed' : 'Member removed' });
       fetchBoard(selectedJournal.id);
     } catch (err: any) {
       toast({ title: 'Error', description: err.message, variant: 'destructive' });
+    }
+  };
+
+  const openIndexCreate = () => {
+    setEditingIndexId(null);
+    setIndexForm({ name: '', subtext: '', imageUrl: '', sortOrder: String(indexes.length + 1) });
+    setIsIndexModalOpen(true);
+  };
+
+  const openIndexEdit = (idx: any) => {
+    setEditingIndexId(idx.id);
+    setIndexForm({
+      name: idx.name || '', subtext: idx.designation || '', imageUrl: idx.institution || '', sortOrder: String(idx.sort_order || 0)
+    });
+    setIsIndexModalOpen(true);
+  };
+
+  const saveIndex = async () => {
+    if (!indexForm.name) { toast({ title: 'Name required', variant: 'destructive' }); return; }
+    setProcessing(true);
+    try {
+      const payload = {
+        journal_id: selectedJournal.id,
+        role: 'indexing',
+        name: indexForm.name,
+        designation: indexForm.subtext,
+        institution: indexForm.imageUrl,
+        sort_order: parseInt(indexForm.sortOrder) || 0,
+      };
+      if (editingIndexId) {
+        await supabase.from('editorial_board').update(payload).eq('id', editingIndexId);
+        toast({ title: 'Indexing partner updated' });
+      } else {
+        await supabase.from('editorial_board').insert([payload]);
+        toast({ title: 'Indexing partner added' });
+      }
+      setIsIndexModalOpen(false);
+      fetchBoard(selectedJournal.id);
+    } catch (err: any) {
+      toast({ title: 'Error', description: err.message, variant: 'destructive' });
+    } finally {
+      setProcessing(false);
     }
   };
 
@@ -263,7 +391,7 @@ export function AdminJournals() {
       <div className="space-y-6 text-left pb-16">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 py-2">
           <div className="pl-2">
-            <h2 className="text-xl font-bold text-slate-800 tracking-tight">Editorial Board</h2>
+            <h2 className="text-xl font-bold text-slate-800 tracking-tight">Board & Indexing config</h2>
             <p className="text-xs font-medium text-slate-500 mt-0.5 truncate max-w-xl">{selectedJournal.title}</p>
           </div>
           <div className="flex items-center gap-2.5 pr-2">
@@ -274,7 +402,7 @@ export function AdminJournals() {
           </div>
         </div>
 
-        <div className="rounded-xl border border-slate-200 bg-white overflow-hidden mx-2 shadow-sm">
+        <div className="rounded-xl border border-slate-200 bg-white overflow-hidden mx-2 shadow-sm mb-8">
           <div className="px-6 py-4 bg-slate-50 border-b border-slate-100 flex items-center gap-3">
             <Users size={18} className="text-blue-900" />
             <span className="font-bold text-sm text-slate-800">Board Members</span>
@@ -308,6 +436,52 @@ export function AdminJournals() {
                   <div className="flex items-center gap-1.5">
                     <Button onClick={() => openMemberEdit(m)} variant="outline" size="icon" className="h-7 w-7 rounded border-slate-200 text-blue-600 hover:bg-blue-50"><Edit size={12}/></Button>
                     <Button onClick={() => deleteMember(m.id)} variant="outline" size="icon" className="h-7 w-7 rounded border-slate-200 text-rose-500 hover:bg-rose-50"><Trash size={12}/></Button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
+        {/* INDEXING SECTION */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 py-2 mt-8">
+          <div className="pl-2">
+            <h2 className="text-lg font-bold text-slate-800 tracking-tight">Indexing & Abstracting</h2>
+            <p className="text-xs font-medium text-slate-500 mt-0.5">Manage indexing partners shown on the journal page.</p>
+          </div>
+          <div className="flex items-center gap-2.5 pr-2">
+            <Button onClick={openIndexCreate} className="bg-emerald-600 hover:bg-emerald-700 text-white gap-2 font-bold text-xs h-9 px-4 rounded-lg shadow-sm border-none">
+              <Plus size={14} /> Add Index
+            </Button>
+          </div>
+        </div>
+        <div className="rounded-xl border border-slate-200 bg-white overflow-hidden mx-2 shadow-sm mb-4">
+          <div className="divide-y divide-slate-100">
+            {boardLoading ? (
+              <div className="p-16 flex justify-center"><Loader2 className="animate-spin h-6 w-6 text-slate-400" /></div>
+            ) : indexes.length === 0 ? (
+              <div className="p-16 text-center text-slate-400 text-sm flex flex-col items-center gap-2">
+                 No indexing partners configured yet.
+              </div>
+            ) : (
+              indexes.map((idx) => (
+                <div key={idx.id} className="flex items-center justify-between px-6 py-4 hover:bg-slate-50 transition-colors">
+                  <div className="flex items-center gap-4">
+                    {idx.institution ? (
+                        <div className="h-10 w-16 bg-white border border-slate-200 rounded object-contain flex items-center justify-center overflow-hidden shrink-0">
+                           <img src={idx.institution} alt={idx.name} className="h-full w-full object-contain p-1" />
+                        </div>
+                    ) : (
+                        <div className="h-10 w-16 bg-slate-100 border border-slate-200 rounded shrink-0 flex items-center justify-center text-slate-400 text-[10px]">No image</div>
+                    )}
+                    <div>
+                      <h4 className="text-[12px] font-bold text-slate-800">{idx.name}</h4>
+                      <p className="text-[11px] text-slate-500">{idx.designation}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <Button onClick={() => openIndexEdit(idx)} variant="outline" size="icon" className="h-7 w-7 rounded border-slate-200 text-blue-600 hover:bg-blue-50"><Edit size={12}/></Button>
+                    <Button onClick={() => deleteMember(idx.id, true)} variant="outline" size="icon" className="h-7 w-7 rounded border-slate-200 text-rose-500 hover:bg-rose-50"><Trash size={12}/></Button>
                   </div>
                 </div>
               ))
@@ -367,6 +541,38 @@ export function AdminJournals() {
             </div>
           </DialogContent>
         </Dialog>
+
+        {/* INDEXING MODAL */}
+        <Dialog open={isIndexModalOpen} onOpenChange={setIsIndexModalOpen}>
+          <DialogContent className="max-w-md bg-white border-slate-200 shadow-xl p-0 rounded-2xl">
+            <DialogHeader className="px-6 py-5 border-b border-slate-100 bg-slate-50/80">
+              <DialogTitle className="text-lg font-bold text-slate-800">{editingIndexId ? 'Edit Indexing Partner' : 'Add Partner'}</DialogTitle>
+            </DialogHeader>
+            <div className="p-6 space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-700">Index Name <span className="text-rose-500">*</span></label>
+                <Input value={indexForm.name} onChange={e => setIndexForm({...indexForm, name: e.target.value})} placeholder="e.g. Crossref" className="h-10 bg-slate-50" />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-700">Sub Text</label>
+                <Input value={indexForm.subtext} onChange={e => setIndexForm({...indexForm, subtext: e.target.value})} placeholder="e.g. DOI Partner" className="h-10 bg-slate-50" />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-700">Image URL</label>
+                <Input value={indexForm.imageUrl} onChange={e => setIndexForm({...indexForm, imageUrl: e.target.value})} placeholder="https://..." className="h-10 bg-slate-50" />
+                <p className="text-[10px] text-slate-500">Provide an external link to their logo/image.</p>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-700">Sort Order</label>
+                <Input type="number" value={indexForm.sortOrder} onChange={e => setIndexForm({...indexForm, sortOrder: e.target.value})} className="h-10 bg-slate-50" />
+              </div>
+            </div>
+            <div className="px-6 py-4 bg-slate-50/80 border-t border-slate-100 flex justify-end gap-3">
+              <Button variant="ghost" onClick={() => setIsIndexModalOpen(false)} className="font-bold text-xs">Cancel</Button>
+              <Button onClick={saveIndex} disabled={processing} className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs gap-2 h-10"><Save size={14}/> Save</Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     );
   }
@@ -380,6 +586,10 @@ export function AdminJournals() {
           <p className="text-xs font-medium text-slate-500 mt-0.5">Create and manage dynamic journal pages. Use the ✏️ button to edit all content including Journal Particulars.</p>
         </div>
         <div className="flex items-center gap-2.5 pr-2 flex-wrap">
+          <Button onClick={downloadMasterCsv} disabled={downloadingCsv} variant="outline" className="bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border-emerald-200 gap-2 font-bold text-xs h-9 px-3.5 rounded-lg shadow-sm">
+            {downloadingCsv ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />} 
+            Master CSV Export
+          </Button>
           <Button onClick={fetchJournals} variant="outline" className="bg-white gap-2 font-bold text-xs h-9 px-3.5 border-slate-200 rounded-lg shadow-sm">
             <RefreshCw size={14} className={loading ? 'animate-spin' : ''} /> Refresh
           </Button>

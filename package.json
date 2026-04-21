@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "vite build",
     "start": "vite preview",
-    "check": "tsc"
+    "check": "tsc",
+    "mail": "cd mail-server && node index.js"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1030.0",
@@ -117,5 +118,17 @@
   },
   "optionalDependencies": {
     "bufferutil": "^4.0.8"
-  }
+  },
+  "description": "",
+  "main": "postcss.config.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://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@github.com/scholarindiapub/Scholar-India-Publishers.git"
+  },
+  "keywords": [],
+  "author": "",
+  "bugs": {
+    "url": "https://github.com/scholarindiapub/Scholar-India-Publishers/issues"
+  },
+  "homepage": "https://github.com/scholarindiapub/Scholar-India-Publishers#readme"
 }

@@ -163,6 +163,7 @@ export function AdminCertificates() {
     manuscriptTitle: '',
     certDate: new Date().toISOString().split('T')[0],
     certNo: '',
+    reviewerEmail: '',
   });
 
   const searchReviewers = async () => {
@@ -195,6 +196,7 @@ export function AdminCertificates() {
       reviewerId: r.id || '',
       journalName: r.journal || '',
       certNo: generateCertNo(r.id || ''),
+      reviewerEmail: r.email || '',
     }));
     setResults([]);
     setSelectedFile(null);
@@ -229,6 +231,24 @@ export function AdminCertificates() {
     win.document.write(buildPopupHtml(buildOpts(), certUrl));
     win.document.close();
     setGenerating(false);
+  };
+
+  const MAIL_SERVER_URL = "https://scholar-hub-server-seven.vercel.app";
+  const MAIL_API_KEY = "scholar_india_mail_secret_2026";
+
+  const triggerEmail = async (endpoint: string, payload: any) => {
+    try {
+      const res = await fetch(`${MAIL_SERVER_URL}${endpoint}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-api-key': MAIL_API_KEY },
+        body: JSON.stringify(payload)
+      });
+      if (!res.ok) throw new Error('Mail failed');
+      return true;
+    } catch (e) {
+      console.error(`Mail trigger error [${endpoint}]:`, e);
+      return false;
+    }
   };
 
   // Upload PDF to S3 then save the link to the database
@@ -275,9 +295,24 @@ export function AdminCertificates() {
       if (dbError) throw dbError;
 
       setSavedSuccess(true);
+
+      // Trigger certificate notification email
+      const emailTarget = form.reviewerEmail;
+      if (emailTarget) {
+        await triggerEmail('/send/certificate-generated', {
+          name: form.name,
+          email: emailTarget,
+          reviewerId: form.reviewerId,
+          journalName: form.journalName,
+          manuscriptTitle: form.manuscriptTitle,
+          certNo: certNo,
+          certUrl: s3Url,
+        });
+      }
+
       toast({
         title: 'Certificate Uploaded & Saved!',
-        description: `Stored in S3 and DB. Certificate ID: ${certNo}`,
+        description: `Stored in S3 and DB. Certificate ID: ${certNo}${emailTarget ? ' · Notification sent.' : ''}`,
       });
     } catch (error: any) {
       console.error('Upload/Save Error:', error);

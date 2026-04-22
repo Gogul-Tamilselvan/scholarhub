@@ -581,6 +581,8 @@ export default function AdminDashboard() {
         { count: acceptedCount },
         { count: rejectedCount },
         { count: booksCount },
+        { count: leadsCount },
+        { count: messagesCount },
         { data: reviewers },
         { data: manuscripts },
         { data: assignments }
@@ -596,6 +598,10 @@ export default function AdminDashboard() {
         getJournalQuery('manuscripts').ilike('status', 'Rejected'),
         // Books count from books table
         supabase.from('books').select('*', { count: 'exact', head: true }),
+        // Leads count from contact_messages table
+        supabase.from('contact_messages').select('*', { count: 'exact', head: true }),
+        // Messages count from reviewer_messages table
+        supabase.from('reviewer_messages').select('*', { count: 'exact', head: true }),
         // Reviewers: latest 5
         (() => {
           let q = supabase.from('reviewers').select('id, first_name, last_name, email, role, status, submitted_at').or('status.eq.Pending,status.eq.pending,status.eq.PENDING');
@@ -621,9 +627,9 @@ export default function AdminDashboard() {
           reviewers: reviewersCount || 0,
           assignments: assignmentsCount || 0,
           payments: paymentsCount || 0,
-          unread: 0, // Not in schema, keeping 0
+          unread: messagesCount || 0,
           books: booksCount || 0,
-          leads: 0,
+          leads: leadsCount || 0,
           sjcm: sjcmCount || 0,
           sjhss: sjhssCount || 0,
           accepted: acceptedCount || 0,

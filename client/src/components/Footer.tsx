@@ -13,6 +13,21 @@ export default function Footer() {
   const [isSubscribing, setIsSubscribing] = useState(false);
   const { toast } = useToast();
 
+  const MAIL_SERVER_URL = "https://scholar-hub-server-seven.vercel.app";
+  const MAIL_API_KEY = "scholar_india_mail_secret_2026";
+
+  const triggerEmail = async (endpoint: string, payload: any) => {
+    try {
+      await fetch(`${MAIL_SERVER_URL}${endpoint}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-api-key': MAIL_API_KEY },
+        body: JSON.stringify(payload)
+      });
+    } catch (e) {
+      console.error("Mail trigger error:", e);
+    }
+  };
+
   const { data: visitorData } = useQuery<{ count: number }>({
     queryKey: ['/api/visitor-count'],
   });
@@ -41,6 +56,12 @@ export default function Footer() {
       }
 
       toast({ title: "Success", description: "You've been subscribed to our newsletter!" });
+      
+      // Trigger Welcome Email
+      await triggerEmail('/send/newsletter-welcome', {
+        email: email
+      });
+
       setEmail("");
       
     } catch (error: any) {

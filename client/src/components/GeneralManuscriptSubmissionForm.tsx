@@ -65,6 +65,21 @@ export default function GeneralManuscriptSubmissionForm({ journalTitle, subject 
   const [manuscriptId, setManuscriptId] = useState<string | null>(null);
   const { toast } = useToast();
 
+  const MAIL_SERVER_URL = "https://scholar-hub-server-seven.vercel.app";
+  const MAIL_API_KEY = "scholar_india_mail_secret_2026";
+
+  const triggerEmail = async (endpoint: string, payload: any) => {
+    try {
+      await fetch(`${MAIL_SERVER_URL}${endpoint}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-api-key': MAIL_API_KEY },
+        body: JSON.stringify(payload)
+      });
+    } catch (e) {
+      console.error("Mail trigger error:", e);
+    }
+  };
+
   const designations = [
     "Asst. Professor",
     "Asso. Professor", 
@@ -340,6 +355,15 @@ export default function GeneralManuscriptSubmissionForm({ journalTitle, subject 
         title: "Submission successful!",
         description: `Your manuscript has been submitted successfully. Manuscript ID: ${id}. You will receive a confirmation email shortly.`,
         duration: 8000,
+      });
+
+      // 4. Trigger Email Confirmation
+      await triggerEmail('/send/manuscript-submission', {
+        name: firstAuthor.name,
+        email: firstAuthor.email,
+        msId: id,
+        title: formData.manuscriptTitle,
+        journal: formData.journal
       });
 
       // Scroll to top to show the success message with Manuscript ID

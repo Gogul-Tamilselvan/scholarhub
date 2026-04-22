@@ -22,6 +22,21 @@ export default function ContactUs() {
     message: ""
   });
 
+  const MAIL_SERVER_URL = "https://scholar-hub-server-seven.vercel.app";
+  const MAIL_API_KEY = "scholar_india_mail_secret_2026";
+
+  const triggerEmail = async (endpoint: string, payload: any) => {
+    try {
+      await fetch(`${MAIL_SERVER_URL}${endpoint}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-api-key': MAIL_API_KEY },
+        body: JSON.stringify(payload)
+      });
+    } catch (e) {
+      console.error("Mail trigger error:", e);
+    }
+  };
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setFormData({
       ...formData,
@@ -51,6 +66,14 @@ export default function ContactUs() {
         toast({
           title: "Message sent successfully!",
           description: "We have received your request. Our team will contact you soon.",
+        });
+
+        // Trigger Email Acknowledgement
+        await triggerEmail('/send/contact-acknowledgement', {
+          name: formData.name,
+          email: formData.email,
+          subject: formData.subject,
+          type: formData.enquiryType
         });
         
         // Reset form

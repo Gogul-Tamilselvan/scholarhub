@@ -27,6 +27,7 @@ import ManuscriptTrack from "@/pages/ManuscriptTrack";
 import AdminCertificateEditor from "@/pages/AdminCertificateEditor";
 import PublicationPayment from "@/pages/PublicationPayment";
 import ArticleLanding from "@/pages/ArticleLanding";
+import SpecialIssueArticleLanding from "@/pages/SpecialIssueArticleLanding";
 import IssueLanding from "@/pages/IssueLanding";
 import ReviewerLogin from "@/pages/ReviewerLogin";
 import ReviewerDashboard from "@/pages/ReviewerDashboard";
@@ -35,6 +36,7 @@ import EditorProfile from "@/pages/EditorProfile";
 import AdminLogin from "@/pages/AdminLogin";
 import AdminDashboard from "@/pages/AdminDashboard";
 import FinalPaperForm from "@/pages/FinalPaperForm";
+import CertificateVerification from "@/pages/CertificateVerification";
 
 function ScrollToTop() {
   const [location] = useLocation();
@@ -81,6 +83,8 @@ function Router() {
       <Route path="/payment" component={PublicationPayment} />
       <Route path="/copyright-form" component={FinalPaperForm} />
       <Route path="/final-paper" component={FinalPaperForm} />
+      <Route path="/certificate-verification" component={CertificateVerification} />
+      <Route path="/si-article/:id" component={SpecialIssueArticleLanding} />
       <Route path="/article/:id">
         {(params) => {
           // Check if the ID is an issue (e.g., sjcm-v1i1) or an article (e.g., sjcm-v1i1-001)

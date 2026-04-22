@@ -7,7 +7,7 @@ import { Search, Loader2, CheckCircle2, Clock, CreditCard, Settings, Globe, Arro
 import Header from '@/components/Header';
 import Footer from "@/components/Footer";
 import SEO from '@/components/SEO';
-import { apiRequest } from "@/lib/queryClient";
+import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
 
@@ -30,26 +30,60 @@ export default function ManuscriptTrack() {
 
   const handleTrack = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    if (!trackId.trim()) return;
+    const id = trackId.trim().toUpperCase();
+    if (!id) return;
 
     setLoading(true);
+    setStatus(null);
     try {
-      const res = await apiRequest("GET", `/api/track-manuscript/${trackId.trim()}`);
-      const data = await res.json();
-      if (data.success) {
-        setStatus(data.status);
-      } else {
+      // Query the manuscripts table directly via Supabase
+      const { data: manuscript, error } = await supabase
+        .from('manuscripts')
+        .select('id, manuscript_title, author_name, journal, submitted_at, status, doi')
+        .ilike('id', id)
+        .maybeSingle();
+
+      if (error) throw error;
+
+      if (!manuscript) {
         toast({
           title: "Not Found",
           description: "Manuscript ID not found. Please check and try again.",
           variant: "destructive",
         });
-        setStatus(null);
+        return;
       }
-    } catch (error) {
+
+      // Also check payments table for payment status
+      const { data: payment } = await supabase
+        .from('payments')
+        .select('status')
+        .ilike('manuscript_id', id)
+        .maybeSingle();
+
+      const paymentStatus = payment?.status?.toLowerCase() === 'approved' || payment?.status?.toLowerCase() === 'paid'
+        ? 'paid'
+        : payment?.status || '';
+
+      const submittedAt = manuscript.submitted_at
+        ? new Date(manuscript.submitted_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
+        : 'N/A';
+
+      setStatus({
+        manuscriptId: manuscript.id,
+        title: manuscript.manuscript_title || manuscript.id,
+        authorName: manuscript.author_name || 'Unknown Author',
+        journal: manuscript.journal || 'N/A',
+        submittedAt,
+        status: manuscript.status || 'Submitted',
+        paymentStatus,
+        doi: manuscript.doi || undefined,
+      });
+    } catch (error: any) {
+      console.error('Track error:', error);
       toast({
         title: "Error",
-        description: "Failed to fetch manuscript status.",
+        description: "Failed to fetch manuscript status. Please try again.",
         variant: "destructive",
       });
     } finally {

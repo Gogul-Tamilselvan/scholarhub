@@ -139,10 +139,14 @@ export function AdminBooks() {
         name: prop.author_name || 'Author',
         email: prop.email,
         status: newStatus.toLowerCase().includes('accepted') ? 'accepted' : 
-                newStatus.toLowerCase().includes('rejected') ? 'rejected' : 'under_review',
+                newStatus.toLowerCase().includes('rejected') ? 'rejected' : 
+                newStatus.toLowerCase().includes('published') ? 'published' : 'under review',
         details: {
-          bookID: id,
-          bookTitle: prop.book_title
+          bID: id,
+          bookTitle: prop.book_title,
+          pubType: prop.publication_type || 'Full Book',
+          format: prop.publication_format || 'Print + Digital',
+          isbnVal: 'Pending Allotment'
         }
       });
 
@@ -705,26 +709,65 @@ export function AdminBooks() {
                 <div className="space-y-4 pt-4 border-t border-slate-50">
                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">SUBMITTED DOCUMENTS</p>
                    <div className="grid grid-cols-3 gap-4">
-                      {selectedProposal.abstract_file_url && (
-                        <a href={selectedProposal.abstract_file_url} target="_blank" rel="noreferrer" className="flex flex-col items-center justify-center p-4 rounded-xl border border-slate-100 bg-white hover:border-blue-500 hover:text-blue-600 transition-all gap-2 group">
+                      {selectedProposal.proposal_link ? (
+                        <a href={selectedProposal.proposal_link} target="_blank" rel="noreferrer" className="flex flex-col items-center justify-center p-4 rounded-xl border border-slate-100 bg-white hover:border-blue-500 hover:text-blue-600 transition-all gap-2 group">
                            <FileText size={24} className="text-slate-300 group-hover:text-blue-500" />
-                           <span className="text-[10px] font-bold uppercase">Abstract</span>
+                           <span className="text-[10px] font-bold uppercase">Proposal / Manuscript</span>
                         </a>
-                      )}
-                      {selectedProposal.full_book_file_url && (
-                        <a href={selectedProposal.full_book_file_url} target="_blank" rel="noreferrer" className="flex flex-col items-center justify-center p-4 rounded-xl border border-slate-100 bg-white hover:border-blue-500 hover:text-blue-600 transition-all gap-2 group">
-                           <BookIcon size={24} className="text-slate-300 group-hover:text-blue-500" />
-                           <span className="text-[10px] font-bold uppercase">Full Draft</span>
-                        </a>
-                      )}
-                      {selectedProposal.cv_file_url && (
-                        <a href={selectedProposal.cv_file_url} target="_blank" rel="noreferrer" className="flex flex-col items-center justify-center p-4 rounded-xl border border-slate-100 bg-white hover:border-blue-500 hover:text-blue-600 transition-all gap-2 group">
-                           <Users size={24} className="text-slate-300 group-hover:text-blue-500" />
-                           <span className="text-[10px] font-bold uppercase">Author CV</span>
-                        </a>
+                      ) : (
+                        <div className="col-span-3 p-4 rounded-xl border border-dashed border-slate-200 bg-slate-50 text-center text-xs text-slate-400 font-medium">
+                           No document was uploaded with this proposal.
+                        </div>
                       )}
                    </div>
                 </div>
+
+                {/* Extra details from the form */}
+                <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-50">
+                   {selectedProposal.institution && (
+                     <div className="space-y-1.5">
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">INSTITUTION</p>
+                        <p className="text-sm font-bold text-slate-700">{selectedProposal.institution}</p>
+                     </div>
+                   )}
+                   {selectedProposal.designation && (
+                     <div className="space-y-1.5">
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">DESIGNATION</p>
+                        <p className="text-sm font-bold text-slate-700">{selectedProposal.designation}</p>
+                     </div>
+                   )}
+                   {selectedProposal.subject_area && (
+                     <div className="space-y-1.5">
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">SUBJECT AREA</p>
+                        <p className="text-sm font-bold text-slate-700">{selectedProposal.subject_area}</p>
+                     </div>
+                   )}
+                   {selectedProposal.expected_pages && (
+                     <div className="space-y-1.5">
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">EXPECTED PAGES</p>
+                        <p className="text-sm font-bold text-slate-700">{selectedProposal.expected_pages}</p>
+                     </div>
+                   )}
+                   {selectedProposal.publication_format && (
+                     <div className="space-y-1.5">
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">PUBLICATION FORMAT</p>
+                        <p className="text-sm font-bold text-slate-700">{selectedProposal.publication_format}</p>
+                     </div>
+                   )}
+                   {selectedProposal.co_authors_details && (
+                     <div className="col-span-2 space-y-1.5">
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">CO-AUTHORS</p>
+                        <p className="text-sm font-bold text-slate-700 whitespace-pre-wrap">{selectedProposal.co_authors_details}</p>
+                     </div>
+                   )}
+                </div>
+
+                {selectedProposal.abstract && (
+                  <div className="space-y-2 pt-4 border-t border-slate-50">
+                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">ABSTRACT / SUMMARY</p>
+                     <p className="text-sm text-slate-700 leading-relaxed bg-slate-50 p-4 rounded-xl border border-slate-100 whitespace-pre-wrap">{selectedProposal.abstract}</p>
+                  </div>
+                )}
              </div>
            )}
 

@@ -151,10 +151,15 @@ export default function DynamicJournalPage() {
     institution: m.institution || '',
     location: m.location || '',
     email: m.email || '',
+    profileUrl: m.profile_url || '',
   });
 
   const editorInChiefData = editorialBoard.find((m: any) => m.role === 'editor-in-chief');
   const managingEditorData = editorialBoard.find((m: any) => m.role === 'managing-editor');
+  
+  const editorInChief = editorInChiefData ? toMember(editorInChiefData) : null;
+  const managingEditor = managingEditorData ? toMember(managingEditorData) : null;
+
   const associateEditorsList = editorialBoard.filter((m: any) => m.role === 'associate-editor').map(toMember);
   const boardMembersList = editorialBoard.filter((m: any) => m.role === 'board-member').map(toMember);
   const indexingPartnersList = editorialBoard.filter((m: any) => m.role === 'indexing').map((m: any) => ({
@@ -205,23 +210,25 @@ export default function DynamicJournalPage() {
               </div>
               <div className="flex-1">
                 <Badge className="bg-yellow-500 text-blue-900 font-bold mb-2 px-3 py-0.5 text-[10px] uppercase tracking-wider border-none rounded-full">
-                  International Peer-Reviewed
+                  {journal.journal_type || "International Peer-Reviewed"}
                 </Badge>
-                <h1 className="text-2xl md:text-3xl lg:text-4xl font-serif font-bold text-white mb-3 tracking-tight leading-tight">
-                  {journal.title}
+                <h1 className="text-2xl md:text-3xl lg:text-4xl font-serif font-bold mb-3 tracking-tight leading-tight">
+                  {journal.title.startsWith("Scholar Journal of ") ? (
+                    <>
+                      <span className="text-white">Scholar Journal of </span>
+                      <span className="text-amber-400">{journal.title.substring("Scholar Journal of ".length)}</span>
+                    </>
+                  ) : (
+                    <span className="text-white">{journal.title}</span>
+                  )}
                 </h1>
                 <div className="flex flex-wrap gap-3 text-blue-100">
                   <span className="flex items-center gap-1.5 bg-white/5 px-3 py-1 rounded-full border border-white/10 text-[11px] md:text-xs font-medium">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-green-400" /> Subject: {journal.subject || 'Multidisciplinary'}
+                    <CheckCircle2 className="w-3.5 h-3.5 text-green-400" /> ISSN (Online): {journal.issn || 'XXXXX'}
                   </span>
                   <span className="flex items-center gap-1.5 bg-white/5 px-3 py-1 rounded-full border border-white/10 text-[11px] md:text-xs font-medium">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-green-400" /> Est: {journal.starting_year || new Date().getFullYear()}
+                    <CheckCircle2 className="w-3.5 h-3.5 text-green-400" /> {journal.frequency || 'Quarterly'} Publication
                   </span>
-                  {journal.issn && journal.issn !== 'XXXXX' && (
-                    <span className="flex items-center gap-1.5 bg-white/5 px-3 py-1 rounded-full border border-white/10 text-[11px] md:text-xs font-medium">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-green-400" /> ISSN: {journal.issn}
-                    </span>
-                  )}
                 </div>
               </div>
             </div>
@@ -253,6 +260,7 @@ export default function DynamicJournalPage() {
         currentIssueArticles={currentIssueArticles}
         currentIssueMeta={currentIssueMeta || undefined}
         indexingPartners={indexingPartnersList.length > 0 ? indexingPartnersList : undefined}
+        journalId={journal.id}
       />
     </>
   );

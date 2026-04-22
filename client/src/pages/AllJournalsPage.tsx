@@ -5,7 +5,7 @@ import SEO from "@/components/SEO";
 import { Link } from "wouter";
 import { supabase } from "@/lib/supabase";
 import { motion } from "framer-motion";
-import { Sparkles, BookOpen, ChevronRight, Loader2 } from "lucide-react";
+import { Sparkles, BookOpen, ChevronRight, Loader2, ArrowRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
@@ -114,38 +114,38 @@ export default function AllJournalsPage() {
             </div>
           ) : (
             <>
-              <div className="grid md:grid-cols-2 gap-8 lg:gap-10">
-                {visibleJournals.map(({ short, full, issn, desc, href, color }, i) => (
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
+                {visibleJournals.map(({ short, full, issn, desc, href }, i) => (
                   <motion.div key={short + i} {...fadeUp((i % 6) * 0.1)}
-                    className="group relative bg-white dark:bg-gray-900 rounded-3xl border border-gray-100 dark:border-gray-800 p-8 shadow-xl shadow-slate-200/50 dark:shadow-none hover:shadow-2xl hover:shadow-blue-900/10 hover:-translate-y-2 transition-all duration-500 ease-out overflow-hidden flex flex-col h-full"
+                    className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/30 dark:to-blue-900/20 rounded-xl border-2 border-blue-200 dark:border-blue-700 p-5 hover:shadow-xl transition-all group flex flex-col h-full"
                   >
-                    <div className={`absolute top-0 right-0 -mr-20 -mt-20 w-64 h-64 bg-gradient-to-br ${color} rounded-full opacity-[0.03] blur-3xl group-hover:opacity-[0.08] transition-opacity duration-500`} />
-                    
-                    <div className="relative z-10 flex-grow">
-                      <div className="flex items-start justify-between mb-8">
-                        <div className="flex items-center gap-4">
-                          <div className="shadow-md bg-gradient-to-br from-[#213361] to-[#152240] p-3.5 rounded-2xl shrink-0 group-hover:scale-110 group-hover:rotate-3 transition-transform duration-500">
-                            <BookOpen className="h-6 w-6 text-amber-400" />
-                          </div>
-                          <div className="text-2xl md:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-br from-gray-200 to-gray-400 dark:from-gray-700 dark:to-gray-800 tracking-tighter drop-shadow-sm">{short}</div>
-                        </div>
-                        <Badge className="bg-amber-100/50 text-amber-800 dark:bg-amber-500/10 dark:text-amber-400 border border-amber-200 dark:border-amber-500/20 px-3 py-1 rounded-full text-[10px] font-bold shadow-sm select-none">{issn}</Badge>
+                    <div className="flex items-start gap-3 mb-4">
+                      <div className="bg-[#213361] p-2 rounded-lg shrink-0 group-hover:scale-110 transition-transform duration-300">
+                        <BookOpen className="h-5 w-5 text-white" />
                       </div>
-                      <h3 className="font-extrabold text-[#213361] dark:text-white text-xl md:text-2xl leading-tight mb-4 group-hover:text-blue-700 dark:group-hover:text-blue-400 transition-colors">
-                        {full}
-                      </h3>
-                      <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed font-medium line-clamp-3">
-                        {desc}
-                      </p>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-bold text-[#213361] dark:text-blue-200 text-base md:text-[17px] leading-snug mb-1 line-clamp-2">
+                          {full.startsWith("Scholar Journal of ") ? (
+                            <>
+                              <span className="text-[13px] md:text-[14px]">Scholar Journal of </span>
+                              <span className="text-amber-600 dark:text-amber-400">{full.substring("Scholar Journal of ".length)}</span>
+                            </>
+                          ) : (
+                            full
+                          )}
+                        </h3>
+                        <Badge className="bg-[#213361] text-white text-[9px] font-bold border-none px-2 py-0.5">{issn}</Badge>
+                      </div>
                     </div>
                     
-                    <div className="relative z-10 mt-8 pt-6 border-t border-gray-100 dark:border-gray-800">
+                    <p className="text-[13px] text-gray-700 dark:text-gray-300 leading-relaxed mb-5 font-medium line-clamp-3 flex-grow">
+                      {desc}
+                    </p>
+                    
+                    <div className="mt-auto">
                       <Link href={href}>
-                        <button className="flex items-center gap-2 text-[#213361] dark:text-amber-400 font-bold text-sm uppercase tracking-wide group/btn outline-none">
-                          Explore Journal 
-                          <div className="bg-gray-100 dark:bg-gray-800 group-hover/btn:bg-[#213361] dark:group-hover/btn:bg-amber-400 group-hover/btn:text-white dark:group-hover/btn:text-[#213361] rounded-full p-1.5 transition-colors duration-300">
-                            <ChevronRight className="h-4 w-4 group-hover/btn:translate-x-0.5 transition-transform" />
-                          </div>
+                        <button className="inline-flex items-center gap-2 bg-[#213361] text-white text-[13px] font-bold px-4 py-2 rounded-md hover:opacity-90 hover:translate-x-1 transition-all shadow-md">
+                          More Info <ArrowRight className="h-3.5 w-3.5" />
                         </button>
                       </Link>
                     </div>

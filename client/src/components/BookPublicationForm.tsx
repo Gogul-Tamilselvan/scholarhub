@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Send, BookOpen } from "lucide-react";
+import { supabase } from "@/lib/supabase";
 
 export default function BookPublicationForm() {
   const [formData, setFormData] = useState({

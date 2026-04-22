@@ -81,6 +81,7 @@ export default function AdminLogin() {
           email: subData.email,
           name: subData.name,
           allowed_tabs: subData.allowed_tabs || [],
+          allowed_journals: subData.allowed_journals || [],
           loginTime: new Date().toISOString()
         }));
         localStorage.removeItem('adminSession');

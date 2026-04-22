@@ -203,19 +203,16 @@ export function AdminPayments() {
       
       // Trigger Email Notification
       if (newStatus === 'Approved') {
-        triggerEmail('/send/payment-status-update', {
+        triggerEmail('/send/payment-invoice', {
           name: pay.author_name || 'Author',
           email: pay.email,
-          mode: 'receipt',
-          details: {
-            mID: pay.manuscript_id,
-            mTitle: pay.manuscript_title,
-            amount: pay.amount,
-            pMode: pay.payment_method || pay.payment_mode,
-            tID: pay.transaction_number,
-            date: parseExcelDate(pay.date_of_payment || pay.submitted_at),
-            pubType: pay.publication_type || (pay.manuscript_id?.includes('BSIP') ? 'book' : 'journal')
-          }
+          manuscriptId: pay.manuscript_id,
+          title: pay.manuscript_title,
+          amount: pay.amount || (pay.manuscript_id?.includes('BSIP') ? '15000' : '1500'),
+          paymentMode: pay.payment_method || pay.payment_mode || 'Bank/Online',
+          transactionRef: pay.transaction_number || 'VERIFIED',
+          invoiceNo: pay.invoice_no || `INV-${pay.manuscript_id || Date.now()}`,
+          pubType: pay.publication_type || (pay.manuscript_id?.includes('BSIP') ? 'book' : 'journal')
         });
       } else if (newStatus === 'Rejected' || newStatus === 'Failed') {
         triggerEmail('/send/payment-status-update', {
@@ -237,16 +234,16 @@ export function AdminPayments() {
   };
 
   const manuallySendInvoice = (pay: any) => {
-    triggerEmail('/send/payment-status-update', {
+    triggerEmail('/send/payment-invoice', {
       name: pay.author_name || 'Author',
       email: pay.email,
-      mode: 'invoice',
-      details: {
-        mID: pay.manuscript_id,
-        mTitle: pay.manuscript_title,
-        amount: pay.amount || (pay.manuscript_id?.includes('BSIP') ? '15000' : '1500'),
-        pubType: pay.publication_type || (pay.manuscript_id?.includes('BSIP') ? 'book' : 'journal')
-      }
+      manuscriptId: pay.manuscript_id,
+      title: pay.manuscript_title,
+      amount: pay.amount || (pay.manuscript_id?.includes('BSIP') ? '15000' : '1500'),
+      paymentMode: pay.payment_method || pay.payment_mode || 'Bank/Online',
+      transactionRef: pay.transaction_number || 'VERIFIED',
+      invoiceNo: pay.invoice_no || `INV-${pay.manuscript_id || Date.now()}`,
+      pubType: pay.publication_type || (pay.manuscript_id?.includes('BSIP') ? 'book' : 'journal')
     });
     toast({ title: 'Invoice sent successfully' });
   };

@@ -124,7 +124,7 @@ export default function PublicationPayment() {
 
       // 3. Send email via Scholar Hub Server
       try {
-        await fetch('https://scholar-hub-server-seven.vercel.app/send/third-party-receipt', {
+        await fetch('http://localhost:4001/send/third-party-receipt', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

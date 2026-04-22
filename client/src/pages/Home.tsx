@@ -9,10 +9,11 @@ import {
   RefreshCw, Send, Languages, ArrowRight,
   Unlock, Hash, BookMarked, Scale, Link2, Fingerprint,
   Megaphone, Sparkles, Edit3, Share2, Users, MessageSquare, Bookmark,
-  CheckCircle2,
+  CheckCircle2, ChevronRight
 } from "lucide-react";
 import { useLocation } from "wouter";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 
 const fadeUp = (delay = 0) => ({
   initial: { opacity: 0, y: 22 },
@@ -185,7 +186,16 @@ export default function Home() {
                     <BookOpen className="h-5 w-5 text-white" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="font-bold text-[#213361] dark:text-blue-200 text-base leading-snug mb-1">{full}</h3>
+                    <h3 className="font-bold text-[#213361] dark:text-blue-200 text-base leading-snug mb-1">
+                      {full.startsWith("Scholar Journal of ") ? (
+                        <>
+                          <span>Scholar Journal of </span>
+                          <span className="text-amber-600 dark:text-amber-400">{full.substring("Scholar Journal of ".length)}</span>
+                        </>
+                      ) : (
+                        full
+                      )}
+                    </h3>
                     <Badge className="bg-[#213361] text-white text-[10px] font-semibold">{issn}</Badge>
                   </div>
                   <div className="text-2xl font-black text-blue-200 dark:text-blue-900/40 leading-none">{short}</div>
@@ -198,6 +208,14 @@ export default function Home() {
                 </Link>
               </motion.div>
             ))}
+          </div>
+
+          <div className="mt-12 flex justify-center">
+            <Link href="/journals">
+              <Button className="bg-white border-2 border-[#213361]/20 text-[#213361] hover:bg-[#213361] hover:text-white hover:border-[#213361] px-8 h-12 rounded-full font-bold shadow-md hover:shadow-lg transition-all gap-2 group">
+                More Journals <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              </Button>
+            </Link>
           </div>
         </div>
       </section>

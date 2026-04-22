@@ -3,7 +3,7 @@ import { supabaseAdmin as supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, RefreshCw, Download, Search, CheckCircle, FileSearch, CheckCheck, AlertTriangle, ExternalLink, UserPlus, Shield } from 'lucide-react';
+import { Loader2, RefreshCw, Download, Search, CheckCircle, FileSearch, CheckCheck, AlertTriangle, ExternalLink, UserPlus, Shield, Mail } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
   Dialog,
@@ -247,15 +247,16 @@ export function SubmissionComparison() {
       toast({ title: 'Approved for production', variant: 'default' });
 
       // Trigger Production Confirmation Email
-      triggerEmail('/send/status-update', {
+      triggerEmail('/send/production-status-update', {
         name: selectedMs.author || 'Author',
         email: selectedMs.email,
-        status: 'published',
+        mode: 'production',
         details: {
           mID: selectedMs.displayId,
           mTitle: selectedMs.title,
-          journal: selectedMs.journal,
-          doi: selectedMs.doi || 'Pending'
+          formatStatus: 'yes',
+          copyrightStatus: 'yes',
+          paymentStatus: selectedMs.msStatus.toLowerCase() === 'complement' ? 'complement' : 'yes'
         }
       });
 
@@ -266,6 +267,36 @@ export function SubmissionComparison() {
       toast({ title: 'Failed to approve', variant: 'destructive' });
     } finally {
       setApproving(false);
+    }
+  };
+
+  const [sendingActionReq, setSendingActionReq] = useState(false);
+  const handleSendActionRequired = async () => {
+    if (!selectedMs) return;
+    setSendingActionReq(true);
+    
+    const missingPayment = selectedMs.msStatus.toLowerCase() === 'accepted' && (!selectedMs.payment || String(selectedMs.payment.status).toLowerCase() !== 'approved');
+
+    try {
+      const success = await triggerEmail('/send/production-status-update', {
+        name: selectedMs.author || 'Author',
+        email: selectedMs.email,
+        mode: 'missing',
+        details: {
+          mID: selectedMs.displayId,
+          mTitle: selectedMs.title,
+          formatStatus: selectedMs.paper ? 'yes' : 'no',
+          copyrightStatus: selectedMs.copyright ? 'yes' : 'no',
+          paymentStatus: missingPayment ? 'no' : 'yes'
+        }
+      });
+      if (success) {
+        toast({ title: 'Notification Sent', description: 'Action required email dispatched successfully.' });
+      }
+    } catch(e) {
+      toast({ title: 'Failed to send notification', variant: 'destructive' });
+    } finally {
+      setSendingActionReq(false);
     }
   };
 
@@ -501,15 +532,25 @@ export function SubmissionComparison() {
                   <CheckCircle size={18} className="text-blue-500" /> All requirements met. Ready for production approval.
                 </div>
               ) : (
-                <div className="bg-amber-50 text-amber-800 p-5 rounded-xl mb-6 font-medium border border-amber-200/60 shadow-sm text-sm">
-                  <div className="flex items-center gap-2 font-bold mb-3 text-amber-700">
-                    <AlertTriangle size={18} className="text-amber-500" /> Cannot approve yet. Missing requirements:
+                <div className="bg-amber-50 text-amber-800 p-5 rounded-xl mb-6 font-medium border border-amber-200/60 shadow-sm text-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                  <div>
+                    <div className="flex items-center gap-2 font-bold mb-3 text-amber-700">
+                      <AlertTriangle size={18} className="text-amber-500" /> Cannot approve yet. Missing requirements:
+                    </div>
+                    <ul className="list-disc pl-8 space-y-1.5 text-amber-700/90 font-semibold marker:text-amber-400">
+                      {!selectedMs.copyright && <li>Copyright Form is missing</li>}
+                      {!selectedMs.paper && <li>Final Manuscript is missing</li>}
+                      {selectedMs.msStatus.toLowerCase() === 'accepted' && (!selectedMs.payment || String(selectedMs.payment.status).toLowerCase() !== 'approved') && <li>Payment is pending or missing</li>}
+                    </ul>
                   </div>
-                  <ul className="list-disc pl-8 space-y-1.5 text-amber-700/90 font-semibold marker:text-amber-400">
-                    {!selectedMs.copyright && <li>Copyright Form is missing</li>}
-                    {!selectedMs.paper && <li>Final Manuscript is missing</li>}
-                    {selectedMs.msStatus.toLowerCase() === 'accepted' && (!selectedMs.payment || String(selectedMs.payment.status).toLowerCase() !== 'approved') && <li>Payment is pending or missing</li>}
-                  </ul>
+                  <Button 
+                    onClick={handleSendActionRequired} 
+                    disabled={sendingActionReq}
+                    className="bg-amber-600 hover:bg-amber-700 text-white font-bold h-10 px-5 shadow-sm shrink-0 gap-2"
+                  >
+                    {sendingActionReq ? <Loader2 size={16} className="animate-spin" /> : <Mail size={16} />}
+                    Send Action Required Email
+                  </Button>
                 </div>
               )}
 

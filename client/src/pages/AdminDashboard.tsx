@@ -8,7 +8,7 @@ import {
   UserPlus, Mail, BookOpen, CreditCard, 
   LogOut, Bell, RefreshCw,
   Clock, CheckCircle2,
-  ChevronRight, ChevronDown, Laptop, MessageSquare, Plus,
+  ChevronRight, ChevronDown, Laptop, MessageSquare, Plus, Sparkles,
   Search, Trash2, Loader2, ExternalLink, Filter,
   MoreVertical, Download, AlertCircle, Calendar,
   FileCheck, Newspaper, Megaphone, BarChart, History,
@@ -25,6 +25,7 @@ import { SubAdminTasks } from '@/components/SubAdminTasks';
 import { ReviewApprovals } from '@/components/ReviewApprovals';
 import { SubmissionComparison } from '@/components/SubmissionComparison';
 import { AdminPayments } from '@/components/AdminPayments';
+import { AdminThirdPartyPayments } from '@/components/AdminThirdPartyPayments';
 import { AdminBooks } from '@/components/AdminBooks';
 import { AdminContacts } from '@/components/AdminContacts';
 import { AdminNewsletter } from '@/components/AdminNewsletter';
@@ -37,6 +38,7 @@ import { AdminArchives } from '@/components/AdminArchives';
 import { AdminCertificates } from '@/components/AdminCertificates';
 import { AdminBroadcast } from '@/components/AdminBroadcast';
 import { AdminMessages } from '@/components/AdminMessages';
+import { AdminSpecialArchives } from '@/components/AdminSpecialArchives';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { 
@@ -68,6 +70,7 @@ export default function AdminDashboard() {
   // Sub-admin state
   const [isMainAdmin, setIsMainAdmin] = useState(true);
   const [subAdminTabs, setSubAdminTabs] = useState<string[]>([]);
+  const [subAdminJournals, setSubAdminJournals] = useState<string[]>([]);
   
   // ── Mail Server Trigger Helper ──────────────────────────────────────────────
   const MAIL_SERVER_URL = "https://scholar-hub-server-seven.vercel.app";
@@ -140,12 +143,20 @@ export default function AdminDashboard() {
 
   const fetchGlobalNotifications = async () => {
     try {
+        const manuscriptsQuery = supabase.from('manuscripts').select('id, manuscript_title, status, submitted_at, journal').in('status', ['Submitted', 'Under Process']).order('submitted_at', { ascending: false }).limit(20);
+        const reviewersQuery = supabase.from('reviewers').select('id, first_name, last_name, role, status, submitted_at, journal').in('status', ['Pending', 'Submitted', 'pending', 'PENDING']).order('submitted_at', { ascending: false }).limit(20);
+
+        if (!isMainAdmin && subAdminJournals.length > 0) {
+          manuscriptsQuery.in('journal', subAdminJournals);
+          reviewersQuery.in('journal', subAdminJournals);
+        }
+
         const [
             { data: mData },
             { data: rData }
         ] = await Promise.all([
-            supabase.from('manuscripts').select('id, manuscript_title, status, submitted_at').in('status', ['Submitted', 'Under Process']).order('submitted_at', { ascending: false }).limit(20),
-            supabase.from('reviewers').select('id, first_name, last_name, role, status, submitted_at').in('status', ['Pending', 'Submitted', 'pending', 'PENDING']).order('submitted_at', { ascending: false }).limit(20)
+            manuscriptsQuery,
+            reviewersQuery
         ]);
 
         const notifs: any[] = [];
@@ -317,7 +328,11 @@ export default function AdminDashboard() {
 
     setLoadingManuscripts(true);
     try {
-      const { data, error } = await supabase.from('manuscripts').select('*').order('submitted_at', { ascending: false, nullsFirst: false }).limit(manuscriptsLimit);
+      let q = supabase.from('manuscripts').select('*');
+      if (!isMainAdmin && subAdminJournals.length > 0) {
+        q = q.in('journal', subAdminJournals);
+      }
+      const { data, error } = await q.order('submitted_at', { ascending: false, nullsFirst: false }).limit(manuscriptsLimit);
       if (!error && data) {
          const formatted = data.map(m => ({
             id: m.id || "UNKNOWN",   // manuscripts.id IS the custom MANSJCM... ID
@@ -355,7 +370,11 @@ export default function AdminDashboard() {
 
     setLoadingReviewers(true);
     try {
-      const { data, error } = await supabase.from('reviewers').select('*').order('submitted_at', { ascending: false, nullsFirst: false }).limit(reviewersLimit);
+      let q = supabase.from('reviewers').select('*');
+      if (!isMainAdmin && subAdminJournals.length > 0) {
+        q = q.in('journal', subAdminJournals);
+      }
+      const { data, error } = await q.order('submitted_at', { ascending: false, nullsFirst: false }).limit(reviewersLimit);
       if (!error && data) {
          const formatted = [...data];
          // Client-side sort: handles both Excel serials and ISO strings correctly
@@ -418,8 +437,21 @@ export default function AdminDashboard() {
            };
          });
          formatted.sort((a: any, b: any) => parseDateToTimestamp(b.assigned_at) - parseDateToTimestamp(a.assigned_at));
-         setAllReviews(formatted);
-         sessionStorage.setItem('adminReviewsCache', JSON.stringify({ data: formatted, timestamp: Date.now() }));
+          
+          let filtered = formatted;
+          if (!isMainAdmin && subAdminJournals.length > 0) {
+            // Filter by checking if the manuscript_id matches the journal (heuristic)
+            filtered = formatted.filter(r => {
+              if (r.journal) return subAdminJournals.includes(r.journal);
+              // Fallback for SJCM/SJHSS prefixes
+              if (r.manuscript_id?.startsWith('MANSJCM') && subAdminJournals.includes('Scholar Journal of Commerce and Management')) return true;
+              if (r.manuscript_id?.startsWith('MANSJHSS') && subAdminJournals.includes('Scholar Journal of Humanities and Social Sciences')) return true;
+              return false;
+            });
+          }
+
+          setAllReviews(filtered);
+          sessionStorage.setItem('adminReviewsCache', JSON.stringify({ data: filtered, timestamp: Date.now() }));
       }
     } catch(err) { console.error(err); }
     finally { setLoadingReviews(false); }
@@ -530,6 +562,14 @@ export default function AdminDashboard() {
     setLoading(true);
     try {
       // Fetch stats and preview data in parallel
+      const getJournalQuery = (table: string) => {
+        let q = supabase.from(table).select('*', { count: 'exact', head: true });
+        if (!isMainAdmin && subAdminJournals.length > 0) {
+          q = q.in('journal', subAdminJournals);
+        }
+        return q;
+      };
+
       const [
         { count: manuscriptsCount },
         { count: underReviewCount },
@@ -545,22 +585,30 @@ export default function AdminDashboard() {
         { data: manuscripts },
         { data: assignments }
       ] = await Promise.all([
-        supabase.from('manuscripts').select('*', { count: 'exact', head: true }),
-        supabase.from('manuscripts').select('*', { count: 'exact', head: true }).in('status', ['Under Process', 'Under Review']),
-        supabase.from('reviewers').select('*', { count: 'exact', head: true }),
-        supabase.from('assignments').select('*', { count: 'exact', head: true }),
-        supabase.from('payments').select('*', { count: 'exact', head: true }),
+        getJournalQuery('manuscripts'),
+        getJournalQuery('manuscripts').in('status', ['Under Process', 'Under Review']),
+        getJournalQuery('reviewers'),
+        supabase.from('assignments').select('*', { count: 'exact', head: true }), // Assignments need a different filter if no journal col
+        getJournalQuery('payments'),
         supabase.from('manuscripts').select('*', { count: 'exact', head: true }).ilike('journal', '%Commerce%'),
         supabase.from('manuscripts').select('*', { count: 'exact', head: true }).ilike('journal', '%Humanities%'),
-        supabase.from('manuscripts').select('*', { count: 'exact', head: true }).ilike('status', 'Accepted'),
-        supabase.from('manuscripts').select('*', { count: 'exact', head: true }).ilike('status', 'Rejected'),
+        getJournalQuery('manuscripts').ilike('status', 'Accepted'),
+        getJournalQuery('manuscripts').ilike('status', 'Rejected'),
         // Books count from books table
         supabase.from('books').select('*', { count: 'exact', head: true }),
-        // Reviewers: only pending status (case-insensitive), latest 5
-        supabase.from('reviewers').select('id, first_name, last_name, email, role, status, submitted_at').or('status.eq.Pending,status.eq.pending,status.eq.PENDING').order('submitted_at', { ascending: false, nullsFirst: false }).limit(5),
+        // Reviewers: latest 5
+        (() => {
+          let q = supabase.from('reviewers').select('id, first_name, last_name, email, role, status, submitted_at').or('status.eq.Pending,status.eq.pending,status.eq.PENDING');
+          if (!isMainAdmin && subAdminJournals.length > 0) q = q.in('journal', subAdminJournals);
+          return q.order('submitted_at', { ascending: false, nullsFirst: false }).limit(5);
+        })(),
         // Manuscripts latest 5
-        supabase.from('manuscripts').select('id, manuscript_title, author_name, status').order('submitted_at', { ascending: false }).limit(5),
-        // Assignments: direct columns, pending only
+        (() => {
+          let q = supabase.from('manuscripts').select('id, manuscript_title, author_name, status');
+          if (!isMainAdmin && subAdminJournals.length > 0) q = q.in('journal', subAdminJournals);
+          return q.order('submitted_at', { ascending: false }).limit(5);
+        })(),
+        // Assignments: latest 5
         supabase.from('assignments').select('id, status, due_date, manuscript_title, reviewer_full_name, reviewer_email').or('status.eq.Pending,status.eq.pending').order('assigned_at', { ascending: false }).limit(5)
       ]);
 
@@ -640,6 +688,7 @@ export default function AdminDashboard() {
         setAdminEmail(sub.email);
         setIsMainAdmin(false);
         setSubAdminTabs(sub.allowed_tabs || []);
+        setSubAdminJournals(sub.allowed_journals || []);
         if (sub.allowed_tabs?.length > 0 && activeTab === 'dashboard') {
           setActiveTab(sub.allowed_tabs[0]);
         }
@@ -2079,9 +2128,11 @@ return (
             <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-3 mb-2">Financials & Publishing</p>
             <NavItem icon={FileCheck} label="Final Submissions" id="final_submissions" />
             <NavItem icon={CreditCard} label="Payments" id="payments" />
+            <NavItem icon={Wallet} label="Third Party Payments" id="third_party_payments" />
             <NavItem icon={Book} label="Books" id="books" />
             <NavItem icon={BookOpen} label="Journals" id="journals" />
             <NavItem icon={Archive} label="Archives" id="archives" />
+            <NavItem icon={Sparkles} label="Special Archives" id="special_archives" />
             <NavItem icon={ScrollText} label="Certificates" id="certificates" />
           </div>
 
@@ -2151,6 +2202,7 @@ return (
               {activeTab === 'assignments' && renderAssignments()}
               {activeTab === 'final_submissions' && (isMainAdmin ? <SubmissionComparison /> : <SubAdminTasks />)}
               {activeTab === 'payments' && <AdminPayments />}
+              {activeTab === 'third_party_payments' && <AdminThirdPartyPayments />}
               {activeTab === 'books' && <AdminBooks />}
               {activeTab === 'leads' && <AdminContacts />}
               {activeTab === 'newsletter' && <AdminNewsletter />}
@@ -2158,15 +2210,16 @@ return (
               {activeTab === 'performance' && <AdminPerformance />}
               {activeTab === 'activity' && <AdminLogs />}
               {activeTab === 'users' && <AdminUsers />}
-              {activeTab === 'journals' && <AdminJournals />}
-              {activeTab === 'archives' && <AdminArchives />}
+              {activeTab === 'journals' && <AdminJournals isMainAdmin={isMainAdmin} subAdminJournals={subAdminJournals} />}
+              {activeTab === 'archives' && <AdminArchives isMainAdmin={isMainAdmin} subAdminJournals={subAdminJournals} />}
+              {activeTab === 'special_archives' && <AdminSpecialArchives isMainAdmin={isMainAdmin} subAdminJournals={subAdminJournals} />}
               {activeTab === 'certificates' && <AdminCertificates />}
               {activeTab === 'broadcast' && <AdminBroadcast />}
               {activeTab === 'messages' && <AdminMessages />}
               {activeTab === 'sub_admins' && isMainAdmin && <AdminSubAdmins />}
 
               {/* Placeholders for others while focused on Home RESTORE */}
-              {activeTab !== 'dashboard' && activeTab !== 'manuscripts' && activeTab !== 'reviewers' && activeTab !== 'reviews' && activeTab !== 'assign' && activeTab !== 'assignments' && activeTab !== 'final_submissions' && activeTab !== 'payments' && activeTab !== 'books' && activeTab !== 'leads' && activeTab !== 'newsletter' && activeTab !== 'deadlines' && activeTab !== 'performance' && activeTab !== 'activity' && activeTab !== 'users' && activeTab !== 'journals' && activeTab !== 'archives' && activeTab !== 'certificates' && activeTab !== 'broadcast' && activeTab !== 'messages' && renderPlaceholder(activeTab.toUpperCase(), LayoutDashboard)}
+              {activeTab !== 'dashboard' && activeTab !== 'manuscripts' && activeTab !== 'reviewers' && activeTab !== 'reviews' && activeTab !== 'assign' && activeTab !== 'assignments' && activeTab !== 'final_submissions' && activeTab !== 'payments' && activeTab !== 'third_party_payments' && activeTab !== 'books' && activeTab !== 'leads' && activeTab !== 'newsletter' && activeTab !== 'deadlines' && activeTab !== 'performance' && activeTab !== 'activity' && activeTab !== 'users' && activeTab !== 'journals' && activeTab !== 'archives' && activeTab !== 'special_archives' && activeTab !== 'certificates' && activeTab !== 'broadcast' && activeTab !== 'messages' && renderPlaceholder(activeTab.toUpperCase(), LayoutDashboard)}
            </div>
         </div>
       </main>

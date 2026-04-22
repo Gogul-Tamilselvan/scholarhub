@@ -37,7 +37,7 @@ const ALL_TABS = [
 ];
 
 const BLANK_FORM = {
-  name: '', email: '', password: '', allowed_tabs: [] as string[], is_active: true
+  name: '', email: '', password: '', allowed_tabs: [] as string[], allowed_journals: [] as string[], is_active: true
 };
 
 export function AdminSubAdmins() {
@@ -45,6 +45,7 @@ export function AdminSubAdmins() {
   const [subAdmins, setSubAdmins] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [journals, setJournals] = useState<any[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState({ ...BLANK_FORM });
@@ -67,7 +68,17 @@ export function AdminSubAdmins() {
     }
   };
 
-  useEffect(() => { fetchSubAdmins(); }, []);
+  const fetchJournals = async () => {
+    try {
+      const { data } = await supabaseAdmin.from('journals').select('id, title');
+      setJournals(data || []);
+    } catch (e) {}
+  };
+
+  useEffect(() => { 
+    fetchSubAdmins();
+    fetchJournals();
+  }, []);
 
   const openCreate = () => {
     setEditingId(null);
@@ -83,6 +94,7 @@ export function AdminSubAdmins() {
       email: sa.email || '',
       password: '',          // don't pre-fill; blank = keep existing
       allowed_tabs: sa.allowed_tabs || [],
+      allowed_journals: sa.allowed_journals || [],
       is_active: sa.is_active ?? true
     });
     setShowPassword(false);
@@ -100,6 +112,39 @@ export function AdminSubAdmins() {
 
   const selectAll = () => setForm(f => ({ ...f, allowed_tabs: ALL_TABS.map(t => t.id) }));
   const clearAll  = () => setForm(f => ({ ...f, allowed_tabs: [] }));
+
+  const toggleJournal = (id: string) => {
+    setForm(f => ({
+      ...f,
+      allowed_journals: f.allowed_journals.includes(id)
+        ? f.allowed_journals.filter(t => t !== id)
+        : [...f.allowed_journals, id]
+    }));
+  };
+
+  const selectAllJournals = () => setForm(f => ({ ...f, allowed_journals: journals.map(j => j.title) }));
+  const clearAllJournals  = () => setForm(f => ({ ...f, allowed_journals: [] }));
+
+  const MAIL_SERVER_URL = "https://scholar-hub-server-seven.vercel.app";
+  const MAIL_API_KEY = "scholar_india_mail_secret_2026";
+
+  const triggerEmail = async (endpoint: string, payload: any) => {
+    try {
+      const res = await fetch(`${MAIL_SERVER_URL}${endpoint}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': MAIL_API_KEY
+        },
+        body: JSON.stringify(payload)
+      });
+      if (!res.ok) throw new Error('Mail failed');
+      return true;
+    } catch (e) {
+      console.error(`Mail trigger error [${endpoint}]:`, e);
+      return false;
+    }
+  };
 
   const handleSave = async () => {
     if (!form.name.trim() || !form.email.trim()) {
@@ -154,6 +199,7 @@ export function AdminSubAdmins() {
         name: form.name.trim(),
         email: email,
         allowed_tabs: form.allowed_tabs,
+        allowed_journals: form.allowed_journals,
         is_active: form.is_active,
         auth_id: authUserId // Link to the Auth User
       };
@@ -168,6 +214,15 @@ export function AdminSubAdmins() {
         ({ error } = await supabaseAdmin.from('sub_admins').insert(payload));
       }
       if (error) throw error;
+
+      if (!editingId) {
+        // Send email with credentials for new sub-admin
+        await triggerEmail('/send/subadmin-credentials', {
+          name: form.name.trim(),
+          email: email,
+          password: password
+        });
+      }
 
       toast({ title: editingId ? 'Sub-Admin Updated' : 'Sub-Admin Created', description: `${form.name} can now access the dashboard.` });
       setIsModalOpen(false);
@@ -257,18 +312,30 @@ export function AdminSubAdmins() {
                     Created {sa.created_at ? new Date(sa.created_at).toLocaleDateString('en-GB') : '—'}
                   </p>
                 </div>
-                <div className="col-span-5 flex flex-wrap gap-1">
-                  {(sa.allowed_tabs || []).length === 0 ? (
-                    <span className="text-[10px] text-slate-400 italic">No tabs assigned</span>
-                  ) : (sa.allowed_tabs || []).map((tab: string) => {
-                    const t = ALL_TABS.find(x => x.id === tab);
-                    return (
-                      <Badge key={tab} variant="outline"
-                        className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border-blue-200">
-                        {t?.label || tab}
+                <div className="col-span-5 space-y-2">
+                  <div className="flex flex-wrap gap-1">
+                    {(sa.allowed_tabs || []).length === 0 ? (
+                      <span className="text-[10px] text-slate-400 italic">No tabs assigned</span>
+                    ) : (sa.allowed_tabs || []).map((tab: string) => {
+                      const t = ALL_TABS.find(x => x.id === tab);
+                      return (
+                        <Badge key={tab} variant="outline"
+                          className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border-blue-200">
+                          {t?.label || tab}
+                        </Badge>
+                      );
+                    })}
+                  </div>
+                  <div className="flex flex-wrap gap-1 border-t border-slate-50 pt-1.5">
+                    {(sa.allowed_journals || []).length === 0 ? (
+                      <span className="text-[10px] text-emerald-600/50 italic font-medium">Full Journal Access</span>
+                    ) : (sa.allowed_journals || []).map((j: string) => (
+                      <Badge key={j} variant="outline"
+                        className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border-emerald-200">
+                        {j}
                       </Badge>
-                    );
-                  })}
+                    ))}
+                  </div>
                 </div>
                 <div className="col-span-2 flex justify-center">
                   <button onClick={() => toggleActive(sa)} title="Toggle active">
@@ -373,6 +440,41 @@ export function AdminSubAdmins() {
               </div>
               <p className="text-[10px] text-slate-400">
                 {form.allowed_tabs.length} of {ALL_TABS.length} tabs selected
+              </p>
+            </div>
+
+            {/* Journal permissions */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-slate-700">Journal Access Restrictions</label>
+                <div className="flex gap-2">
+                  <button onClick={selectAllJournals}
+                    className="text-[10px] font-bold text-emerald-600 hover:underline flex items-center gap-1">
+                    <CheckSquare size={11} /> Select All
+                  </button>
+                  <span className="text-slate-300">|</span>
+                  <button onClick={clearAllJournals}
+                    className="text-[10px] font-bold text-slate-400 hover:underline flex items-center gap-1">
+                    <Square size={11} /> Clear (Global Access)
+                  </button>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-2 bg-slate-50 rounded-xl p-4 border border-slate-100 max-h-[150px] overflow-y-auto">
+                {journals.map(j => (
+                  <label key={j.id}
+                    className="flex items-center gap-2 cursor-pointer hover:bg-white rounded-lg px-2 py-1.5 transition-colors">
+                    <input
+                      type="checkbox"
+                      checked={form.allowed_journals.includes(j.title)}
+                      onChange={() => toggleJournal(j.title)}
+                      className="h-3.5 w-3.5 rounded text-emerald-600 border-slate-300"
+                    />
+                    <span className="text-[11px] font-medium text-slate-700">{j.title}</span>
+                  </label>
+                ))}
+              </div>
+              <p className="text-[10px] text-slate-400 italic">
+                Note: Leave empty to grant access to ALL journals.
               </p>
             </div>
 

@@ -52,9 +52,7 @@ export default function ArticleSEO({
   const publicationDate = `${year}/01/01`;
 
   return (
-    <Helmet>
-      {/* Page Title & Description */}
-      <title>{title} | {journal}</title>
+    <Helmet title={`${title} | ${journal || 'Scholar India Publishers'}`}>
       <meta name="description" content={abstract || `Research article: ${title} published in ${journal}`} />
       
       {/* Canonical URL */}

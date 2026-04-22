@@ -4,13 +4,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Plus, Edit, Trash, BookOpen, Save, RefreshCw, Users, UserPlus, ChevronRight, ArrowLeft, Download } from 'lucide-react';
+import { Loader2, Plus, Edit, Trash, BookOpen, Save, RefreshCw, Users, UserPlus, ChevronRight, ArrowLeft, Download, BookMarked } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 type View = 'list' | 'editorial';
 
-export function AdminJournals() {
+export function AdminJournals({ isMainAdmin = true, subAdminJournals = [] }: { isMainAdmin?: boolean, subAdminJournals?: string[] }) {
   const { toast } = useToast();
   const [journals, setJournals] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -27,7 +27,7 @@ export function AdminJournals() {
   const [isBoardModalOpen, setIsBoardModalOpen] = useState(false);
   const [editingMemberId, setEditingMemberId] = useState<string | null>(null);
   const [memberForm, setMemberForm] = useState({
-    role: 'board-member', name: '', designation: '', institution: '', location: '', email: '', sortOrder: '0'
+    role: 'board-member', name: '', designation: '', institution: '', location: '', email: '', sortOrder: '0', profileUrl: ''
   });
   // Indexing state
   const [indexes, setIndexes] = useState<any[]>([]);
@@ -105,7 +105,6 @@ export function AdminJournals() {
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-
       toast({ title: 'Success', description: 'Master CSV downloaded.' });
     } catch (err: any) {
       toast({ title: 'Error', description: 'Failed to generate CSV: ' + err.message, variant: 'destructive' });
@@ -114,30 +113,18 @@ export function AdminJournals() {
     }
   };
 
-  const [form, setForm] = useState({
-    title: '', slug: '', subject: '', startingYear: new Date().getFullYear().toString(),
-    aim: '', scope: '', publicationTypes: '', researchFocus: '', targetAudience: '', subjectCovers: '', referenceStyle: 'APA',
-    // Journal Particulars
-    issn: 'XXXXX', frequency: 'Quarterly', language: 'English',
-    publisherName: 'Scholar India Publishers', publisherAddress: '', publicationFormat: 'Online (Open Access)', email: ''
-  });
-
   const fetchJournals = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase.from('journals').select('*').order('created_at', { ascending: false });
-      if (error) {
-          if (error.message.includes('relation "public.journals" does not exist')) {
-              setJournals([]);
-              return;
-          }
-          throw error;
+      let q = supabase.from('journals').select('*').order('created_at', { ascending: true });
+      if (!isMainAdmin && subAdminJournals.length > 0) {
+        q = q.in('title', subAdminJournals);
       }
+      const { data, error } = await q;
+      if (error) throw error;
       setJournals(data || []);
     } catch (err: any) {
-      console.error(err);
-      toast({ title: 'Notice', description: 'Could not fetch journals' });
-      setJournals([]);
+      toast({ title: 'Error', description: err.message, variant: 'destructive' });
     } finally {
       setLoading(false);
     }
@@ -145,13 +132,24 @@ export function AdminJournals() {
 
   useEffect(() => { fetchJournals(); }, []);
 
+  const [form, setForm] = useState({
+    title: '', slug: '', subject: '', startingYear: new Date().getFullYear().toString(),
+    aim: '', scope: '', publicationTypes: '', researchFocus: '', targetAudience: '', subjectCovers: '', referenceStyle: 'APA',
+    // Journal Particulars
+    issn: 'XXXXX', frequency: 'Quarterly', language: 'English',
+    publisherName: 'Scholar India Publishers', publisherAddress: '', publicationFormat: 'Online (Open Access)', email: '',
+    journalType: 'International Peer-Reviewed'
+  });
+
+
   const openCreate = () => {
     setEditingId(null);
     setForm({
       title: '', slug: '', subject: '', startingYear: new Date().getFullYear().toString(),
       aim: '', scope: '', publicationTypes: '', researchFocus: '', targetAudience: '', subjectCovers: '', referenceStyle: 'APA',
       issn: 'XXXXX', frequency: 'Quarterly', language: 'English',
-      publisherName: 'Scholar India Publishers', publisherAddress: '', publicationFormat: 'Online (Open Access)', email: ''
+      publisherName: 'Scholar India Publishers', publisherAddress: '', publicationFormat: 'Online (Open Access)', email: '',
+      journalType: 'International Peer-Reviewed'
     });
     setIsModalOpen(true);
   };
@@ -176,7 +174,8 @@ export function AdminJournals() {
       publisherName: journal.publisher_name || 'Scholar India Publishers',
       publisherAddress: journal.publisher_address || '',
       publicationFormat: journal.publication_format || 'Online (Open Access)',
-      email: journal.email || ''
+      email: journal.email || '',
+      journalType: journal.journal_type || 'International Peer-Reviewed'
     });
     setIsModalOpen(true);
   };
@@ -207,7 +206,8 @@ export function AdminJournals() {
         publisher_name: form.publisherName,
         publisher_address: form.publisherAddress,
         publication_format: form.publicationFormat,
-        email: form.email
+        email: form.email,
+        journal_type: form.journalType
       };
 
       if (editingId) {
@@ -271,7 +271,10 @@ export function AdminJournals() {
 
   const openMemberCreate = () => {
     setEditingMemberId(null);
-    setMemberForm({ role: 'board-member', name: '', designation: '', institution: '', location: '', email: '', sortOrder: String(boardMembers.length + 1) });
+    setMemberForm({ 
+      role: 'board-member', name: '', designation: '', institution: '', 
+      location: '', email: '', sortOrder: String(boardMembers.length + 1), profileUrl: '' 
+    });
     setIsBoardModalOpen(true);
   };
 
@@ -279,7 +282,8 @@ export function AdminJournals() {
     setEditingMemberId(m.id);
     setMemberForm({
       role: m.role || 'board-member', name: m.name || '', designation: m.designation || '',
-      institution: m.institution || '', location: m.location || '', email: m.email || '', sortOrder: String(m.sort_order || 0)
+      institution: m.institution || '', location: m.location || '', email: m.email || '', 
+      sortOrder: String(m.sort_order || 0), profileUrl: m.profile_url || ''
     });
     setIsBoardModalOpen(true);
   };
@@ -297,6 +301,7 @@ export function AdminJournals() {
         location: memberForm.location,
         email: memberForm.email,
         sort_order: parseInt(memberForm.sortOrder) || 0,
+        profile_url: memberForm.profileUrl
       };
       if (editingMemberId) {
         const { error } = await supabase.from('editorial_board').update(payload).eq('id', editingMemberId);
@@ -534,6 +539,11 @@ export function AdminJournals() {
                   <Input value={memberForm.email} onChange={e => setMemberForm({...memberForm, email: e.target.value})} placeholder="email@university.edu" className="h-10 bg-slate-50" />
                 </div>
               </div>
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-700">Profile URL</label>
+                <Input value={memberForm.profileUrl} onChange={e => setMemberForm({...memberForm, profileUrl: e.target.value})} placeholder="https://scholar.google.com/..." className="h-10 bg-slate-50" />
+                <p className="text-[10px] text-slate-500">Link to Google Scholar, ResearchGate, or University profile.</p>
+              </div>
             </div>
             <div className="px-6 py-4 bg-slate-50/80 border-t border-slate-100 flex justify-end gap-3">
               <Button variant="ghost" onClick={() => setIsBoardModalOpen(false)} className="font-bold text-xs">Cancel</Button>
@@ -660,6 +670,14 @@ export function AdminJournals() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-1.5"><label className="text-xs font-bold text-slate-700">Journal Title <span className="text-rose-500">*</span></label><Input value={form.title} onChange={e=>setForm({...form, title: e.target.value})} placeholder="Full journal title..." className="h-10 text-sm bg-slate-50"/></div>
                 <div className="space-y-1.5"><label className="text-xs font-bold text-slate-700">URL Slug <span className="text-rose-500">*</span></label><Input value={form.slug} onChange={e=>setForm({...form, slug: e.target.value})} placeholder="journal-of-science" className="h-10 text-sm bg-slate-50"/></div>
+                <div className="space-y-1.5"><label className="text-xs font-bold text-slate-700">Journal Badge Type</label>
+                  <select value={form.journalType} onChange={e=>setForm({...form, journalType: e.target.value})} className="h-10 w-full rounded-md border border-slate-200 bg-slate-50 px-3 text-sm">
+                    <option>International Peer-Reviewed</option>
+                    <option>Peer-Reviewed</option>
+                    <option>International Indexed</option>
+                    <option>Open Access</option>
+                  </select>
+                </div>
                 <div className="space-y-1.5"><label className="text-xs font-bold text-slate-700">Starting Year</label><Input value={form.startingYear} onChange={e=>setForm({...form, startingYear: e.target.value})} placeholder="2025" className="h-10 text-sm bg-slate-50"/></div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4">

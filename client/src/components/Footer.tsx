@@ -137,6 +137,7 @@ export default function Footer() {
                 <li><Link href="/join-reviewer" className={linkClass}><ChevronRight className={iconClass}/>Join as Editor/Reviewer</Link></li>
                 <li><Link href="/reviewer-search" className={linkClass}><ChevronRight className={iconClass}/>Editor & Reviewer Track</Link></li>
                 <li><Link href="/reviewer-login" className="group flex items-center text-[13px] font-bold text-amber-400 hover:text-amber-300 transition-colors w-fit"><ChevronRight className={iconClass}/>Reviewer Login Portal</Link></li>
+                <li><Link href="/certificate-verification" className="group flex items-center text-[13px] font-bold text-amber-400 hover:text-amber-300 transition-colors w-fit"><ChevronRight className={iconClass}/>Certificate Verification</Link></li>
               </ul>
             </div>
 

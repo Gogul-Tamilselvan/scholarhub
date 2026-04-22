@@ -4,13 +4,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Plus, ArrowLeft, Edit, Trash, BookOpen, Save, RefreshCw, ChevronRight, Archive, FileText, Calendar, UploadCloud, ExternalLink } from 'lucide-react';
+import { Loader2, Plus, ArrowLeft, Edit, Trash, BookOpen, Save, RefreshCw, ChevronRight, Archive, FileText, Calendar, UploadCloud, ExternalLink, FileDown, Upload } from 'lucide-react';
+import * as XLSX from 'xlsx';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 type View = 'journals' | 'volumes' | 'issues' | 'articles';
 
-export function AdminArchives() {
+export function AdminArchives({ isMainAdmin = true, subAdminJournals = [] }: { isMainAdmin?: boolean, subAdminJournals?: string[] }) {
   const { toast } = useToast();
   const [view, setView] = useState<View>('journals');
   const [loading, setLoading] = useState(true);
@@ -36,7 +37,7 @@ export function AdminArchives() {
   // Forms
   const [volumeForm, setVolumeForm] = useState({ volumeNumber: '', label: '', period: '', status: 'In Progress' });
   const [issueForm, setIssueForm] = useState({ issueNumber: '', label: '', period: '', isCurrent: false });
-  const [articleForm, setArticleForm] = useState({ articleId: '', title: '', authors: '', affiliation: '', pages: '', doi: '', abstract: '', pdf_url: '', sortOrder: '0' });
+  const [articleForm, setArticleForm] = useState({ articleId: '', title: '', authors: '', affiliation: '', pages: '', doi: '', abstract: '', pdf_url: '', keywords: '', sortOrder: '0' });
   const [uploadingPdf, setUploadingPdf] = useState(false);
 
   const handlePdfUpload = async (file: File) => {
@@ -80,7 +81,12 @@ export function AdminArchives() {
         ...(data || [])
       ];
       
-      setJournals(combined);
+      let finalCombined = combined;
+      if (!isMainAdmin && subAdminJournals.length > 0) {
+        finalCombined = combined.filter(j => subAdminJournals.includes(j.title));
+      }
+      
+      setJournals(finalCombined);
     } catch (err: any) {
       console.error(err);
       setJournals([
@@ -308,6 +314,7 @@ export function AdminArchives() {
       doi: a.doi || '',
       abstract: a.abstract || '',
       pdf_url: a.pdf_url || '',
+      keywords: a.keywords || '',
       sortOrder: String(a.sort_order || 0)
     });
     setIsArticleModalOpen(true);
@@ -328,6 +335,7 @@ export function AdminArchives() {
         doi: articleForm.doi,
         abstract: articleForm.abstract,
         pdf_url: articleForm.pdf_url,
+        keywords: articleForm.keywords,
         sort_order: parseInt(articleForm.sortOrder) || 0,
       };
       if (editingItem) {
@@ -356,6 +364,70 @@ export function AdminArchives() {
       fetchArticles(selectedIssue.id);
     } catch (err: any) {
       toast({ title: 'Error', description: err.message, variant: 'destructive' });
+    }
+  };
+
+  const downloadTemplate = () => {
+    const headers = ['articleId', 'title', 'authors', 'affiliation', 'pages', 'doi', 'abstract', 'pdf_url', 'keywords', 'sortOrder'];
+    const ws = XLSX.utils.aoa_to_sheet([headers]);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Template");
+    XLSX.writeFile(wb, "journal_articles_template.csv");
+  };
+
+  const handleBulkImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !selectedIssue) return;
+    
+    setProcessing(true);
+    try {
+      const reader = new FileReader();
+      reader.onload = async (evt) => {
+        const bstr = evt.target?.result;
+        const wb = XLSX.read(bstr, { type: 'binary' });
+        const wsname = wb.SheetNames[0];
+        const ws = wb.Sheets[wsname];
+        const data = XLSX.utils.sheet_to_json(ws) as any[];
+
+        if (data.length === 0) {
+          toast({ title: 'Empty file', variant: 'destructive' });
+          setProcessing(false);
+          return;
+        }
+
+        const articlesToInsert = data.map((row, idx) => ({
+          issue_id: selectedIssue.id,
+          journal_id: selectedJournal.id,
+          article_id: String(row.articleId || row.article_id || ''),
+          title: String(row.title || ''),
+          authors: String(row.authors || ''),
+          affiliation: String(row.affiliation || ''),
+          pages: String(row.pages || ''),
+          doi: String(row.doi || ''),
+          abstract: String(row.abstract || ''),
+          pdf_url: String(row.pdf_url || ''),
+          keywords: String(row.keywords || ''),
+          sort_order: parseInt(row.sortOrder || row.sort_order || (articles.length + idx + 1))
+        })).filter(a => a.title && a.authors);
+
+        if (articlesToInsert.length === 0) {
+          toast({ title: 'No valid articles found', description: 'Make sure title and authors are present.', variant: 'destructive' });
+          setProcessing(false);
+          return;
+        }
+
+        const { error } = await supabase.from('journal_articles').insert(articlesToInsert);
+        if (error) throw error;
+
+        toast({ title: `Successfully imported ${articlesToInsert.length} articles` });
+        fetchArticles(selectedIssue.id);
+      };
+      reader.readAsBinaryString(file);
+    } catch (err: any) {
+      toast({ title: 'Import failed', description: err.message, variant: 'destructive' });
+    } finally {
+      setProcessing(false);
+      if (e.target) e.target.value = '';
     }
   };
 
@@ -530,9 +602,20 @@ export function AdminArchives() {
         <div className="space-y-4 mx-2">
           <div className="flex items-center justify-between">
             <Button onClick={goBack} variant="ghost" className="gap-2 text-xs font-bold text-slate-600"><ArrowLeft size={14} /> Back</Button>
-            <Button onClick={openArticleCreate} className="bg-[#1e3a8a] hover:bg-blue-900 text-white gap-2 font-bold text-xs h-9 px-4 rounded-lg shadow-sm border-none">
-              <Plus size={14} /> Add Article
-            </Button>
+            <div className="flex gap-2">
+              <Button onClick={downloadTemplate} variant="outline" size="sm" className="text-xs gap-1 border-blue-200 text-blue-700 hover:bg-blue-50 h-9 px-4 rounded-lg"><FileDown size={14} /> Template</Button>
+              <div className="relative">
+                <input type="file" accept=".csv,.xlsx" id="bulk-import-reg" className="hidden" onChange={handleBulkImport} />
+                <Button asChild variant="outline" size="sm" className="text-xs gap-1 border-emerald-200 text-emerald-700 hover:bg-emerald-50 h-9 px-4 rounded-lg cursor-pointer">
+                  <label htmlFor="bulk-import-reg" className="cursor-pointer">
+                    {processing ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />} Import CSV
+                  </label>
+                </Button>
+              </div>
+              <Button onClick={openArticleCreate} className="bg-[#1e3a8a] hover:bg-blue-900 text-white gap-2 font-bold text-xs h-9 px-4 rounded-lg shadow-sm border-none">
+                <Plus size={14} /> Add Article
+              </Button>
+            </div>
           </div>
           <div className="rounded-xl border border-slate-200 bg-white overflow-hidden shadow-sm">
             <div className="px-6 py-4 bg-slate-50 border-b border-slate-100 flex items-center gap-3">
@@ -740,6 +823,10 @@ export function AdminArchives() {
                 <label className="text-xs font-bold text-slate-700">DOI</label>
                 <Input value={articleForm.doi} onChange={e => setArticleForm({...articleForm, doi: e.target.value})} placeholder="e.g. 10.65219/sjcm.20260201001" className="h-10 bg-slate-50" />
               </div>
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-700">Keywords (Comma separated)</label>
+              <Input value={articleForm.keywords} onChange={e => setArticleForm({...articleForm, keywords: e.target.value})} placeholder="Keyword 1, Keyword 2..." className="h-10 bg-slate-50" />
             </div>
             <div className="space-y-1.5">
               <label className="text-xs font-bold text-slate-700">Abstract</label>

@@ -621,14 +621,16 @@ export default function AdminDashboard() {
       ]);
 
       // Build per-journal breakdown from lightweight fetch
+      const SKIP_JOURNALS = new Set(['test', 'unspecified', 'unknown', 'n/a', 'na', 'none', 'null', 'undefined', '']);
       const jMap: Record<string, { total: number; accepted: number; rejected: number }> = {};
       (allMsJournals || []).forEach((m: any) => {
-        const j = (m.journal || 'Unspecified').trim();
-        if (!jMap[j]) jMap[j] = { total: 0, accepted: 0, rejected: 0 };
-        jMap[j].total++;
+        const raw = (m.journal || '').trim();
+        if (!raw || SKIP_JOURNALS.has(raw.toLowerCase())) return; // skip blanks & test entries
+        if (!jMap[raw]) jMap[raw] = { total: 0, accepted: 0, rejected: 0 };
+        jMap[raw].total++;
         const s = String(m.status || '').toLowerCase();
-        if (s === 'accepted') jMap[j].accepted++;
-        if (s === 'rejected') jMap[j].rejected++;
+        if (s === 'accepted') jMap[raw].accepted++;
+        if (s === 'rejected') jMap[raw].rejected++;
       });
       const journalBreakdown = Object.entries(jMap)
         .map(([journal, counts]) => ({ journal, ...counts }))

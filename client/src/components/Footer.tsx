@@ -54,10 +54,10 @@ export default function Footer() {
   const iconClass = "h-3 w-3 mr-2 opacity-0 -ml-5 group-hover:opacity-100 group-hover:ml-0 transition-all duration-300 text-amber-500";
 
   return (
-    <footer className="relative bg-[#0d162d] dark:bg-gray-950 text-white border-t border-white/10 overflow-hidden font-sans">
+    <footer className="relative bg-[#213361] dark:bg-gray-950 text-white border-t border-white/10 overflow-hidden font-sans">
       {/* Decorative Background Elements */}
       <div className="absolute top-0 left-[20%] w-[60%] h-px bg-gradient-to-r from-transparent via-amber-500/50 to-transparent" />
-      <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] rounded-full bg-[#213361]/30 blur-[120px] pointer-events-none" />
+      <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] rounded-full bg-[#1a2a52]/40 blur-[120px] pointer-events-none" />
       <div className="absolute bottom-[-20%] right-[-10%] w-[40%] h-[60%] rounded-full bg-amber-500/5 blur-[120px] pointer-events-none" />
 
       <div className="max-w-7xl mx-auto px-6 pt-20 pb-10 relative z-10">
@@ -100,7 +100,7 @@ export default function Footer() {
                  <Button
                    type="submit"
                    disabled={isSubscribing}
-                   className="bg-amber-500 hover:bg-amber-400 text-[#0d162d] font-bold h-10 px-4 rounded-xl shadow-md transition-colors"
+                   className="bg-amber-500 hover:bg-amber-400 text-[#213361] font-bold h-10 px-4 rounded-xl shadow-md transition-colors"
                    data-testid="button-newsletter-subscribe"
                  >
                    <Send className="w-4 h-4" />

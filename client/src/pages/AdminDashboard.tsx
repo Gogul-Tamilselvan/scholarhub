@@ -238,11 +238,10 @@ export default function AdminDashboard() {
       unread: 0,
       books: 0,
       leads: 0,
-      sjcm: 0,
-      sjhss: 0,
       accepted: 0,
       rejected: 0
     },
+    journalBreakdown: [] as { journal: string; total: number; accepted: number; rejected: number }[],
     recentManuscripts: [] as any[],
     pendingAssignments: [] as any[],
     pendingReviewerApprovals: [] as any[]
@@ -576,13 +575,12 @@ export default function AdminDashboard() {
         { count: reviewersCount },
         { count: assignmentsCount },
         { count: paymentsCount },
-        { count: sjcmCount },
-        { count: sjhssCount },
         { count: acceptedCount },
         { count: rejectedCount },
         { count: booksCount },
         { count: leadsCount },
         { count: messagesCount },
+        { data: allMsJournals },
         { data: reviewers },
         { data: manuscripts },
         { data: assignments }
@@ -590,18 +588,22 @@ export default function AdminDashboard() {
         getJournalQuery('manuscripts'),
         getJournalQuery('manuscripts').in('status', ['Under Process', 'Under Review']),
         getJournalQuery('reviewers'),
-        supabase.from('assignments').select('*', { count: 'exact', head: true }), // Assignments need a different filter if no journal col
+        supabase.from('assignments').select('*', { count: 'exact', head: true }),
         getJournalQuery('payments'),
-        supabase.from('manuscripts').select('*', { count: 'exact', head: true }).ilike('journal', '%Commerce%'),
-        supabase.from('manuscripts').select('*', { count: 'exact', head: true }).ilike('journal', '%Humanities%'),
         getJournalQuery('manuscripts').ilike('status', 'Accepted'),
         getJournalQuery('manuscripts').ilike('status', 'Rejected'),
-        // Books count from books table
+        // Books count
         supabase.from('books').select('*', { count: 'exact', head: true }),
-        // Leads count from contact_messages table
+        // Leads count from contact_messages
         supabase.from('contact_messages').select('*', { count: 'exact', head: true }),
-        // Messages count from reviewer_messages table
+        // Messages count from reviewer_messages
         supabase.from('reviewer_messages').select('*', { count: 'exact', head: true }),
+        // All manuscripts journal + status for breakdown (lightweight)
+        (() => {
+          let q = supabase.from('manuscripts').select('journal, status');
+          if (!isMainAdmin && subAdminJournals.length > 0) q = q.in('journal', subAdminJournals);
+          return q;
+        })(),
         // Reviewers: latest 5
         (() => {
           let q = supabase.from('reviewers').select('id, first_name, last_name, email, role, status, submitted_at').or('status.eq.Pending,status.eq.pending,status.eq.PENDING');
@@ -618,7 +620,19 @@ export default function AdminDashboard() {
         supabase.from('assignments').select('id, status, due_date, manuscript_title, reviewer_full_name, reviewer_email').or('status.eq.Pending,status.eq.pending').order('assigned_at', { ascending: false }).limit(5)
       ]);
 
-
+      // Build per-journal breakdown from lightweight fetch
+      const jMap: Record<string, { total: number; accepted: number; rejected: number }> = {};
+      (allMsJournals || []).forEach((m: any) => {
+        const j = (m.journal || 'Unspecified').trim();
+        if (!jMap[j]) jMap[j] = { total: 0, accepted: 0, rejected: 0 };
+        jMap[j].total++;
+        const s = String(m.status || '').toLowerCase();
+        if (s === 'accepted') jMap[j].accepted++;
+        if (s === 'rejected') jMap[j].rejected++;
+      });
+      const journalBreakdown = Object.entries(jMap)
+        .map(([journal, counts]) => ({ journal, ...counts }))
+        .sort((a, b) => b.total - a.total);
 
       const newData = {
         stats: {
@@ -630,11 +644,10 @@ export default function AdminDashboard() {
           unread: messagesCount || 0,
           books: booksCount || 0,
           leads: leadsCount || 0,
-          sjcm: sjcmCount || 0,
-          sjhss: sjhssCount || 0,
           accepted: acceptedCount || 0,
           rejected: rejectedCount || 0
         },
+        journalBreakdown,
         recentManuscripts: manuscripts?.map(m => ({
           title: m.manuscript_title || 'Untitled',
           author: m.author_name || 'Unknown',
@@ -1077,23 +1090,44 @@ export default function AdminDashboard() {
       </div>
 
       {/* JOURNAL SUMMARY BAR */}
-      <div className="flex items-center gap-8 bg-white p-4 rounded-2xl shadow-sm border border-slate-100 mb-6">
-        <div className="flex items-center gap-2.5 text-[11px] font-black text-slate-400 tracking-[2px] border-r border-slate-100 pr-8">
-           <BarChart size={14} className="text-blue-600" /> BY JOURNAL
+      <div className="flex flex-wrap items-center gap-3 bg-white px-5 py-3.5 rounded-2xl shadow-sm border border-slate-100 mb-6">
+        <div className="flex items-center gap-2 text-[11px] font-black text-slate-400 tracking-[2px] border-r border-slate-100 pr-5 shrink-0">
+          <BarChart size={14} className="text-blue-600" /> BY JOURNAL
         </div>
-        <div className="flex items-center gap-6 text-[11px] font-bold">
-           <div className="flex items-center gap-2 px-3 py-1 bg-white border border-slate-100 rounded-full shadow-sm"><div className="w-2 h-2 rounded-full bg-blue-600"></div><span className="text-slate-800">SJCM:</span><span className="text-slate-500">{loading ? '...' : dashboardData.stats.sjcm}</span></div>
-           <div className="flex items-center gap-2 px-3 py-1 bg-white border border-slate-100 rounded-full shadow-sm"><div className="w-2 h-2 rounded-full bg-purple-600"></div><span className="text-slate-800">SJHSS:</span><span className="text-slate-500">{loading ? '...' : dashboardData.stats.sjhss}</span></div>
+        <div className="flex flex-wrap items-center gap-2 flex-1">
+          {loading ? (
+            <span className="text-[11px] text-slate-400 italic">Loading...</span>
+          ) : dashboardData.journalBreakdown.length === 0 ? (
+            <span className="text-[11px] text-slate-400 italic">No data</span>
+          ) : (
+            dashboardData.journalBreakdown.map((j, i) => {
+              const dotColors = ['bg-blue-600','bg-purple-600','bg-emerald-500','bg-amber-500','bg-rose-500','bg-cyan-500','bg-indigo-500','bg-teal-500'];
+              const dot = dotColors[i % dotColors.length];
+              // Build short name: take first letters of each word, max 6 chars, or full if short
+              const words = j.journal.split(' ').filter(Boolean);
+              const abbr = words.length > 2 ? words.map(w => w[0].toUpperCase()).join('') : j.journal.length > 20 ? j.journal.slice(0,18) + '…' : j.journal;
+              return (
+                <div key={j.journal} title={j.journal} className="flex items-center gap-1.5 px-3 py-1 bg-white border border-slate-100 rounded-full shadow-sm hover:border-slate-300 transition-colors cursor-default">
+                  <div className={`w-2 h-2 rounded-full ${dot} shrink-0`} />
+                  <span className="text-[11px] font-bold text-slate-700">{abbr}:</span>
+                  <span className="text-[11px] font-black text-slate-500">{j.total}</span>
+                  {j.accepted > 0 && <span className="text-[9px] font-bold text-emerald-600 ml-0.5">✓{j.accepted}</span>}
+                  {j.rejected > 0 && <span className="text-[9px] font-bold text-rose-500">✗{j.rejected}</span>}
+                </div>
+              );
+            })
+          )}
         </div>
-        <div className="ml-auto flex gap-3">
-           <div className="bg-amber-50/50 text-emerald-600 border border-amber-100 inline-flex px-4 py-1.5 rounded-full items-center gap-2 text-[10px] font-black">
-              <CheckCircle2 size={12} className="text-emerald-500" /> Accepted: {loading ? '...' : dashboardData.stats.accepted}
-           </div>
-           <div className="bg-rose-50/50 text-rose-600 border border-rose-100 inline-flex px-4 py-1.5 rounded-full items-center gap-2 text-[10px] font-black">
-              <AlertCircle size={12} className="text-rose-500" /> Rejected: {loading ? '...' : dashboardData.stats.rejected}
-           </div>
+        <div className="flex gap-2 shrink-0">
+          <div className="bg-emerald-50 text-emerald-700 border border-emerald-100 inline-flex px-3 py-1.5 rounded-full items-center gap-1.5 text-[10px] font-black">
+            <CheckCircle2 size={11} className="text-emerald-500" /> Accepted: {loading ? '…' : dashboardData.stats.accepted}
+          </div>
+          <div className="bg-rose-50 text-rose-600 border border-rose-100 inline-flex px-3 py-1.5 rounded-full items-center gap-1.5 text-[10px] font-black">
+            <AlertCircle size={11} className="text-rose-500" /> Rejected: {loading ? '…' : dashboardData.stats.rejected}
+          </div>
         </div>
       </div>
+
 
       {/* QUICK ACTIONS SECTION */}
       <div className="bg-white rounded-xl border border-slate-100 overflow-hidden shadow-sm">

@@ -159,6 +159,10 @@ export function SubmissionComparison() {
       matchStatus = !item.copyright || !item.paper;
     }
 
+    // Hide if the publication task is already Approved (meaning the paper is published)
+    const task = publicationTasks.find(t => t.manuscript_id === item.displayId);
+    if (task && task.status === 'Approved') return false;
+
     return matchSearch && matchStatus;
   });
 
@@ -318,20 +322,14 @@ export function SubmissionComparison() {
     const isProd = String(doc.status || '').toLowerCase().includes('approved for production');
     if (docName === 'Paper' && isProd) {
       return (
-        <div className="flex flex-col gap-1 items-start">
-          <Badge className="bg-emerald-600 text-white border-none px-2 py-0.5 shadow-sm flex gap-1 items-center">
-            <CheckCircle size={10} /> Production Ready
-          </Badge>
-          <a href={doc.file_url || doc.file_link || '#'} target="_blank" rel="noreferrer" className="text-[10px] text-blue-600 hover:underline">View File</a>
-        </div>
+        <Badge className="bg-emerald-600 text-white border-none px-2 py-0.5 shadow-sm flex gap-1 items-center">
+          <CheckCircle size={10} /> Production Ready
+        </Badge>
       );
     }
 
     return (
-      <div className="flex flex-col gap-1 items-start">
-        <Badge className="bg-emerald-50 text-emerald-600 border-emerald-200 px-2 py-0.5 shadow-sm whitespace-nowrap">Submitted</Badge>
-        <a href={doc.file_url || doc.file_link || '#'} target="_blank" rel="noreferrer" className="text-[10px] text-blue-600 hover:underline inline-flex items-center gap-0.5"><ExternalLink size={10} /> View File</a>
-      </div>
+      <Badge className="bg-emerald-50 text-emerald-600 border-emerald-200 px-2 py-0.5 shadow-sm whitespace-nowrap">Submitted</Badge>
     );
   };
 
@@ -385,8 +383,10 @@ export function SubmissionComparison() {
                   <Button size="sm"
                     onClick={async () => {
                       await supabase.from('publication_tasks').update({ status: 'Approved', approved_at: new Date().toISOString() }).eq('id', task.id);
-                      toast({ title: 'Approved', description: `${task.manuscript_id} publication PDF approved.` });
+                      await supabase.from('manuscripts').update({ status: 'Published' }).eq('id', task.manuscript_id || task.id);
+                      toast({ title: 'Approved', description: `${task.manuscript_id} publication PDF approved and published.` });
                       fetchTasks();
+                      fetchData();
                     }}
                     className="h-8 px-4 text-[10px] font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg gap-1">
                     <CheckCircle size={11} /> Approve
@@ -435,14 +435,14 @@ export function SubmissionComparison() {
           </div>
         </div>
 
-        <div className="grid grid-cols-12 gap-x-4 px-6 py-3.5 bg-slate-50/80 border-b border-slate-100 items-center pr-2 mb-0">
-          <div className="col-span-2 text-[10px] font-black text-slate-500 uppercase tracking-widest">MANUSCRIPT ID</div>
-          <div className="col-span-3 text-[10px] font-black text-slate-500 uppercase tracking-widest pl-1">MANUSCRIPT DETAILS</div>
-          <div className="col-span-1 text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center justify-center">MS STATUS</div>
-          <div className="col-span-2 text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center justify-center">PAYMENT</div>
-          <div className="col-span-1 text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center justify-center">COPYRIGHT</div>
-          <div className="col-span-1 text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center justify-center">FINAL PAPER</div>
-          <div className="col-span-2 text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center justify-end pr-2">ACTION</div>
+        <div className="grid grid-cols-[1.5fr_3fr_1fr_1fr_1fr_1.5fr_2.5fr] gap-x-4 px-6 py-3.5 bg-slate-50/80 border-b border-slate-100 items-center pr-2 mb-0">
+          <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest">MANUSCRIPT ID</div>
+          <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-1">MANUSCRIPT DETAILS</div>
+          <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center justify-center">MS STATUS</div>
+          <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center justify-center">PAYMENT</div>
+          <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center justify-center">COPYRIGHT</div>
+          <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center justify-center">FINAL PAPER</div>
+          <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center justify-end pr-2">ACTION</div>
         </div>
         
         <div className="divide-y divide-slate-100 bg-white">
@@ -452,57 +452,66 @@ export function SubmissionComparison() {
              <div className="p-16 text-center text-slate-400 font-medium text-sm">No matching submissions found.</div>
           ) : (
              filteredData.map((item, index) => (
-               <div key={item.displayId || index} className="grid grid-cols-12 gap-x-4 px-6 py-5 hover:bg-slate-50/50 items-center transition-colors">
-                 <div className="col-span-2">
+               <div key={item.displayId || index} className="grid grid-cols-[1.5fr_3fr_1fr_1fr_1fr_1.5fr_2.5fr] gap-x-4 px-6 py-5 hover:bg-slate-50/50 items-center transition-colors border-b border-slate-50 last:border-0">
+                 <div>
                     <p className="text-[11px] font-black text-slate-700 tracking-wider">{(item.displayId || '—').toUpperCase()}</p>
                  </div>
-                 <div className="col-span-3 space-y-1.5 pr-2">
+                 <div className="space-y-1.5 pr-2">
                     <p className="text-[12px] font-bold text-slate-800 line-clamp-2 leading-snug">{item.title}</p>
                     <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">{item.author}</p>
                  </div>
-                 <div className="col-span-1 flex items-center justify-center">
+                 <div className="flex items-center justify-center">
                     <Badge variant="outline" className={`border-none tracking-wide text-[9px] font-bold px-2 py-0.5 capitalize ${item.msStatus.toLowerCase() === 'complement' ? 'bg-indigo-50 text-indigo-600' : 'bg-emerald-50 text-emerald-600'}`}>
                        {item.msStatus}
                     </Badge>
                  </div>
-                 <div className="col-span-2 flex items-center justify-center text-center">
+                 <div className="flex items-center justify-center text-center">
                     {renderPaymentBadge(item)}
                  </div>
-                 <div className="col-span-1 flex items-center justify-center text-center">
+                 <div className="flex items-center justify-center text-center">
                     {renderStatusBadge('Copyright', item.copyright)}
                  </div>
-                 <div className="col-span-1 flex items-center justify-center text-center">
+                 <div className="flex items-center justify-center text-center">
                     {renderStatusBadge('Paper', item.paper)}
                  </div>
-                 <div className="col-span-2 flex items-center justify-end flex-wrap pr-1 gap-1">
-                     {/* Assignment status badge */}
-                     {(() => {
-                       const task = publicationTasks.find(t => t.manuscript_id === item.displayId);
-                       if (!task) return null;
-                       const colors: Record<string,string> = {
-                         'Assigned': 'bg-blue-50 text-blue-600 border-blue-200',
-                         'In Progress': 'bg-amber-50 text-amber-700 border-amber-200',
-                         'Submitted': 'bg-purple-50 text-purple-700 border-purple-200',
-                         'Approved': 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                       };
-                       return <Badge className={`text-[9px] font-bold px-2 py-0.5 border ${colors[task.status] || 'bg-slate-50 text-slate-500'}`}>{task.status}</Badge>;
-                     })()}
-                     <Button
-                       onClick={() => { setSelectedMs(item); setIsModalOpen(true); }}
-                       className={`text-[10px] h-8 px-3 font-bold tracking-wide rounded-lg flex items-center gap-1.5 shadow-sm transition-all ${item.isProdApproved ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : item.isReady ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'}`}
-                     >
-                       {item.isProdApproved ? <CheckCircle size={12} /> : <FileSearch size={12} />}
-                       Review
-                     </Button>
-                     <Button
-                       size="sm"
-                       variant="outline"
-                       onClick={() => { setAssigningMs(item); setAssignForm({ email: subAdmins[0]?.email || '', notes: '' }); setIsAssignModalOpen(true); }}
-                       className="text-[10px] h-8 px-3 font-bold rounded-lg border-dashed border-slate-300 text-slate-600 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 gap-1"
-                       title="Assign to Sub-Admin"
-                     >
-                       <UserPlus size={11} /> Assign
-                     </Button>
+                 <div className="flex flex-col items-end gap-2 pr-1">
+                     <div className="flex items-center justify-end gap-2 w-full flex-wrap">
+                       {(() => {
+                         const task = publicationTasks.find(t => t.manuscript_id === item.displayId);
+                         const colors: Record<string,string> = {
+                           'Assigned': 'bg-blue-50 text-blue-600 border-blue-200',
+                           'In Progress': 'bg-amber-50 text-amber-700 border-amber-200',
+                           'Submitted': 'bg-purple-50 text-purple-700 border-purple-200',
+                           'Approved': 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                         };
+                         return (
+                           <>
+                             {task ? (
+                               <Badge className={`text-[9px] font-bold px-3 py-1 border ${colors[task.status] || 'bg-slate-50 text-slate-500'}`}>{task.status}</Badge>
+                             ) : (
+                               <>
+                                 <Button
+                                   size="sm"
+                                   variant="outline"
+                                   onClick={() => { setAssigningMs(item); setAssignForm({ email: subAdmins[0]?.email || '', notes: '' }); setIsAssignModalOpen(true); }}
+                                   className="text-[10px] h-8 px-3 font-bold rounded-lg border-dashed border-slate-300 text-slate-600 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 gap-1"
+                                   title="Assign to Sub-Admin"
+                                 >
+                                   <UserPlus size={11} /> Assign
+                                 </Button>
+                                 <Button
+                                   onClick={() => { setSelectedMs(item); setIsModalOpen(true); }}
+                                   className={`text-[10px] h-8 px-3 font-bold tracking-wide rounded-lg flex items-center gap-1.5 shadow-sm transition-all ${item.isProdApproved ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : item.isReady ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'}`}
+                                 >
+                                   {item.isProdApproved ? <CheckCircle size={12} /> : <FileSearch size={12} />}
+                                   Review
+                                 </Button>
+                               </>
+                             )}
+                           </>
+                         );
+                       })()}
+                     </div>
                  </div>
                </div>
              ))

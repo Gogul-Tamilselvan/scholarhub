@@ -18,7 +18,16 @@ export default function Header() {
     async function loadDynamic() {
       try {
         const { data } = await supabase.from('journals').select('title, slug').order('created_at', { ascending: true });
-        if (data) setDynamicJournals(data);
+        if (data) {
+          const sorted = [...data].sort((a, b) => {
+            if (a.slug === 'sjcm') return -1;
+            if (b.slug === 'sjcm') return 1;
+            if (a.slug === 'sjhss' && b.slug !== 'sjcm') return -1;
+            if (b.slug === 'sjhss' && a.slug !== 'sjcm') return 1;
+            return 0;
+          });
+          setDynamicJournals(sorted);
+        }
       } catch (e) {
         // Silently ignore if table doesn't exist
       }
@@ -56,29 +65,40 @@ export default function Header() {
 
           {/* Desktop Navigation */}
           <nav className="hidden lg:flex items-center gap-1 flex-1 justify-center px-4 xl:px-6">
-            <Button variant="ghost" className="text-sm font-extrabold text-[#213361] hover:text-[#213361] hover:bg-slate-100 px-4 h-9 rounded-full transition-colors duration-300" asChild>
+            <Button variant="ghost" className="text-sm font-extrabold text-[#213361] hover:text-[#213361] hover:bg-transparent px-4 h-9 rounded-full transition-colors duration-300" asChild>
               <Link href="/" data-testid="link-nav-home">Home</Link>
             </Button>
 
             {/* Journals */}
             <div className="relative group">
-              <Button asChild variant="ghost" className="text-sm font-extrabold text-[#213361] hover:text-[#213361] hover:bg-slate-100 px-4 h-9 rounded-full flex items-center gap-1.5 transition-colors duration-300">
+              <Button asChild variant="ghost" className="text-sm font-extrabold text-[#213361] hover:text-[#213361] hover:bg-transparent px-4 h-9 rounded-full flex items-center gap-1.5 transition-colors duration-300">
                 <Link href="/journals" className="flex items-center gap-1.5 cursor-pointer">Journals <ChevronDown className="h-3.5 w-3.5 opacity-60 transition-transform duration-300 group-hover:rotate-180" /></Link>
               </Button>
               <div className="absolute top-full left-0 hidden group-hover:block pt-3 z-[60]">
                 <div className="bg-white/95 backdrop-blur-xl border border-slate-100 p-1.5 rounded-2xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.1)] overflow-hidden min-w-[260px]">
-                  {dynamicJournals.map(j => (
-                    <Link key={j.slug} href={j.slug === 'sjcm' ? '/commerce-management' : j.slug === 'sjhss' ? '/humanities' : `/journal/${j.slug}`}>
-                      <div className={dropdownItemClass}>{j.title.replace(/^Scholar Journal of\s+/i, '')}</div>
-                    </Link>
-                  ))}
+                  {/* Hardcoded primary journals — always Commerce first, Humanities second */}
+                  <Link href="/commerce-management">
+                    <div className={dropdownItemClass}>Commerce and Management</div>
+                  </Link>
+                  <Link href="/humanities">
+                    <div className={dropdownItemClass}>Humanities and Social Sciences</div>
+                  </Link>
+                  {/* Any additional journals from the database */}
+                  {dynamicJournals
+                    .filter(j => j.slug !== 'sjcm' && j.slug !== 'sjhss')
+                    .map(j => (
+                      <Link key={j.slug} href={`/journal/${j.slug}`}>
+                        <div className={dropdownItemClass}>{j.title.replace(/^Scholar Journal of\s+/i, '')}</div>
+                      </Link>
+                    ))
+                  }
                 </div>
               </div>
             </div>
 
             {/* Books */}
             <div className="relative group">
-              <Button variant="ghost" className="text-sm font-extrabold text-[#213361] hover:text-[#213361] hover:bg-slate-100 px-4 h-9 rounded-full flex items-center gap-1.5 transition-colors duration-300">
+              <Button variant="ghost" className="text-sm font-extrabold text-[#213361] hover:text-[#213361] hover:bg-transparent px-4 h-9 rounded-full flex items-center gap-1.5 transition-colors duration-300">
                 Books <ChevronDown className="h-3.5 w-3.5 opacity-60 transition-transform duration-300 group-hover:rotate-180" />
               </Button>
               <div className="absolute top-full left-0 hidden group-hover:block pt-3 z-[60]">
@@ -98,7 +118,7 @@ export default function Header() {
 
             {/* Services */}
             <div className="relative group">
-              <Button variant="ghost" className="text-sm font-extrabold text-[#213361] hover:text-[#213361] hover:bg-slate-100 px-4 h-9 rounded-full flex items-center gap-1.5 transition-colors duration-300">
+              <Button variant="ghost" className="text-sm font-extrabold text-[#213361] hover:text-[#213361] hover:bg-transparent px-4 h-9 rounded-full flex items-center gap-1.5 transition-colors duration-300">
                 Services <ChevronDown className="h-3.5 w-3.5 opacity-60 transition-transform duration-300 group-hover:rotate-180" />
               </Button>
               <div className="absolute top-full left-0 hidden group-hover:block pt-3 z-[60]">
@@ -113,7 +133,7 @@ export default function Header() {
               </div>
             </div>
 
-            <Button variant="ghost" className="text-sm font-extrabold text-[#213361] hover:text-[#213361] hover:bg-slate-100 px-4 h-9 rounded-full transition-colors duration-300" asChild>
+            <Button variant="ghost" className="text-sm font-extrabold text-[#213361] hover:text-[#213361] hover:bg-transparent px-4 h-9 rounded-full transition-colors duration-300" asChild>
               <Link href="/contact" data-testid="link-nav-contact">Contact</Link>
             </Button>
           </nav>

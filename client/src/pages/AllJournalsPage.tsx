@@ -127,7 +127,7 @@ export default function AllJournalsPage() {
                         <h3 className="font-bold text-[#213361] dark:text-blue-200 text-base md:text-[17px] leading-snug mb-1 line-clamp-2">
                           {full.startsWith("Scholar Journal of ") ? (
                             <>
-                              <span className="text-[13px] md:text-[14px]">Scholar Journal of </span>
+                              <span className="text-[13px] md:text-[14px]">Scholar Journal of </span><br />
                               <span className="text-amber-600 dark:text-amber-400">{full.substring("Scholar Journal of ".length)}</span>
                             </>
                           ) : (

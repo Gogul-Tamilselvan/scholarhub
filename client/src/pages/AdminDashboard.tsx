@@ -837,12 +837,13 @@ export default function AdminDashboard() {
          toast({ title: `Status changed to ${newStatus}` });
          fetchReviewers(true);
 
-         // Trigger Appointment Email if Approved
-         if (newStatus === 'Active' || newStatus === 'Accepted') {
+         // Trigger Status Email
+         if (['Active', 'Accepted', 'Hold', 'Rejected'].includes(newStatus)) {
+           const mailStatus = newStatus === 'Accepted' ? 'active' : newStatus.toLowerCase();
            triggerEmail('/send/reviewer-status-update', {
              name: `${rev.first_name} ${rev.last_name || ''}`.trim(),
              email: rev.email,
-             status: 'accepted',
+             status: mailStatus,
              details: {
                rID: rev.id,
                role: rev.role || 'Reviewer',
@@ -976,7 +977,7 @@ export default function AdminDashboard() {
                              {parseDateString(r.submitted_at)}
                           </div>
                           <div className="col-span-1 flex items-center justify-end gap-3 print:justify-start">
-                             <Badge variant="outline" className={`border text-[9px] font-black tracking-wide rounded px-2.5 py-0.5 shadow-sm border-none ${r.status?.toLowerCase() === 'active' || r.status?.toLowerCase() === 'accepted' ? 'bg-emerald-100 text-emerald-600' : r.status?.toLowerCase() === 'rejected' ? 'bg-rose-100 text-rose-600' : 'bg-slate-100 text-slate-600'}`}>
+                             <Badge variant="outline" className={`border text-[9px] font-black tracking-wide rounded px-2.5 py-0.5 shadow-sm border-none ${r.status?.toLowerCase() === 'active' || r.status?.toLowerCase() === 'accepted' ? 'bg-emerald-100 text-emerald-600' : r.status?.toLowerCase() === 'rejected' ? 'bg-rose-100 text-rose-600' : r.status?.toLowerCase() === 'hold' ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-600'}`}>
                                 {r.status || 'Active'}
                              </Badge>
                              <div className="print:hidden">
@@ -990,6 +991,9 @@ export default function AdminDashboard() {
                                       </DropdownMenuItem>
                                       <DropdownMenuItem onClick={() => updateReviewerStatus(r.id, 'Active')} className="focus:bg-emerald-50 cursor-pointer text-xs rounded-lg py-2 focus:text-emerald-700">
                                          <Check className="mr-2 h-4 w-4 text-emerald-600" /> Mark Active
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem onClick={() => updateReviewerStatus(r.id, 'Hold')} className="focus:bg-amber-50 cursor-pointer text-xs rounded-lg py-2 focus:text-amber-700">
+                                         <Pause className="mr-2 h-4 w-4 text-amber-600" /> Hold
                                       </DropdownMenuItem>
                                       <DropdownMenuItem onClick={() => updateReviewerStatus(r.id, 'Rejected')} className="focus:bg-rose-50 cursor-pointer text-xs rounded-lg py-2 focus:text-rose-700">
                                          <X className="mr-2 h-4 w-4 text-rose-600" /> Reject
@@ -2168,9 +2172,9 @@ return (
             <NavItem icon={LayoutDashboard} label="Dashboard" id="dashboard" />
             <NavItem icon={FileText} label="Manuscripts" id="manuscripts" />
             <NavItem icon={Users} label="EB & Reviewers" id="reviewers" />
-            <NavItem icon={CheckSquare} label="Approve Reviews" id="reviews" />
             <NavItem icon={ListChecks} label="Assign Work" id="assign" />
             <NavItem icon={List} label="Assignments" id="assignments" />
+            <NavItem icon={CheckSquare} label="Approve Reviews" id="reviews" />
           </div>
           
           <div className="mb-5">

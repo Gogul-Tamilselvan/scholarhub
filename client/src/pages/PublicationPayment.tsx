@@ -353,6 +353,47 @@ export default function PublicationPayment() {
         </div>
       </div>
       
+      <div className="max-w-6xl mx-auto px-4 pb-12">
+        <div className="border border-gray-200 rounded-xl shadow-sm overflow-hidden bg-white">
+          <div className="bg-[#213361] py-4 px-6">
+            <h2 className="text-xl font-bold text-white">Why Do We Charge Article Processing Charges?</h2>
+          </div>
+          <div className="p-6 text-gray-700">
+            <p className="mb-8">
+              Like other reputed international journals, Scholar India Publishers charges Article Processing Charges (APC) to maintain the highest standards of academic publishing. Since we provide unlimited free access to all our published research (Open Access), we do not charge readers or institutions for subscriptions.
+            </p>
+            
+            <div className="grid md:grid-cols-2 gap-8">
+              <div>
+                <h3 className="font-bold text-gray-900 mb-4">APC Includes:</h3>
+                <ul className="space-y-3">
+                  <li className="flex items-center gap-3"><Check className="w-4 h-4 text-gray-800" /> <span className="text-sm text-gray-600">Crossref DOI</span></li>
+                  <li className="flex items-center gap-3"><Check className="w-4 h-4 text-gray-800" /> <span className="text-sm text-gray-600">Peer Review</span></li>
+                  <li className="flex items-center gap-3"><Check className="w-4 h-4 text-gray-800" /> <span className="text-sm text-gray-600">Professional Editing</span></li>
+                  <li className="flex items-center gap-3"><Check className="w-4 h-4 text-gray-800" /> <span className="text-sm text-gray-600">Open Access</span></li>
+                  <li className="flex items-center gap-3"><Check className="w-4 h-4 text-gray-800" /> <span className="text-sm text-gray-600">Academic Indexing</span></li>
+                </ul>
+              </div>
+              
+              <div className="space-y-6">
+                <div>
+                  <h3 className="font-bold text-gray-900 mb-1">Technical Infrastructure</h3>
+                  <p className="text-sm text-gray-600 leading-relaxed">
+                    Supports permanent hosting, Crossref DOI registration, XML conversion, and archival in global databases.
+                  </p>
+                </div>
+                <div>
+                  <h3 className="font-bold text-gray-900 mb-1">Global Visibility</h3>
+                  <p className="text-sm text-gray-600 leading-relaxed">
+                    Ensures your research is discoverable through Google Scholar, ResearchGate, and major indexing services.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <Footer />
     </div>
   );

@@ -144,32 +144,21 @@ export default function TabbedJournalPage({
   const [selectedIssue, setSelectedIssue] = useState<string | null>(null);
   const [showReviewerForm, setShowReviewerForm] = useState(false);
   const [specialIssues, setSpecialIssues] = useState<any[]>([]);
-  const [selectedSpecialIssue, setSelectedSpecialIssue] = useState<any>(null);
 
   // Fetch special themed issues
   useEffect(() => {
     if (!journalId || !title) return;
     
     async function fetchSpecialArchives() {
-      // Search by ID, Title, or Slug as fallbacks
       const slug = title.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '');
       const { data } = await supabase
-        .from('si_issues')
-        .select('*, si_volumes!inner(journal_id, label, volume_number, period)')
-        .or(`journal_id.eq.${journalId},journal_id.eq."${title}",journal_id.eq.${slug}`, { foreignTable: 'si_volumes' })
+        .from('journal_special_issues')
+        .select('*')
+        .or(`journal_id.eq.${journalId},journal_id.eq."${title}",journal_id.eq.${slug}`)
         .order('created_at', { ascending: false });
 
       if (data) {
-        const normalized = data.map(iss => ({
-          ...iss,
-          title: iss.title || iss.label || `Special Issue ${iss.issue_number}`,
-          theme: iss.theme,
-          description: iss.description,
-          status: iss.status,
-          guest_editor: iss.guest_editor,
-          si_volume: iss.si_volumes
-        }));
-        setSpecialIssues(normalized); 
+        setSpecialIssues(data); 
       }
     }
     
@@ -370,120 +359,7 @@ export default function TabbedJournalPage({
               </Card>
             )}
 
-            {/* ── Special Issues (Legacy UI) ── */}
-            {(specialIssues.length > 0 || (dynamicArchives?.volumes && dynamicArchives.volumes.length > 0)) && (
-              <div className="space-y-6">
-                {selectedSpecialIssue ? (
-                  <PublicSpecialIssueArchive 
-                    specialIssue={selectedSpecialIssue} 
-                    onBack={() => setSelectedSpecialIssue(null)} 
-                  />
-                ) : (
-                  <>
-                    <div className="bg-[#213361] rounded-2xl p-6 text-white shadow-lg overflow-hidden relative group">
-                      <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                        <BookMarked className="h-16 w-16 -mr-4 -mt-4 rotate-12" />
-                      </div>
-                      <div className="flex items-center gap-4 relative z-10">
-                        <div className="h-12 w-12 rounded-full bg-white/20 flex items-center justify-center">
-                          <BookMarked className="h-6 w-6 text-yellow-400" />
-                        </div>
-                        <div>
-                          <h2 className="text-2xl font-serif font-bold">Special Issues</h2>
-                          <p className="text-sm font-medium text-blue-100 mt-1">
-                            {specialIssues.filter(s => s.status === 'Open').length > 0
-                              ? specialIssues.filter(s => s.status === 'Open').length + ' open call(s) for papers'
-                              : 'Thematic collections curated by guest editors'}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    {specialIssues.length > 0 ? (
-                      <div className="grid grid-cols-1 gap-6">
-                        {specialIssues.map(si => {
-                          const isOpen = si.status === 'Open';
-                          return (
-                            <div
-                              key={si.id}
-                              className={`bg-white dark:bg-gray-900 rounded-2xl border-2 transition-all overflow-hidden ${
-                                isOpen ? 'border-[#2DD4BF] shadow-sm' : 'border-gray-100 dark:border-gray-800'
-                              }`}
-                            >
-                              <div className="p-6 space-y-4">
-                                <div className="flex flex-wrap items-start justify-between gap-4">
-                                  <h3 className="text-2xl font-serif font-bold text-[#213361] dark:text-blue-300 leading-tight">
-                                    {si.title}
-                                  </h3>
-                                  <span className={`shrink-0 flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-full ${
-                                    isOpen ? 'bg-[#CCFBF1] text-[#0F766E]' : 'bg-gray-100 text-gray-600'
-                                  }`}>
-                                    <div className={`h-2 w-2 rounded-full ${isOpen ? 'bg-[#0F766E] animate-pulse' : 'bg-gray-400'}`} />
-                                    {isOpen ? 'Open — Call for Papers' : si.status || 'Published'}
-                                  </span>
-                                </div>
 
-                                <div className="space-y-3">
-                                  {si.theme && (
-                                    <div className="flex items-center gap-2 text-amber-600">
-                                      <Tag className="h-4 w-4 shrink-0" />
-                                      <span className="text-sm font-bold italic">{si.theme}</span>
-                                    </div>
-                                  )}
-                                  {si.description && (
-                                    <p className="text-base text-gray-600 dark:text-gray-400 leading-relaxed">
-                                      {si.description}
-                                    </p>
-                                  )}
-                                </div>
-
-                                <div className="pt-4 border-t border-gray-100 dark:border-gray-800 flex flex-col sm:flex-row items-center justify-between gap-4">
-                                  {si.guest_editor && (
-                                    <div className="flex items-center gap-3">
-                                      <div className="h-10 w-10 rounded-full bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center border border-blue-100 dark:border-blue-800">
-                                        <Users className="h-5 w-5 text-blue-600" />
-                                      </div>
-                                      <div>
-                                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block">Guest Editor</span>
-                                        <span className="text-sm font-bold text-gray-800 dark:text-gray-200">{si.guest_editor}</span>
-                                      </div>
-                                    </div>
-                                  )}
-                                  
-                                  <div className="flex items-center gap-3 w-full sm:w-auto">
-                                    {isOpen && (
-                                      <button
-                                        onClick={() => handleTabChange('submit')}
-                                        className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 bg-[#213361] hover:bg-blue-800 text-white text-sm font-bold px-5 py-2.5 rounded-xl transition-all shadow-md active:scale-95"
-                                      >
-                                        <Send className="h-4 w-4" />
-                                        Submit Manuscript
-                                      </button>
-                                    )}
-                                    <button
-                                      onClick={() => setSelectedSpecialIssue(si)}
-                                      className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 bg-orange-500 hover:bg-orange-600 text-white text-sm font-bold px-5 py-2.5 rounded-xl transition-all shadow-md active:scale-95"
-                                    >
-                                      <Archive className="h-4 w-4" />
-                                      View Archives
-                                    </button>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    ) : (
-                      <div className="pt-12 pb-12 text-center bg-gray-50 dark:bg-gray-800/50 rounded-2xl border-2 border-dashed border-gray-200">
-                         <Archive className="h-12 w-12 text-gray-300 mx-auto mb-3" />
-                         <p className="text-sm text-gray-500 font-medium">No special themes found for this journal yet.</p>
-                      </div>
-                    )}
-                  </>
-                )}
-              </div>
-            )}
 
             <Card className="bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 overflow-hidden">
               <CardHeader className="bg-[#213361] border-0">
@@ -535,7 +411,7 @@ export default function TabbedJournalPage({
             <div className="space-y-8">
               {editorInChief && (
                 <Card className="bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 overflow-hidden">
-                  <CardHeader className="bg-[#213361] border-0">
+                  <CardHeader className="bg-[#213361] border-0 py-3 px-6">
                     <CardTitle className="text-2xl font-serif text-white">Editor-in-Chief</CardTitle>
                   </CardHeader>
                   <CardContent className="pt-6">
@@ -568,7 +444,7 @@ export default function TabbedJournalPage({
 
               {managingEditor && (
                 <Card className="bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 overflow-hidden">
-                  <CardHeader className="bg-[#213361] border-0">
+                  <CardHeader className="bg-[#213361] border-0 py-3 px-6">
                     <CardTitle className="text-2xl font-serif text-white">Managing Editor</CardTitle>
                   </CardHeader>
                   <CardContent className="pt-6">
@@ -605,7 +481,7 @@ export default function TabbedJournalPage({
 
               {associateEditors.length > 0 && (
                 <Card className="bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 overflow-hidden">
-                  <CardHeader className="bg-[#213361] border-0">
+                  <CardHeader className="bg-[#213361] border-0 py-3 px-6">
                     <CardTitle className="text-2xl font-serif text-white">Associate Editors</CardTitle>
                   </CardHeader>
                   <CardContent className="pt-6">
@@ -638,7 +514,7 @@ export default function TabbedJournalPage({
 
               {boardMembers.length > 0 ? (
                 <Card className="bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 overflow-hidden">
-                  <CardHeader className="bg-[#213361] border-0">
+                  <CardHeader className="bg-[#213361] border-0 py-3 px-6">
                     <CardTitle className="text-2xl font-serif text-white">Editorial Board Members</CardTitle>
                   </CardHeader>
                   <CardContent className="pt-6">
@@ -669,7 +545,7 @@ export default function TabbedJournalPage({
                 </Card>
               ) : (
                 <Card className="bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 overflow-hidden">
-                  <CardHeader className="bg-[#213361] border-0">
+                  <CardHeader className="bg-[#213361] border-0 py-3 px-6">
                     <CardTitle className="text-2xl font-serif text-white">Editorial Board Members</CardTitle>
                   </CardHeader>
                   <CardContent className="pt-16 pb-16 text-center">
@@ -1373,12 +1249,6 @@ export default function TabbedJournalPage({
 
           {/* ── Special Issues Tab (Legacy UI) ── */}
           <TabsContent value="special-issues" className="mt-0 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            {selectedSpecialIssue ? (
-              <PublicSpecialIssueArchive
-                specialIssue={selectedSpecialIssue}
-                onBack={() => setSelectedSpecialIssue(null)}
-              />
-            ) : (
             <div className="space-y-6">
               {/* Header card (Legacy Style) */}
               <div className="bg-[#213361] rounded-2xl p-6 text-white shadow-lg overflow-hidden relative group">
@@ -1474,13 +1344,15 @@ export default function TabbedJournalPage({
                                   Submit Manuscript
                                 </button>
                               )}
-                              <button
-                                onClick={() => setSelectedSpecialIssue(si)}
-                                className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 bg-orange-500 hover:bg-orange-600 text-white text-sm font-bold px-5 py-2.5 rounded-xl transition-all shadow-md active:scale-95"
-                              >
-                                <Archive className="h-4 w-4" />
-                                View Archives
-                              </button>
+                              {si.cover_image_url && (
+                                <button
+                                  onClick={() => window.open(si.cover_image_url, '_blank')}
+                                  className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-bold px-5 py-2.5 rounded-xl transition-all shadow-md active:scale-95"
+                                >
+                                  <FileText className="h-4 w-4" />
+                                  View Full PDF
+                                </button>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -1490,7 +1362,6 @@ export default function TabbedJournalPage({
                 </div>
               )}
             </div>
-            )}
           </TabsContent>
 
                     <TabsContent value="guidelines">

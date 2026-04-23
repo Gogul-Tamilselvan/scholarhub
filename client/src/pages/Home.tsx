@@ -189,7 +189,7 @@ export default function Home() {
                     <h3 className="font-bold text-[#213361] dark:text-blue-200 text-base leading-snug mb-1">
                       {full.startsWith("Scholar Journal of ") ? (
                         <>
-                          <span>Scholar Journal of </span>
+                          <span>Scholar Journal of </span><br />
                           <span className="text-amber-600 dark:text-amber-400">{full.substring("Scholar Journal of ".length)}</span>
                         </>
                       ) : (

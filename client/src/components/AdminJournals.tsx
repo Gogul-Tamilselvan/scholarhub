@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Plus, Edit, Trash, BookOpen, Save, RefreshCw, Users, UserPlus, ChevronRight, ArrowLeft, Download, BookMarked } from 'lucide-react';
+import { Loader2, Plus, Edit, Trash, BookOpen, Save, RefreshCw, Users, UserPlus, ChevronRight, ArrowLeft, Download, BookMarked, Upload } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
@@ -18,6 +18,7 @@ export function AdminJournals({ isMainAdmin = true, subAdminJournals = [] }: { i
   
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [processing, setProcessing] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
 
   // Editorial Board state
@@ -122,6 +123,7 @@ export function AdminJournals({ isMainAdmin = true, subAdminJournals = [] }: { i
       }
       const { data, error } = await q;
       if (error) throw error;
+      
       setJournals(data || []);
     } catch (err: any) {
       toast({ title: 'Error', description: err.message, variant: 'destructive' });
@@ -138,7 +140,7 @@ export function AdminJournals({ isMainAdmin = true, subAdminJournals = [] }: { i
     // Journal Particulars
     issn: 'XXXXX', frequency: 'Quarterly', language: 'English',
     publisherName: 'Scholar India Publishers', publisherAddress: '', publicationFormat: 'Online (Open Access)', email: '',
-    journalType: 'International Peer-Reviewed'
+    journalType: 'International Peer-Reviewed', coverImage: ''
   });
 
 
@@ -149,7 +151,7 @@ export function AdminJournals({ isMainAdmin = true, subAdminJournals = [] }: { i
       aim: '', scope: '', publicationTypes: '', researchFocus: '', targetAudience: '', subjectCovers: '', referenceStyle: 'APA',
       issn: 'XXXXX', frequency: 'Quarterly', language: 'English',
       publisherName: 'Scholar India Publishers', publisherAddress: '', publicationFormat: 'Online (Open Access)', email: '',
-      journalType: 'International Peer-Reviewed'
+      journalType: 'International Peer-Reviewed', coverImage: ''
     });
     setIsModalOpen(true);
   };
@@ -175,7 +177,8 @@ export function AdminJournals({ isMainAdmin = true, subAdminJournals = [] }: { i
       publisherAddress: journal.publisher_address || '',
       publicationFormat: journal.publication_format || 'Online (Open Access)',
       email: journal.email || '',
-      journalType: journal.journal_type || 'International Peer-Reviewed'
+      journalType: journal.journal_type || 'International Peer-Reviewed',
+      coverImage: journal.cover_image || ''
     });
     setIsModalOpen(true);
   };
@@ -207,7 +210,8 @@ export function AdminJournals({ isMainAdmin = true, subAdminJournals = [] }: { i
         publisher_address: form.publisherAddress,
         publication_format: form.publicationFormat,
         email: form.email,
-        journal_type: form.journalType
+        journal_type: form.journalType,
+        cover_image: form.coverImage
       };
 
       if (editingId) {
@@ -231,6 +235,44 @@ export function AdminJournals({ isMainAdmin = true, subAdminJournals = [] }: { i
       toast({ title: 'Error saving journal', description: err.message, variant: 'destructive' });
     } finally {
       setProcessing(false);
+    }
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    try {
+      const fileExt = file.name.split('.').pop() || 'png';
+      const fileName = `covers/cover_${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+
+      const { data: presignData, error: presignError } = await supabase.functions.invoke('s3-presign', {
+        body: {
+          fileName: fileName,
+          fileType: file.type || 'image/png',
+        }
+      });
+
+      if (presignError) throw new Error("Failed to get upload signature");
+
+      const { signedUrl, publicUrl } = presignData;
+
+      const arrayBuffer = await file.arrayBuffer();
+      const uploadResponse = await fetch(signedUrl, {
+        method: "PUT",
+        headers: { "Content-Type": file.type || 'image/png' },
+        body: new Uint8Array(arrayBuffer),
+      });
+
+      if (!uploadResponse.ok) throw new Error("Failed to upload image to S3");
+
+      setForm({ ...form, coverImage: publicUrl });
+      toast({ title: "Cover uploaded successfully" });
+    } catch (err: any) {
+      toast({ title: "Upload failed", description: err.message, variant: "destructive" });
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -695,8 +737,30 @@ export function AdminJournals({ isMainAdmin = true, subAdminJournals = [] }: { i
                 <div className="space-y-1.5"><label className="text-xs font-bold text-slate-700">Publication Format</label><Input value={form.publicationFormat} onChange={e=>setForm({...form, publicationFormat: e.target.value})} className="h-10 text-sm bg-slate-50"/></div>
                 <div className="space-y-1.5"><label className="text-xs font-bold text-slate-700">Email</label><Input value={form.email} onChange={e=>setForm({...form, email: e.target.value})} placeholder="editor@journal.com" className="h-10 text-sm bg-slate-50"/></div>
               </div>
-              <div className="grid grid-cols-1 gap-4 mt-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                 <div className="space-y-1.5"><label className="text-xs font-bold text-slate-700">Publisher Address</label><Input value={form.publisherAddress} onChange={e=>setForm({...form, publisherAddress: e.target.value})} placeholder="Full address..." className="h-10 text-sm bg-slate-50"/></div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-700">Cover Image</label>
+                  <div className="flex gap-2">
+                    <div className="relative flex-1">
+                      <Input 
+                        type="file" 
+                        accept="image/*"
+                        onChange={handleImageUpload}
+                        disabled={uploading}
+                        className="h-10 text-xs bg-slate-50 border-slate-200 file:mr-4 file:py-1 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" 
+                      />
+                      {uploading && (
+                        <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                          <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
+                        </div>
+                      )}
+                    </div>
+                    {form.coverImage && (
+                       <img src={form.coverImage} className="h-10 w-10 object-cover rounded border border-slate-200" alt="Cover" />
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
 

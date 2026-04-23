@@ -5,8 +5,23 @@ import StructuredData, { createPeriodicalData } from "@/components/StructuredDat
 import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 import { BookOpen, CheckCircle2 } from "lucide-react";
+import { useState, useEffect } from "react";
+import { supabase } from "@/lib/supabase";
 
 export default function SocialSciencesJournal() {
+  const [coverImage, setCoverImage] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function fetchCover() {
+      // Use sjhss cover since this is essentially part of Humanities and Social Sciences
+      const { data } = await supabase.from('journals').select('cover_image').eq('slug', 'sjhss').single();
+      if (data?.cover_image) {
+        setCoverImage(data.cover_image);
+      }
+    }
+    fetchCover();
+  }, []);
+
   return (
     <>
       <SEO
@@ -28,13 +43,15 @@ export default function SocialSciencesJournal() {
           <div className="absolute bottom-[-10%] right-[-5%] w-96 h-96 rounded-full bg-blue-400 blur-3xl" />
         </div>
         <div className="max-w-7xl mx-auto px-6 relative z-10">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-          >
-            <div className="flex flex-col md:flex-row items-center gap-8">
-              <div className="bg-white/10 p-4 rounded-2xl backdrop-blur-md border border-white/20 shadow-2xl">
+          <div className="flex flex-col md:flex-row items-start justify-between gap-6">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+              className="max-w-3xl"
+            >
+              <div className="flex items-start gap-4 md:gap-6">
+                <div className="bg-white/10 p-3 rounded-xl backdrop-blur-md border border-white/20 shadow-xl shrink-0 mt-1">
                 <BookOpen className="w-16 h-16 md:w-24 h-24 text-yellow-400" />
               </div>
               <div className="text-center md:text-left">
@@ -42,20 +59,31 @@ export default function SocialSciencesJournal() {
                   International Peer-Reviewed
                 </Badge>
                 <h1 className="text-4xl md:text-6xl font-serif font-bold text-white mb-4 tracking-tight leading-tight">
-                  Scholar Journal of <br className="hidden md:block" />
+                  Scholar Journal of <br />
                   <span className="text-yellow-400">Social Sciences</span>
                 </h1>
                 <div className="flex flex-wrap justify-center md:justify-start gap-4 text-blue-100 text-sm md:text-base font-medium">
-                  <span className="flex items-center gap-2 bg-white/5 px-3 py-1 rounded-full border border-white/10">
-                    <CheckCircle2 className="w-4 h-4 text-green-400" /> Fast-track Publication
+                  <span className="flex items-center gap-1.5 bg-white/5 px-3 py-1 rounded-full border border-white/10 text-[11px] md:text-xs font-medium">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-green-400" /> Fast-track Publication
                   </span>
-                  <span className="flex items-center gap-2 bg-white/5 px-3 py-1 rounded-full border border-white/10">
-                    <CheckCircle2 className="w-4 h-4 text-green-400" /> Peer-Reviewed Excellence
+                  <span className="flex items-center gap-1.5 bg-white/5 px-3 py-1 rounded-full border border-white/10 text-[11px] md:text-xs font-medium">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-green-400" /> Peer-Reviewed Excellence
                   </span>
                 </div>
               </div>
             </div>
           </motion.div>
+
+          {coverImage && (
+            <div className="hidden md:block shrink-0">
+              <img
+                src={coverImage}
+                alt="Journal Cover"
+                className="h-36 lg:h-44 w-auto object-contain rounded shadow-2xl"
+              />
+            </div>
+          )}
+          </div>
         </div>
       </section>
       <TabbedJournalPage

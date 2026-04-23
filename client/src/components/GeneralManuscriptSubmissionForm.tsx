@@ -58,7 +58,8 @@ export default function GeneralManuscriptSubmissionForm({ journalTitle, subject 
     journal: journalTitle || "",
     manuscriptTitle: "",
     researchField: subject || "",
-    doi: "",
+    isSpecialIssue: "no" as "yes" | "no",
+    specialIssueTitle: "",
     manuscript: null as File | null
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -231,25 +232,6 @@ export default function GeneralManuscriptSubmissionForm({ journalTitle, subject 
     setIsSubmitting(true);
 
     try {
-      if (formData.doi && formData.doi.trim() !== '') {
-        const { data: existingDois, error: doiError } = await supabase
-          .from('manuscripts')
-          .select('id, status')
-          .eq('doi', formData.doi.trim())
-          .in('status', ['Published', 'published', 'Accepted', 'accepted']);
-
-        if (doiError) console.error("DOI check error", doiError);
-        
-        if (existingDois && existingDois.length > 0) {
-          toast({
-            title: "DOI already exists",
-            description: "DOI is already published.",
-            variant: "destructive"
-          });
-          setIsSubmitting(false);
-          return;
-        }
-      }
       if (!formData.manuscript) {
         throw new Error("Please upload a manuscript file");
       }
@@ -330,14 +312,15 @@ export default function GeneralManuscriptSubmissionForm({ journalTitle, subject 
           affiliation: firstAuthor.organisation,
           email: firstAuthor.email,
           mobile: firstAuthor.mobile,
-          journal: formData.journal,
+          journal: formData.isSpecialIssue === "yes" && formData.specialIssueTitle.trim() 
+            ? `${formData.journal} (Special Issue: ${formData.specialIssueTitle.trim()})`
+            : formData.journal,
           manuscript_title: formData.manuscriptTitle,
           research_field: formData.researchField || "",
           author_count: authors.length,
           author_names: authorNames,
           file_url: s3Url,
           status: 'submitted',
-          doi: formData.doi.trim() || null,
           submitted_at: new Date().toISOString()
         }])
         .select();
@@ -375,7 +358,8 @@ export default function GeneralManuscriptSubmissionForm({ journalTitle, subject 
         journal: "",
         manuscriptTitle: "",
         researchField: "",
-        doi: "",
+        isSpecialIssue: "no" as "yes" | "no",
+        specialIssueTitle: "",
         manuscript: null
       });
       
@@ -449,6 +433,38 @@ export default function GeneralManuscriptSubmissionForm({ journalTitle, subject 
                 ))}
               </SelectContent>
             </Select>
+          </div>
+
+          <div className="space-y-4 border p-4 rounded-md bg-gray-50 dark:bg-gray-800/50">
+            <div className="space-y-2">
+              <Label className="text-blue-600 dark:text-blue-400" htmlFor="isSpecialIssue">Are you applying for a special issue?</Label>
+              <Select 
+                value={formData.isSpecialIssue} 
+                onValueChange={(value) => setFormData(prev => ({ ...prev, isSpecialIssue: value as "yes" | "no" }))}
+              >
+                <SelectTrigger id="isSpecialIssue" className="bg-white dark:bg-gray-900">
+                  <SelectValue placeholder="Select an option" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="no">No</SelectItem>
+                  <SelectItem value="yes">Yes</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            {formData.isSpecialIssue === "yes" && (
+              <div className="space-y-2 pt-2">
+                <Label className="text-blue-600 dark:text-blue-400" htmlFor="specialIssueTitle">Title of Special Issue *</Label>
+                <Input
+                  id="specialIssueTitle"
+                  type="text"
+                  value={formData.specialIssueTitle}
+                  onChange={(e) => setFormData(prev => ({ ...prev, specialIssueTitle: e.target.value }))}
+                  placeholder="Enter the title of the special issue"
+                  required
+                />
+              </div>
+            )}
           </div>
 
           {/* Authors Section */}
@@ -681,21 +697,7 @@ export default function GeneralManuscriptSubmissionForm({ journalTitle, subject 
             </p>
           </div>
 
-          <div className="space-y-4 border p-4 rounded-md bg-gray-50 dark:bg-gray-800/50">
-            <div className="space-y-2">
-              <Label className="text-blue-600 dark:text-blue-400" htmlFor="doi">DOI Link (If Re-submitting / Existing)</Label>
-              <Input
-                id="doi"
-                type="text"
-                value={formData.doi}
-                onChange={(e) => setFormData(prev => ({ ...prev, doi: e.target.value }))}
-                placeholder="e.g., https://doi.org/10.1234/abc.567"
-              />
-              <p className="text-xs text-muted-foreground text-gray-700 dark:text-gray-300">
-                Optional: Provide the DOI if this manuscript is an update to an existing publication.
-              </p>
-            </div>
-          </div>
+
 
           <div className="space-y-2">
             <Label className="text-blue-600 dark:text-blue-400" htmlFor="manuscript">Upload Manuscript without Author Details *</Label>

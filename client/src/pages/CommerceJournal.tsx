@@ -5,8 +5,22 @@ import StructuredData, { createPeriodicalData } from "@/components/StructuredDat
 import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 import { BookOpen, CheckCircle2 } from "lucide-react";
+import { useState, useEffect } from "react";
+import { supabase } from "@/lib/supabase";
 
 export default function CommerceJournal() {
+  const [coverImage, setCoverImage] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function fetchCover() {
+      const { data } = await supabase.from('journals').select('cover_image').eq('slug', 'sjcm').single();
+      if (data?.cover_image) {
+        setCoverImage(data.cover_image);
+      }
+    }
+    fetchCover();
+  }, []);
+
   // Editorial board data - unique to Commerce journal
   const editorInChief = {
     name: "Dr. Samuel J",
@@ -279,35 +293,47 @@ export default function CommerceJournal() {
           <div className="absolute top-[-10%] right-[-5%] w-96 h-96 rounded-full bg-yellow-500 blur-3xl" />
         </div>
         <div className="max-w-7xl mx-auto px-6 relative z-10">
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5 }}
-            className="max-w-3xl"
-          >
-            <div className="flex items-start gap-4 md:gap-6">
-              <div className="bg-white/10 p-3 rounded-xl backdrop-blur-md border border-white/20 shadow-xl shrink-0 mt-1">
-                <BookOpen className="w-10 h-10 md:w-12 h-12 text-yellow-400" />
-              </div>
-              <div className="flex-1">
-                <Badge className="bg-yellow-500 text-blue-900 font-bold mb-2 px-3 py-0.5 text-[10px] uppercase tracking-wider border-none rounded-full">
-                  International Peer-Reviewed
-                </Badge>
-                <h1 className="text-2xl md:text-3xl lg:text-4xl font-serif font-bold text-white mb-3 tracking-tight leading-tight">
-                  Scholar Journal of <br />
-                  <span className="text-yellow-400">Commerce and Management</span>
-                </h1>
-                <div className="flex flex-wrap gap-3 text-blue-100">
-                  <span className="flex items-center gap-1.5 bg-white/5 px-3 py-1 rounded-full border border-white/10 text-[11px] md:text-xs font-medium">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-green-400" /> ISSN (Online): xxxx
-                  </span>
-                  <span className="flex items-center gap-1.5 bg-white/5 px-3 py-1 rounded-full border border-white/10 text-[11px] md:text-xs font-medium">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-green-400" /> Quarterly Publication
-                  </span>
+          <div className="flex flex-col md:flex-row items-start justify-between gap-6">
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.5 }}
+              className="max-w-3xl"
+            >
+              <div className="flex items-start gap-4 md:gap-6">
+                <div className="bg-white/10 p-3 rounded-xl backdrop-blur-md border border-white/20 shadow-xl shrink-0 mt-1">
+                  <BookOpen className="w-10 h-10 md:w-12 h-12 text-yellow-400" />
+                </div>
+                <div className="flex-1">
+                  <Badge className="bg-yellow-500 text-blue-900 font-bold mb-2 px-3 py-0.5 text-[10px] uppercase tracking-wider border-none rounded-full">
+                    International Peer-Reviewed
+                  </Badge>
+                  <h1 className="text-2xl md:text-3xl lg:text-4xl font-serif font-bold text-white mb-3 tracking-tight leading-tight">
+                    Scholar Journal of <br />
+                    <span className="text-yellow-400">Commerce and Management</span>
+                  </h1>
+                  <div className="flex flex-wrap gap-3 text-blue-100">
+                    <span className="flex items-center gap-1.5 bg-white/5 px-3 py-1 rounded-full border border-white/10 text-[11px] md:text-xs font-medium">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-green-400" /> ISSN (Online): xxxx
+                    </span>
+                    <span className="flex items-center gap-1.5 bg-white/5 px-3 py-1 rounded-full border border-white/10 text-[11px] md:text-xs font-medium">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-green-400" /> Quarterly Publication
+                    </span>
+                  </div>
                 </div>
               </div>
-            </div>
-          </motion.div>
+            </motion.div>
+
+            {coverImage && (
+              <div className="hidden md:block shrink-0">
+                <img
+                  src={coverImage}
+                  alt="Journal Cover"
+                  className="h-36 lg:h-44 w-auto object-contain rounded shadow-2xl"
+                />
+              </div>
+            )}
+          </div>
         </div>
       </section>
       <TabbedJournalPage

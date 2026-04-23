@@ -40,7 +40,6 @@ export default function ManuscriptSubmissionForm({ journalName }: ManuscriptSubm
   useEffect(() => {
     async function fetchJournals() {
       const { data, error } = await supabase.from('journals').select('title');
-      if (data && !error && data.length > 0) {
         setJournals(data.map(j => j.title));
       } else {
         setJournals([

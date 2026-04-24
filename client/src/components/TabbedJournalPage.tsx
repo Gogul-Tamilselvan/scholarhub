@@ -144,6 +144,7 @@ export default function TabbedJournalPage({
   const [selectedIssue, setSelectedIssue] = useState<string | null>(null);
   const [showReviewerForm, setShowReviewerForm] = useState(false);
   const [specialIssues, setSpecialIssues] = useState<any[]>([]);
+  const [selectedSpecialIssue, setSelectedSpecialIssue] = useState<any>(null);
 
   // Fetch special themed issues
   useEffect(() => {
@@ -199,6 +200,9 @@ export default function TabbedJournalPage({
     if (value !== "archives") {
       setSelectedVolume(null);
       setSelectedIssue(null);
+    }
+    if (value !== "special-issues") {
+      setSelectedSpecialIssue(null);
     }
   };
 
@@ -1280,7 +1284,76 @@ export default function TabbedJournalPage({
                     </p>
                   </CardContent>
                 </Card>
+              ) : selectedSpecialIssue ? (
+                // DETAIL VIEW
+                <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
+                  <Button variant="ghost" onClick={() => setSelectedSpecialIssue(null)} className="mb-2 -ml-2 text-blue-700 hover:text-blue-900">
+                    <ArrowLeft className="h-4 w-4 mr-2" /> Back to Special Issues
+                  </Button>
+                  
+                  <div className="bg-white dark:bg-gray-900 rounded-2xl border-2 border-gray-100 dark:border-gray-800 p-8 shadow-sm">
+                    <h3 className="text-3xl font-serif font-bold text-[#213361] dark:text-blue-300 leading-tight mb-4">
+                      {selectedSpecialIssue.title}
+                    </h3>
+                    
+                    {selectedSpecialIssue.theme && (
+                      <div className="flex items-center gap-2 text-amber-600 mb-4">
+                        <Tag className="h-5 w-5 shrink-0" />
+                        <span className="text-base font-bold italic">{selectedSpecialIssue.theme}</span>
+                      </div>
+                    )}
+                    
+                    {selectedSpecialIssue.description && (
+                      <p className="text-lg text-gray-600 dark:text-gray-400 leading-relaxed mb-8">
+                        {selectedSpecialIssue.description}
+                      </p>
+                    )}
+
+                    <div className="space-y-4">
+                      <h4 className="text-xl font-bold text-[#213361] border-b pb-2">Files & Resources</h4>
+                      {(() => {
+                        let files: { title: string; url: string }[] = [];
+                        if (selectedSpecialIssue.file_url) {
+                          try {
+                            files = JSON.parse(selectedSpecialIssue.file_url);
+                          } catch (e) {}
+                        } else if (selectedSpecialIssue.cover_image_url) {
+                          files = [{ title: 'View Full PDF', url: selectedSpecialIssue.cover_image_url }];
+                        }
+
+                        if (files.length === 0) {
+                          return <p className="text-gray-500 italic">No files available for this special issue yet.</p>;
+                        }
+
+                        return (
+                          <div className="grid gap-3">
+                            {files.map((file, idx) => (
+                              <a
+                                key={idx}
+                                href={file.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center justify-between p-4 bg-gray-50 hover:bg-emerald-50 border border-gray-200 hover:border-emerald-200 rounded-xl transition-all group"
+                              >
+                                <div className="flex items-center gap-4">
+                                  <div className="h-10 w-10 bg-white border border-gray-200 rounded-lg flex items-center justify-center group-hover:bg-emerald-100 group-hover:border-emerald-200 group-hover:text-emerald-600 transition-colors">
+                                    <FileText className="h-5 w-5 text-gray-400 group-hover:text-emerald-600" />
+                                  </div>
+                                  <span className="font-bold text-gray-800 group-hover:text-emerald-700 text-base">{file.title || `Document ${idx + 1}`}</span>
+                                </div>
+                                <div className="text-sm font-bold text-emerald-600 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                  View <ExternalLink className="h-4 w-4" />
+                                </div>
+                              </a>
+                            ))}
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  </div>
+                </div>
               ) : (
+                // LIST VIEW
                 <div className="space-y-6">
                   {specialIssues.map(si => {
                     const isOpen = si.status === 'Open';
@@ -1288,13 +1361,16 @@ export default function TabbedJournalPage({
                       <div 
                         key={si.id} 
                         className={`bg-white dark:bg-gray-900 rounded-2xl border-2 transition-all overflow-hidden ${
-                          isOpen ? 'border-[#2DD4BF] shadow-sm' : 'border-gray-100 dark:border-gray-800'
+                          isOpen ? 'border-[#2DD4BF] shadow-sm' : 'border-gray-100 dark:border-gray-800 hover:border-blue-200'
                         }`}
                       >
                         <div className="p-6 space-y-4">
                           {/* Title + Status */}
                           <div className="flex flex-wrap items-start justify-between gap-4">
-                            <h3 className="text-2xl font-serif font-bold text-[#213361] dark:text-blue-300 leading-tight">
+                            <h3 
+                              className="text-2xl font-serif font-bold text-[#213361] dark:text-blue-300 leading-tight cursor-pointer hover:text-blue-600 hover:underline decoration-blue-200 underline-offset-4"
+                              onClick={() => setSelectedSpecialIssue(si)}
+                            >
                               {si.title}
                             </h3>
                             <span className={`shrink-0 flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-full ${
@@ -1344,15 +1420,13 @@ export default function TabbedJournalPage({
                                   Submit Manuscript
                                 </button>
                               )}
-                              {si.cover_image_url && (
-                                <button
-                                  onClick={() => window.open(si.cover_image_url, '_blank')}
-                                  className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-bold px-5 py-2.5 rounded-xl transition-all shadow-md active:scale-95"
-                                >
-                                  <FileText className="h-4 w-4" />
-                                  View Full PDF
-                                </button>
-                              )}
+                              
+                              <button
+                                onClick={() => setSelectedSpecialIssue(si)}
+                                className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 text-sm font-bold px-5 py-2.5 rounded-xl transition-all active:scale-95"
+                              >
+                                View Details & Files <ChevronRight className="h-4 w-4" />
+                              </button>
                             </div>
                           </div>
                         </div>

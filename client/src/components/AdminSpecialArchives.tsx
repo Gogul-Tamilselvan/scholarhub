@@ -10,7 +10,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
-type View = 'journals' | 'issues';
+type View = 'journals' | 'issues' | 'files';
 
 export function AdminSpecialArchives({ isMainAdmin = true, subAdminJournals = [] }: { isMainAdmin?: boolean, subAdminJournals?: string[] }) {
   const { toast } = useToast();
@@ -23,6 +23,7 @@ export function AdminSpecialArchives({ isMainAdmin = true, subAdminJournals = []
 
   // Selected context
   const [selectedJournal, setSelectedJournal] = useState<any>(null);
+  const [selectedIssueItem, setSelectedIssueItem] = useState<any>(null);
 
   // Modals
   const [isIssueModalOpen, setIsIssueModalOpen] = useState(false);
@@ -30,20 +31,21 @@ export function AdminSpecialArchives({ isMainAdmin = true, subAdminJournals = []
   const [processing, setProcessing] = useState(false);
   const [uploading, setUploading] = useState(false);
 
-  // Form (using journal_special_issues table)
-  // title -> Title
-  // theme -> Sub Title
-  // guest_editor -> Name
-  // description -> Publication Month & Year
-  // cover_image_url -> File Upload (PDF URL)
+  interface SpecialIssueFile {
+    title: string;
+    url: string;
+  }
+
   const [issueForm, setIssueForm] = useState({ 
     title: '', 
     theme: '', 
     guest_editor: '', 
     month: '', 
     year: '', 
-    file_url: '' 
+    files: [] as SpecialIssueFile[]
   });
+
+  const [newFileTitle, setNewFileTitle] = useState('');
 
   useEffect(() => { fetchJournals(); }, []);
 
@@ -84,7 +86,10 @@ export function AdminSpecialArchives({ isMainAdmin = true, subAdminJournals = []
   };
 
   const openJournal = (j: any) => { setSelectedJournal(j); setView('issues'); fetchIssues(j.id); };
-  const goBack = () => { if (view === 'issues') { setView('journals'); fetchJournals(); } };
+  const goBack = () => { 
+    if (view === 'files') { setView('issues'); fetchIssues(selectedJournal.id); }
+    else if (view === 'issues') { setView('journals'); fetchJournals(); } 
+  };
 
   const saveIssue = async () => {
     if (!issueForm.title) return toast({ title: 'Title required', variant: 'destructive' });
@@ -100,7 +105,6 @@ export function AdminSpecialArchives({ isMainAdmin = true, subAdminJournals = []
         theme: issueForm.theme,
         guest_editor: issueForm.guest_editor,
         description: periodString, // Storing Month & Year here
-        cover_image_url: issueForm.file_url, // Storing PDF URL here
         status: 'Published'
       };
 
@@ -127,6 +131,11 @@ export function AdminSpecialArchives({ isMainAdmin = true, subAdminJournals = []
 
     setUploading(true);
     try {
+      if (!newFileTitle) {
+        setUploading(false);
+        return toast({ title: "Please enter a title for the file first", variant: "destructive" });
+      }
+
       const fileExt = file.name.split('.').pop() || 'pdf';
       const fileName = `special_issues/si_${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
 
@@ -150,7 +159,19 @@ export function AdminSpecialArchives({ isMainAdmin = true, subAdminJournals = []
 
       if (!uploadResponse.ok) throw new Error("Failed to upload file to S3");
 
-      setIssueForm({ ...issueForm, file_url: publicUrl });
+      const newFiles = [...issueForm.files, { title: newFileTitle, url: publicUrl }];
+      setIssueForm({ ...issueForm, files: newFiles });
+      setNewFileTitle('');
+      e.target.value = '';
+
+      // Auto-save
+      if (selectedIssueItem) {
+        await supabase.from('journal_special_issues').update({
+          file_url: JSON.stringify(newFiles),
+          cover_image_url: newFiles.length > 0 ? newFiles[0].url : ''
+        }).eq('id', selectedIssueItem.id);
+      }
+
       toast({ title: "File uploaded successfully" });
     } catch (err: any) {
       toast({ title: "Upload failed", description: err.message, variant: "destructive" });
@@ -168,9 +189,28 @@ export function AdminSpecialArchives({ isMainAdmin = true, subAdminJournals = []
     } catch (err: any) { toast({ title: 'Error', description: err.message, variant: 'destructive' }); }
   };
 
+  const removeFile = async (index: number) => {
+    const newFiles = [...issueForm.files];
+    newFiles.splice(index, 1);
+    setIssueForm({ ...issueForm, files: newFiles });
+
+    if (selectedIssueItem) {
+      try {
+        await supabase.from('journal_special_issues').update({
+          file_url: JSON.stringify(newFiles),
+          cover_image_url: newFiles.length > 0 ? newFiles[0].url : ''
+        }).eq('id', selectedIssueItem.id);
+        toast({ title: 'File removed' });
+      } catch (err: any) {
+        toast({ title: 'Error', description: err.message, variant: 'destructive' });
+      }
+    }
+  };
+
   const openAddModal = () => {
     setEditingItem(null);
-    setIssueForm({ title: '', theme: '', guest_editor: '', month: '', year: '', file_url: '' });
+    setIssueForm({ title: '', theme: '', guest_editor: '', month: '', year: '', files: [] });
+    setNewFileTitle('');
     setIsIssueModalOpen(true);
   };
 
@@ -187,9 +227,27 @@ export function AdminSpecialArchives({ isMainAdmin = true, subAdminJournals = []
       guest_editor: iss.guest_editor || '', 
       month: month, 
       year: year, 
-      file_url: iss.cover_image_url || '' 
+      files: [] 
     });
+    setNewFileTitle('');
     setIsIssueModalOpen(true);
+  };
+
+  const openFilesView = (iss: any) => {
+    setSelectedIssueItem(iss);
+    
+    let parsedFiles: SpecialIssueFile[] = [];
+    if (iss.file_url) {
+      try {
+        parsedFiles = JSON.parse(iss.file_url);
+      } catch (e) {}
+    } else if (iss.cover_image_url) {
+      parsedFiles = [{ title: 'Main File', url: iss.cover_image_url }];
+    }
+
+    setIssueForm({ ...issueForm, files: parsedFiles });
+    setNewFileTitle('');
+    setView('files');
   };
 
   if (loading && journals.length === 0) {
@@ -218,11 +276,13 @@ export function AdminSpecialArchives({ isMainAdmin = true, subAdminJournals = []
             <h2 className="text-xl font-black text-slate-800 tracking-tight flex items-center gap-3">
               {view === 'journals' && "Journal Selection"}
               {view === 'issues' && selectedJournal?.title}
+              {view === 'files' && `${selectedIssueItem?.title} - Files`}
             </h2>
           </div>
           <p className="text-[11px] font-medium text-slate-500 mt-1.5 ml-1">
              {view === 'journals' && "Select a journal to manage its special archives."}
              {view === 'issues' && "Manage full PDF special issues for this journal."}
+             {view === 'files' && "Upload and manage multiple PDF files for this special issue."}
           </p>
         </div>
 
@@ -284,7 +344,9 @@ export function AdminSpecialArchives({ isMainAdmin = true, subAdminJournals = []
                           </div>
                         </div>
                         <div className="flex items-center gap-2 shrink-0">
-                           {iss.cover_image_url && <Button variant="ghost" size="icon" className="h-8 w-8 text-emerald-600 hover:bg-emerald-50" onClick={() => window.open(iss.cover_image_url, '_blank')} title="View PDF"><LinkIcon size={14} /></Button>}
+                           <Button variant="outline" size="sm" className="h-8 text-xs gap-1 border-blue-200 text-blue-700 hover:bg-blue-50 bg-white" onClick={() => openFilesView(iss)}>
+                             <FileText size={14} /> Manage Files
+                           </Button>
                            <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-blue-600" onClick={() => openEditModal(iss)}><Edit size={14} /></Button>
                            <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-rose-600" onClick={() => deleteItem(iss.id)}><Trash size={14} /></Button>
                         </div>
@@ -292,6 +354,74 @@ export function AdminSpecialArchives({ isMainAdmin = true, subAdminJournals = []
                     </CardContent>
                   </Card>
                 ))}
+              </div>
+            )}
+
+            {view === 'files' && (
+              <div className="space-y-6">
+                <Card className="p-6 bg-white border-slate-100 shadow-sm rounded-2xl">
+                  {/* Upload New File Row */}
+                  <div className="flex items-start gap-4 p-5 bg-slate-50 border border-slate-200 rounded-xl mb-6">
+                    <div className="h-10 w-10 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center shrink-0">
+                      <Upload size={20} />
+                    </div>
+                    <div className="space-y-3 flex-1">
+                      <div>
+                        <h4 className="text-sm font-bold text-slate-800">Upload New File</h4>
+                        <p className="text-xs text-slate-500">Provide a title and select a PDF file to upload.</p>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <Input 
+                          value={newFileTitle}
+                          onChange={(e) => setNewFileTitle(e.target.value)}
+                          placeholder="File Title (e.g. Part 1, Front Matter)" 
+                          className="bg-white border-slate-200" 
+                        />
+                        <div className="relative">
+                          <Input 
+                            type="file" 
+                            accept=".pdf,application/pdf"
+                            onChange={handleFileUpload}
+                            disabled={uploading}
+                            className="bg-white border-slate-200 file:mr-4 file:py-1.5 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" 
+                          />
+                          {uploading && (
+                            <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                              <span className="text-xs text-slate-500 font-medium">Uploading...</span>
+                              <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* List of uploaded files */}
+                  <div className="space-y-3">
+                    <h4 className="text-sm font-bold text-slate-800 mb-2 border-b pb-2">Uploaded Files</h4>
+                    {issueForm.files.length === 0 && (
+                      <div className="text-center py-8">
+                        <p className="text-sm text-slate-500">No files added yet.</p>
+                      </div>
+                    )}
+                    {issueForm.files.map((file, idx) => (
+                      <div key={idx} className="flex items-center gap-4 p-4 bg-emerald-50/50 border border-emerald-100 rounded-xl hover:bg-emerald-50 transition-colors">
+                        <div className="w-10 h-10 bg-emerald-100 text-emerald-600 rounded-lg flex items-center justify-center shrink-0">
+                          <FileText size={18} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-bold text-slate-800 truncate">{file.title}</p>
+                          <a href={file.url} target="_blank" rel="noreferrer" className="text-xs text-emerald-600 hover:underline truncate block mt-0.5">
+                            {file.url}
+                          </a>
+                        </div>
+                        <Button variant="ghost" size="icon" className="h-10 w-10 text-slate-400 hover:text-rose-500 hover:bg-rose-50 shrink-0" onClick={() => removeFile(idx)}>
+                          <Trash size={18} />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
               </div>
             )}
           </>
@@ -311,40 +441,6 @@ export function AdminSpecialArchives({ isMainAdmin = true, subAdminJournals = []
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5"><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Publication Month</label><Input value={issueForm.month} onChange={e => setIssueForm({...issueForm, month: e.target.value})} placeholder="e.g. January" className="h-10 text-xs bg-slate-50 border-slate-200" /></div>
               <div className="space-y-1.5"><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Publication Year</label><Input value={issueForm.year} onChange={e => setIssueForm({...issueForm, year: e.target.value})} placeholder="e.g. 2026" className="h-10 text-xs bg-slate-50 border-slate-200" /></div>
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                File Upload (S3 PDF Link) 
-                <span className="text-[9px] text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">PDF</span>
-              </label>
-              <div className="flex items-center gap-3">
-                <div className="relative flex-1">
-                  <Input 
-                    type="file" 
-                    accept=".pdf,application/pdf"
-                    onChange={handleFileUpload}
-                    disabled={uploading}
-                    className="h-10 text-xs bg-slate-50 border-slate-200 file:mr-4 file:py-1 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" 
-                  />
-                  {uploading && (
-                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                      <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
-                    </div>
-                  )}
-                </div>
-              </div>
-              {issueForm.file_url && (
-                <div className="flex items-center gap-2 text-[10px] font-semibold text-emerald-600 mt-2 bg-emerald-50 p-2 rounded-lg border border-emerald-100">
-                  <LinkIcon size={12} />
-                  <a href={issueForm.file_url} target="_blank" rel="noreferrer" className="hover:underline truncate max-w-[300px]">
-                    {issueForm.file_url}
-                  </a>
-                  <Button variant="ghost" size="icon" className="h-5 w-5 rounded-full hover:bg-rose-100 text-rose-500 ml-auto" onClick={() => setIssueForm({...issueForm, file_url: ''})}>
-                    <Trash size={10} />
-                  </Button>
-                </div>
-              )}
             </div>
           </div>
           <div className="px-6 py-4 bg-slate-50/50 flex justify-end gap-3">

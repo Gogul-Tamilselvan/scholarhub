@@ -119,10 +119,17 @@ export default function FinalPaperForm() {
       form.setValue("revisionNotes", data.research_field || "");
       form.setValue("supportingAuthors", data.author_names || "");
       
-      // Auto-detect journal type from journal name
+      // Auto-detect journal type from journal name or code
       const journalName = data.journal?.toLowerCase() || '';
-      if (journalName.includes("commerce")) form.setValue("publicationType", "sjcm");
-      else if (journalName.includes("humanities") || journalName.includes("social")) form.setValue("publicationType", "sjhss");
+      if (journalName.includes("commerce") || journalName === "sjcm") {
+        form.setValue("publicationType", "sjcm");
+      } else if (journalName.includes("humanities") || journalName.includes("social") || journalName === "sjhss") {
+        form.setValue("publicationType", "sjhss");
+      } else {
+        // Fallback for cases like "SJHSS" or "SJCM" (sometimes uppercase in DB)
+        if (id.startsWith("MANSJHS") || id.startsWith("MANSJHSS")) form.setValue("publicationType", "sjhss");
+        else if (id.startsWith("MANSJCM") || id.startsWith("MSJCM")) form.setValue("publicationType", "sjcm");
+      }
 
       // Store manuscript status and all details
       const status = (data.status || "").toLowerCase();
@@ -491,7 +498,17 @@ export default function FinalPaperForm() {
           </div>
         )}
 
-        <form onSubmit={form.handleSubmit(onSubmit)}>
+        <form onSubmit={form.handleSubmit(onSubmit, (errors) => {
+          console.error("Form Validation Errors:", errors);
+          const firstError = Object.values(errors)[0];
+          if (firstError) {
+            toast({
+              title: "Form Incomplete",
+              description: String(firstError.message || "Please check all fields in all steps."),
+              variant: "destructive",
+            });
+          }
+        })}>
           {/* STEP 0: TEMPLATE DOWNLOAD & FETCH MANUSCRIPT - Shows before data is fetched */}
           {!manuscriptStatus && currentStep === 1 && (
             <div className="space-y-6">
@@ -725,6 +742,22 @@ export default function FinalPaperForm() {
                   <CardDescription>Modify any information below before uploading your manuscript</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
+
+                  <div className="space-y-2">
+                    <Label htmlFor="publicationType">Target Journal *</Label>
+                    <Select 
+                      value={form.watch("publicationType")} 
+                      onValueChange={(v) => form.setValue("publicationType", v)}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select Journal" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="sjcm">Scholar Journal of Commerce & Management (SJCM)</SelectItem>
+                        <SelectItem value="sjhss">Scholar Journal of Humanities & Social Sciences (SJHSS)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
 
                   <div className="space-y-2">
                     <Label htmlFor="articleTitle">Article Title *</Label>

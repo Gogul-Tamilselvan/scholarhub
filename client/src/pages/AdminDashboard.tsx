@@ -103,6 +103,34 @@ export default function AdminDashboard() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editForm, setEditForm] = useState({ id: '', title: '', journal: '', author: '', email: '', doi: '', plagiarism: '' });
   const [submittingEdit, setSubmittingEdit] = useState(false);
+
+  const [isEditReviewerModalOpen, setIsEditReviewerModalOpen] = useState(false);
+  const [editReviewerForm, setEditReviewerForm] = useState({ id: '', first_name: '', last_name: '', email: '', mobile: '', role: '', journal: '', institution: '' });
+  const [submittingReviewerEdit, setSubmittingReviewerEdit] = useState(false);
+
+  const handleEditReviewerSubmit = async () => {
+    setSubmittingReviewerEdit(true);
+    try {
+      const { error } = await supabase.from('reviewers').update({
+        first_name: editReviewerForm.first_name,
+        last_name: editReviewerForm.last_name,
+        email: editReviewerForm.email,
+        mobile: editReviewerForm.mobile,
+        role: editReviewerForm.role,
+        journal: editReviewerForm.journal,
+        institution: editReviewerForm.institution
+      }).eq('id', editReviewerForm.id);
+
+      if (error) throw error;
+      toast({ title: 'Reviewer updated successfully' });
+      setIsEditReviewerModalOpen(false);
+      fetchReviewers(true);
+    } catch(err: any) {
+      toast({ title: 'Update failed', description: err.message, variant: 'destructive' });
+    } finally {
+      setSubmittingReviewerEdit(false);
+    }
+  };
   const [searchTerm, setSearchTerm] = useState('');
   const [filterJournal, setFilterJournal] = useState('All');
   const [filterStatus, setFilterStatus] = useState('All');
@@ -989,6 +1017,21 @@ export default function AdminDashboard() {
                                       <DropdownMenuItem onClick={() => { setSelectedReviewer(r); setIsReviewerDetailsModalOpen(true); }} className="focus:bg-slate-50 cursor-pointer text-xs rounded-lg py-2">
                                          <Eye className="mr-2 h-4 w-4 text-blue-700" /> View Details
                                       </DropdownMenuItem>
+                                      <DropdownMenuItem onClick={() => {
+                                          setEditReviewerForm({
+                                            id: r.id,
+                                            first_name: r.first_name || '',
+                                            last_name: r.last_name || '',
+                                            email: r.email || '',
+                                            mobile: r.mobile || r.phone || '',
+                                            role: r.role || '',
+                                            journal: r.journal || '',
+                                            institution: r.institution || ''
+                                          });
+                                          setIsEditReviewerModalOpen(true);
+                                       }} className="focus:bg-indigo-50 cursor-pointer text-xs rounded-lg py-2 focus:text-indigo-700">
+                                          <Edit className="mr-2 h-4 w-4 text-indigo-600" /> Edit
+                                       </DropdownMenuItem>
                                       <DropdownMenuItem onClick={() => updateReviewerStatus(r.id, 'Active')} className="focus:bg-emerald-50 cursor-pointer text-xs rounded-lg py-2 focus:text-emerald-700">
                                          <Check className="mr-2 h-4 w-4 text-emerald-600" /> Mark Active
                                       </DropdownMenuItem>
@@ -2729,6 +2772,65 @@ return (
               Confirm Rejection
             </Button>
             <Button variant="outline" onClick={() => setIsRejectModalOpen(false)} className="bg-white text-slate-700 font-bold border border-slate-200 h-10 px-6 rounded-lg hover:bg-slate-50 transition-colors flex-1 sm:flex-none text-[13px] whitespace-nowrap">Cancel</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Reviewer Modal */}
+      <Dialog open={isEditReviewerModalOpen} onOpenChange={setIsEditReviewerModalOpen}>
+        <DialogContent className="max-w-4xl p-0 bg-white border border-slate-100 shadow-2xl rounded-2xl overflow-hidden gap-0 mt-8 max-h-[90vh]">
+          <DialogHeader className="px-6 py-4 border-b border-slate-100 bg-white sticky top-0 z-10">
+            <DialogTitle className="flex items-center gap-2 text-sm font-bold text-slate-800">
+              <Edit className="h-4 w-4" /> Edit Reviewer / EB Member
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="p-8 overflow-y-auto max-h-[calc(90vh-140px)] custom-scrollbar">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <label className="text-[12px] font-bold text-slate-700">First Name</label>
+                <Input value={editReviewerForm.first_name} onChange={e => setEditReviewerForm({...editReviewerForm, first_name: e.target.value})} className="h-10 text-sm font-medium border-slate-200 shadow-sm rounded-lg text-slate-600 focus-visible:ring-1 focus-visible:ring-blue-600" />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[12px] font-bold text-slate-700">Last Name</label>
+                <Input value={editReviewerForm.last_name} onChange={e => setEditReviewerForm({...editReviewerForm, last_name: e.target.value})} className="h-10 text-sm font-medium border-slate-200 shadow-sm rounded-lg text-slate-600 focus-visible:ring-1 focus-visible:ring-blue-600" />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[12px] font-bold text-slate-700">Email</label>
+                <Input value={editReviewerForm.email} onChange={e => setEditReviewerForm({...editReviewerForm, email: e.target.value})} className="h-10 text-sm font-medium border-slate-200 shadow-sm rounded-lg text-slate-600 focus-visible:ring-1 focus-visible:ring-blue-600" />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[12px] font-bold text-slate-700">Mobile</label>
+                <Input value={editReviewerForm.mobile} onChange={e => setEditReviewerForm({...editReviewerForm, mobile: e.target.value})} className="h-10 text-sm font-medium border-slate-200 shadow-sm rounded-lg text-slate-600 focus-visible:ring-1 focus-visible:ring-blue-600" />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[12px] font-bold text-slate-700">Role</label>
+                <Select value={editReviewerForm.role} onValueChange={v => setEditReviewerForm({...editReviewerForm, role: v})}>
+                  <SelectTrigger className="h-10 text-sm font-medium border-slate-200 shadow-sm rounded-lg text-slate-600 focus-visible:ring-1 focus-visible:ring-blue-600">
+                    <SelectValue placeholder="Select Role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Reviewer">Reviewer</SelectItem>
+                    <SelectItem value="Editorial Board Member">Editorial Board Member</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <label className="text-[12px] font-bold text-slate-700">Journal</label>
+                <Input value={editReviewerForm.journal} onChange={e => setEditReviewerForm({...editReviewerForm, journal: e.target.value})} className="h-10 text-sm font-medium border-slate-200 shadow-sm rounded-lg text-slate-600 focus-visible:ring-1 focus-visible:ring-blue-600" />
+              </div>
+              <div className="space-y-2 md:col-span-2">
+                <label className="text-[12px] font-bold text-slate-700">Institution</label>
+                <Input value={editReviewerForm.institution} onChange={e => setEditReviewerForm({...editReviewerForm, institution: e.target.value})} className="h-10 text-sm font-medium border-slate-200 shadow-sm rounded-lg text-slate-600 focus-visible:ring-1 focus-visible:ring-blue-600" />
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-slate-100 bg-white sticky bottom-0 z-10 w-full mt-auto">
+             <Button variant="outline" disabled={submittingReviewerEdit} onClick={() => setIsEditReviewerModalOpen(false)} className="bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100 h-9 font-semibold shadow-sm text-[12px] px-6">Cancel</Button>
+             <Button onClick={handleEditReviewerSubmit} disabled={submittingReviewerEdit} className="bg-[#1e40af] hover:bg-blue-900 border-none text-white h-9 font-semibold shadow-sm text-[12px] px-5 gap-2">
+                 {submittingReviewerEdit ? <Loader2 size={14} className="animate-spin" /> : "Save Changes"}
+             </Button>
           </div>
         </DialogContent>
       </Dialog>

@@ -58,10 +58,15 @@ export function SubmissionComparison() {
       ]);
 
       if (manuscripts) {
-        // Filter manuscripts to only those that are 'Accepted' or 'Complement'
+        // Filter manuscripts to only those that are 'Accepted' or 'Complement', or have final documents submitted
         const applicableMs = manuscripts.filter(ms => {
           const status = String(ms.status || '').toLowerCase().trim();
-          return status === 'accepted' || status === 'complement';
+          if (status === 'published') return false;
+          
+          const msId = ms.manuscript_id || ms.id;
+          const hasDocs = copyrights?.some(c => c.manuscript_id === msId) || papers?.some(p => p.manuscript_id === msId);
+          
+          return status === 'accepted' || status === 'complement' || hasDocs;
         });
 
         const mergedData = applicableMs.map(ms => {
@@ -235,6 +240,48 @@ export function SubmissionComparison() {
     } catch (e: any) {
       console.error(`❌ Mail trigger error [${endpoint}]:`, e.message);
       return false;
+    }
+  };
+
+  const rejectDocument = async (type: 'Copyright Form' | 'Final Manuscript', doc: any) => {
+    if (!selectedMs) return;
+    const reason = window.prompt(`Enter reason for rejecting the ${type}:`);
+    if (reason === null) return; // User cancelled
+
+    try {
+      // Delete from DB
+      if (type === 'Copyright Form') {
+        const { error } = await supabase.from('copyright_forms').delete().eq('id', doc.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from('final_papers').delete().eq('id', doc.id);
+        if (error) throw error;
+      }
+
+      // Send Email using the working production-status-update endpoint
+      const missingPayment = selectedMs.msStatus.toLowerCase() === 'accepted' && (!selectedMs.payment || String(selectedMs.payment.status).toLowerCase() !== 'approved');
+
+      await triggerEmail('/send/production-status-update', {
+        name: selectedMs.author || 'Author',
+        email: selectedMs.email,
+        mode: 'missing',
+        details: {
+          mID: selectedMs.displayId,
+          mTitle: selectedMs.title,
+          formatStatus: type === 'Final Manuscript' ? 'no' : (selectedMs.paper ? 'yes' : 'no'),
+          copyrightStatus: type === 'Copyright Form' ? 'no' : (selectedMs.copyright ? 'yes' : 'no'),
+          paymentStatus: missingPayment ? 'no' : 'yes',
+          reason: reason // Passed along in case the mail template supports custom reasons
+        }
+      });
+
+      toast({ title: `${type} Rejected`, description: 'Record deleted and author notified.' });
+
+      // Refresh UI
+      fetchData();
+      setIsModalOpen(false);
+    } catch (e: any) {
+       toast({ title: 'Error rejecting document', description: e.message, variant: 'destructive' });
     }
   };
 
@@ -621,9 +668,18 @@ export function SubmissionComparison() {
                         <div><span className="text-[10px] font-black text-slate-400 block uppercase tracking-widest mb-1">Author / Name</span> <span className="font-bold text-slate-800">{selectedMs.copyright.corresponding_author || selectedMs.copyright.author_names || selectedMs.copyright.author_name || 'N/A'}</span></div>
                         <div><span className="text-[10px] font-black text-slate-400 block uppercase tracking-widest mb-1">Email</span> <span className="font-semibold text-slate-700 truncate block">{selectedMs.copyright.email || 'N/A'}</span></div>
                         <div><span className="text-[10px] font-black text-slate-400 block uppercase tracking-widest mb-1">Submitted On</span> <span className="font-semibold text-slate-700">{parseSafeDate(selectedMs.copyright.submission_date || selectedMs.copyright.submitted_at)}</span></div>
-                        <a href={selectedMs.copyright.file_url || selectedMs.copyright.file_link} target="_blank" rel="noreferrer" className="w-full mt-4 flex items-center justify-center gap-2 text-purple-600 bg-purple-50 hover:bg-purple-100 text-xs font-bold py-2.5 rounded-lg transition-colors border border-purple-100">
-                          <Download size={14} /> View Form
-                        </a>
+                        <div className="flex gap-2 w-full mt-4">
+                          <a href={selectedMs.copyright.file_url || selectedMs.copyright.file_link} target="_blank" rel="noreferrer" className="flex-1 flex items-center justify-center gap-2 text-purple-600 bg-purple-50 hover:bg-purple-100 text-xs font-bold py-2.5 rounded-lg transition-colors border border-purple-100">
+                            <Download size={14} /> View Form
+                          </a>
+                          <Button 
+                            variant="outline" 
+                            className="flex-1 text-rose-600 hover:bg-rose-50 border-rose-200 hover:border-rose-300 text-xs font-bold py-2.5 h-auto rounded-lg"
+                            onClick={() => rejectDocument('Copyright Form', selectedMs.copyright)}
+                          >
+                            Reject &amp; Notify
+                          </Button>
+                        </div>
                       </>
                     ) : (
                       <div className="text-center py-6 text-rose-500 font-bold border-2 border-dashed border-rose-100 rounded-xl bg-rose-50/30">Not Submitted</div>
@@ -642,9 +698,18 @@ export function SubmissionComparison() {
                         <div><span className="text-[10px] font-black text-slate-400 block uppercase tracking-widest mb-1">Author / Name</span> <span className="font-bold text-slate-800">{selectedMs.paper.corresponding_author || selectedMs.paper.author_name || 'N/A'}</span></div>
                         <div><span className="text-[10px] font-black text-slate-400 block uppercase tracking-widest mb-1">Contact</span> <span className="font-semibold text-slate-700 truncate block">{selectedMs.paper.email || 'N/A'}</span></div>
                         <div><span className="text-[10px] font-black text-slate-400 block uppercase tracking-widest mb-1">Submitted On</span> <span className="font-semibold text-slate-700">{parseSafeDate(selectedMs.paper.submission_date || selectedMs.paper.submitted_at)}</span></div>
-                        <a href={selectedMs.paper.file_url || selectedMs.paper.file_link} target="_blank" rel="noreferrer" className="w-full mt-4 flex items-center justify-center gap-2 text-emerald-600 bg-emerald-50 hover:bg-emerald-100 text-xs font-bold py-2.5 rounded-lg transition-colors border border-emerald-100">
-                          <Download size={14} /> View Paper
-                        </a>
+                        <div className="flex gap-2 w-full mt-4">
+                          <a href={selectedMs.paper.file_url || selectedMs.paper.file_link} target="_blank" rel="noreferrer" className="flex-1 flex items-center justify-center gap-2 text-emerald-600 bg-emerald-50 hover:bg-emerald-100 text-xs font-bold py-2.5 rounded-lg transition-colors border border-emerald-100">
+                            <Download size={14} /> View Paper
+                          </a>
+                          <Button 
+                            variant="outline" 
+                            className="flex-1 text-rose-600 hover:bg-rose-50 border-rose-200 hover:border-rose-300 text-xs font-bold py-2.5 h-auto rounded-lg"
+                            onClick={() => rejectDocument('Final Manuscript', selectedMs.paper)}
+                          >
+                            Reject &amp; Notify
+                          </Button>
+                        </div>
                       </>
                     ) : (
                       <div className="text-center py-6 text-rose-500 font-bold border-2 border-dashed border-rose-100 rounded-xl bg-rose-50/30">Not Submitted</div>

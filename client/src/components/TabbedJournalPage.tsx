@@ -565,7 +565,7 @@ export default function TabbedJournalPage({
                     <CardTitle className="text-2xl font-serif text-white">Editor-in-Chief</CardTitle>
                   </CardHeader>
                   <CardContent className="pt-6">
-                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div className="grid md:grid-cols-2 lg:grid-cols-2 gap-6">
                       {Array.from(new Map([...(editorInChief ? [editorInChief] : []), ...dbEditorInChief].map(m => [m.name, m])).values()).map((member, idx) => (
                         <div key={idx} className="p-4 rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700">
                           <h4 className="font-bold text-gray-900 dark:text-gray-100">{member.name}</h4>
@@ -598,7 +598,7 @@ export default function TabbedJournalPage({
                     <CardTitle className="text-2xl font-serif text-white">Managing Editor</CardTitle>
                   </CardHeader>
                   <CardContent className="pt-6">
-                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div className="grid md:grid-cols-2 lg:grid-cols-2 gap-6">
                       {Array.from(new Map([...(managingEditor ? [managingEditor] : []), ...dbManagingEditor].map(m => [m.name, m])).values()).map((member, idx) => (
                         <div key={idx} className="p-4 rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700">
                           <h4 className="font-bold text-gray-900 dark:text-gray-100">{member.name}</h4>
@@ -631,7 +631,7 @@ export default function TabbedJournalPage({
                     <CardTitle className="text-2xl font-serif text-white">Associate Editors</CardTitle>
                   </CardHeader>
                   <CardContent className="pt-6">
-                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div className="grid md:grid-cols-2 lg:grid-cols-2 gap-6">
                       {Array.from(new Map([...associateEditors, ...dbAssociateEditors].map(m => [m.name, m])).values()).map((member, idx) => (
                         <div key={idx} className="p-4 rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700">
                           <h4 className="font-bold text-gray-900 dark:text-gray-100">{member.name}</h4>
@@ -664,7 +664,7 @@ export default function TabbedJournalPage({
                     <CardTitle className="text-2xl font-serif text-white">Editorial Board Members</CardTitle>
                   </CardHeader>
                   <CardContent className="pt-6">
-                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div className="grid md:grid-cols-2 lg:grid-cols-2 gap-6">
                       {Array.from(new Map([...boardMembers, ...dbBoardMembers].map(m => [m.name, m])).values()).map((member, idx) => (
                         <div key={idx} className="p-4 rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700 hover:border-blue-200 transition-colors">
                           <h4 className="font-bold text-gray-900 dark:text-gray-100">{member.name}</h4>
@@ -695,7 +695,7 @@ export default function TabbedJournalPage({
                     <CardTitle className="text-2xl font-serif text-white">Reviewer Board</CardTitle>
                   </CardHeader>
                   <CardContent className="pt-6">
-                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div className="grid md:grid-cols-2 lg:grid-cols-2 gap-6">
                       {Array.from(new Map(dbReviewers.map(m => [m.name, m])).values()).map((member, idx) => (
                         <div key={idx} className="p-4 rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700 hover:border-blue-200 transition-colors">
                           <h4 className="font-bold text-gray-900 dark:text-gray-100">{member.name}</h4>

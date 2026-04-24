@@ -36,7 +36,7 @@ export default function Header() {
   }, []);
 
   const dropdownItemClass =
-    "block px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-[#213361] rounded-lg transition-all duration-200 cursor-pointer";
+    "block px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-amber-400 hover:text-slate-900 rounded-lg transition-all duration-200 cursor-pointer";
 
   return (
     <header className="sticky top-0 z-50 w-full bg-white/95 backdrop-blur-xl border-b border-slate-200/80 shadow-[0_4px_25px_-10px_rgba(33,51,97,0.1)] transition-all duration-300">
@@ -75,7 +75,7 @@ export default function Header() {
                 <Link href="/journals" className="flex items-center gap-1.5 cursor-pointer">Journals <ChevronDown className="h-3.5 w-3.5 opacity-60 transition-transform duration-300 group-hover:rotate-180" /></Link>
               </Button>
               <div className="absolute top-full left-0 hidden group-hover:block pt-3 z-[60]">
-                <div className="bg-white/95 backdrop-blur-xl border border-slate-100 p-1.5 rounded-2xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.1)] overflow-hidden min-w-[260px]">
+                <div className="bg-white/95 backdrop-blur-xl border border-slate-100 border-t-4 border-t-amber-400 p-1.5 rounded-2xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.1)] overflow-hidden min-w-[260px]">
                   {/* Hardcoded primary journals — always Commerce first, Humanities second */}
                   <Link href="/commerce-management">
                     <div className={dropdownItemClass}>Commerce and Management</div>
@@ -102,7 +102,7 @@ export default function Header() {
                 Books <ChevronDown className="h-3.5 w-3.5 opacity-60 transition-transform duration-300 group-hover:rotate-180" />
               </Button>
               <div className="absolute top-full left-0 hidden group-hover:block pt-3 z-[60]">
-                <div className="bg-white/95 backdrop-blur-xl border border-slate-100 p-1.5 rounded-2xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.1)] overflow-hidden min-w-[240px]">
+                <div className="bg-white/95 backdrop-blur-xl border border-slate-100 border-t-4 border-t-amber-400 p-1.5 rounded-2xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.1)] overflow-hidden min-w-[240px]">
                   <Link href="/book-publication-info" data-testid="link-book-info">
                     <div className={dropdownItemClass}>Publication Information</div>
                   </Link>
@@ -122,7 +122,7 @@ export default function Header() {
                 Services <ChevronDown className="h-3.5 w-3.5 opacity-60 transition-transform duration-300 group-hover:rotate-180" />
               </Button>
               <div className="absolute top-full left-0 hidden group-hover:block pt-3 z-[60]">
-                <div className="bg-white/95 backdrop-blur-xl border border-slate-100 p-1.5 rounded-2xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.1)] overflow-hidden min-w-[240px]">
+                <div className="bg-white/95 backdrop-blur-xl border border-slate-100 border-t-4 border-t-amber-400 p-1.5 rounded-2xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.1)] overflow-hidden min-w-[240px]">
                   <Link href="/conference-seminars" data-testid="link-conference-seminars">
                     <div className={dropdownItemClass}>Conference & Seminars</div>
                   </Link>
@@ -146,7 +146,7 @@ export default function Header() {
                 Sign In <ChevronDown className="h-3.5 w-3.5 opacity-70 transition-transform duration-300 group-hover:rotate-180" />
               </Button>
               <div className="absolute top-full right-0 hidden group-hover:block pt-3 z-[60]">
-                <div className="bg-white/95 backdrop-blur-xl border border-slate-100 p-1.5 rounded-2xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.1)] overflow-hidden min-w-[200px]">
+                <div className="bg-white/95 backdrop-blur-xl border border-slate-100 border-t-4 border-t-amber-400 p-1.5 rounded-2xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.1)] overflow-hidden min-w-[200px]">
                   <Link href="/admin/login" data-testid="link-admin-login">
                     <div className={dropdownItemClass}>Admin Portal</div>
                   </Link>
@@ -164,7 +164,7 @@ export default function Header() {
                 Submit <ChevronDown className="h-3.5 w-3.5 opacity-70 transition-transform duration-300 group-hover:rotate-180" />
               </Button>
               <div className="absolute top-full right-0 hidden group-hover:block pt-3 z-[60]">
-                <div className="bg-white/95 backdrop-blur-xl border border-slate-100 p-1.5 rounded-2xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.1)] overflow-hidden min-w-[200px]">
+                <div className="bg-white/95 backdrop-blur-xl border border-slate-100 border-t-4 border-t-amber-400 p-1.5 rounded-2xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.1)] overflow-hidden min-w-[200px]">
                   <Link href="/call-for-books" data-testid="link-submit-book">
                     <div className={dropdownItemClass}>Book Chapter</div>
                   </Link>

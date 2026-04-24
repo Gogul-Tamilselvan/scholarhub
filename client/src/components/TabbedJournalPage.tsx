@@ -27,12 +27,96 @@ import {
   BookMarked,
   Tag,
   Globe,
+  Loader2,
 } from "lucide-react";
 import GeneralManuscriptSubmissionForm from "./GeneralManuscriptSubmissionForm";
 import { supabase } from "@/lib/supabase";
 import ReviewerApplicationForm from "./ReviewerApplicationForm";
 import Footer from "./Footer";
 import PublicSpecialIssueArchive from "./PublicSpecialIssueArchive";
+
+// Inline component: fetches articles for a special issue and renders them
+function SIArticlesList({ specialIssueId }: { specialIssueId: string }) {
+  const [articles, setArticles] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [dbError, setDbError] = useState<string | null>(null);
+
+  useEffect(() => {
+    supabase
+      .from("si_articles")
+      .select("*")
+      .eq("special_issue_id", specialIssueId)
+      .order("sort_order", { ascending: true })
+      .then(({ data, error }) => {
+        if (error) {
+          setDbError(error.message);
+        } else {
+          setArticles(data || []);
+        }
+        setLoading(false);
+      });
+  }, [specialIssueId]);
+
+  if (loading) return <div className="py-8 flex justify-center"><Loader2 className="animate-spin h-6 w-6 text-blue-400" /></div>;
+
+  if (dbError) {
+    return (
+      <div className="py-8 px-4 bg-amber-50 border border-amber-200 rounded-xl text-center">
+        <p className="text-sm font-bold text-amber-800 mb-1">Database setup needed</p>
+        <p className="text-xs text-amber-600">Run the SQL migration in Supabase to enable articles for special issues.</p>
+        <code className="block mt-3 text-[10px] bg-amber-100 rounded p-2 text-left text-amber-900 font-mono whitespace-pre-wrap">
+          ALTER TABLE public.si_articles ADD COLUMN IF NOT EXISTS special_issue_id UUID REFERENCES public.journal_special_issues(id);
+        </code>
+      </div>
+    );
+  }
+
+  if (articles.length === 0) {
+    return (
+      <div className="py-10 text-center text-gray-400">
+        <FileText className="h-12 w-12 mx-auto mb-3 text-gray-200" />
+        <p className="text-sm font-medium">No articles published yet for this special issue.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {articles.map((article, idx) => (
+        <div key={article.id} className="border border-gray-100 rounded-xl p-5 hover:border-blue-200 hover:shadow-md transition-all bg-white">
+          <div className="flex flex-col md:flex-row gap-5">
+            <div className="flex-1 space-y-3">
+              <div className="flex items-center gap-2">
+                <span className="px-2 py-0.5 bg-blue-50 text-[#213361] text-[10px] font-bold rounded uppercase tracking-wider">Research Article</span>
+                <span className="text-[10px] text-gray-400 font-semibold">#{idx + 1}</span>
+              </div>
+              <a href={`/si-article/${article.id}`} className="block group">
+                <h4 className="text-base font-serif font-bold text-[#213361] group-hover:text-blue-700 transition-colors leading-snug uppercase tracking-wide">
+                  {article.title}
+                </h4>
+              </a>
+              <p className="text-sm font-semibold text-gray-700">{article.authors}</p>
+              <div className="flex flex-wrap gap-4 text-xs text-gray-500 font-bold pt-1">
+                {article.pages && <span className="flex items-center gap-1"><FileText className="h-3.5 w-3.5 text-blue-400" /> Pages: {article.pages}</span>}
+                {article.doi && <span className="flex items-center gap-1"><ExternalLink className="h-3.5 w-3.5 text-emerald-500" /> DOI: {article.doi}</span>}
+              </div>
+            </div>
+            <div className="flex flex-col items-start md:items-end gap-2 border-t md:border-t-0 md:border-l border-gray-100 pt-3 md:pt-0 md:pl-5 min-w-[140px]">
+              <a href={`/si-article/${article.id}`} className="w-full text-center px-4 py-2 bg-slate-50 border border-slate-200 hover:border-blue-400 hover:text-blue-600 text-gray-700 text-xs font-bold rounded-xl transition-all">
+                Abstract
+              </a>
+              {article.pdf_url && (
+                <a href={article.pdf_url} target="_blank" rel="noopener noreferrer" className="w-full text-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5">
+                  <FileText className="h-3.5 w-3.5" /> PDF Full Text
+                </a>
+              )}
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 // Clean author names — strip *, †, ‡, superscript digits
 const cleanAuthors = (raw: string) =>
@@ -136,13 +220,75 @@ export default function TabbedJournalPage({
   journalId,
 }: TabbedJournalPageProps) {
   const [location] = useLocation();
-  const [activeTab, setActiveTab] = useState(() => {
-    const hash = window.location.hash.slice(1);
-    return hash || "overview";
-  });
+  const [activeTab, setActiveTab] = useState("overview");
+  const [showReviewerForm, setShowReviewerForm] = useState(false);
+  
+  // Dynamic members from BOTH tables
+  const [dbEditorInChief, setDbEditorInChief] = useState<EditorialMember[]>([]);
+  const [dbManagingEditor, setDbManagingEditor] = useState<EditorialMember[]>([]);
+  const [dbAssociateEditors, setDbAssociateEditors] = useState<EditorialMember[]>([]);
+  const [dbBoardMembers, setDbBoardMembers] = useState<EditorialMember[]>([]);
+  const [dbReviewers, setDbReviewers] = useState<EditorialMember[]>([]);
+  const [loadingMembers, setLoadingMembers] = useState(false);
+
+  useEffect(() => {
+    async function fetchMembers() {
+      if (!title && !journalId) return;
+      setLoadingMembers(true);
+      try {
+        const results: any[] = [];
+        
+        // 1. Fetch from 'reviewers' table (legacy/application based)
+        if (title) {
+          const { data } = await supabase
+            .from('reviewers')
+            .select('*')
+            .eq('journal', title)
+            .in('status', ['Active', 'Accepted']);
+          if (data) results.push(...data.map(r => ({ ...r, source: 'reviewers' })));
+        }
+
+        // 2. Fetch from 'editorial_board' table (dynamic journal manager)
+        if (journalId) {
+          const { data } = await supabase
+            .from('editorial_board')
+            .select('*')
+            .eq('journal_id', journalId);
+          if (data) results.push(...data.map(r => ({ ...r, source: 'editorial_board' })));
+        }
+        
+        const toMember = (r: any) => ({
+          name: r.name || `${r.first_name || ''} ${r.last_name || ''}`.trim(),
+          designation: r.designation || (r.role === 'Reviewer' ? 'Reviewer' : 'Board Member'),
+          institution: r.institution || '',
+          location: r.location || [r.district, r.state, r.nationality].filter(Boolean).join(', '),
+          email: r.email || '',
+          profileUrl: r.profile_pdf_link || r.profile_url || ''
+        });
+
+        // Sort and Filter
+        const eic = results.filter(r => r.role === 'editor-in-chief' || r.role === 'Editor-in-Chief').map(toMember);
+        const me = results.filter(r => r.role === 'managing-editor' || r.role === 'Managing Editor').map(toMember);
+        const ae = results.filter(r => r.role === 'associate-editor' || r.role === 'Associate Editor').map(toMember);
+        const board = results.filter(r => r.role === 'board-member' || r.role === 'Editorial Board Member').map(toMember);
+        const revs = results.filter(r => r.role === 'reviewer' || r.role === 'Reviewer').map(toMember);
+
+        setDbEditorInChief(eic);
+        setDbManagingEditor(me);
+        setDbAssociateEditors(ae);
+        setDbBoardMembers(board);
+        setDbReviewers(revs);
+      } catch (err) {
+        console.error("Error fetching members:", err);
+      } finally {
+        setLoadingMembers(false);
+      }
+    }
+    fetchMembers();
+  }, [title, journalId]);
+
   const [selectedVolume, setSelectedVolume] = useState<string | null>(null);
   const [selectedIssue, setSelectedIssue] = useState<string | null>(null);
-  const [showReviewerForm, setShowReviewerForm] = useState(false);
   const [specialIssues, setSpecialIssues] = useState<any[]>([]);
   const [selectedSpecialIssue, setSelectedSpecialIssue] = useState<any>(null);
 
@@ -413,87 +559,83 @@ export default function TabbedJournalPage({
 
           <TabsContent value="editorial-board">
             <div className="space-y-8">
-              {editorInChief && (
+              {(editorInChief || dbEditorInChief.length > 0) && (
                 <Card className="bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 overflow-hidden">
                   <CardHeader className="bg-[#213361] border-0 py-3 px-6">
                     <CardTitle className="text-2xl font-serif text-white">Editor-in-Chief</CardTitle>
                   </CardHeader>
                   <CardContent className="pt-6">
-                    <div className="flex flex-col md:flex-row gap-6">
-                      <div className="flex-1 space-y-4">
-                        <div>
-                          <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">{editorInChief.name}</h3>
-                          <p className="text-blue-600 dark:text-blue-400 font-medium">{editorInChief.designation}</p>
-                          <p className="text-gray-700 dark:text-gray-300">{editorInChief.institution}</p>
-                          <p className="text-gray-500 dark:text-gray-400 text-sm">{editorInChief.location}</p>
-                        </div>
-                        <div className="flex flex-wrap items-center gap-4">
-                          <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400">
-                            <Mail className="h-4 w-4" />
-                            <a href={`mailto:${editorInChief.email}`} className="text-sm hover:underline">{editorInChief.email}</a>
+                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {Array.from(new Map([...(editorInChief ? [editorInChief] : []), ...dbEditorInChief].map(m => [m.name, m])).values()).map((member, idx) => (
+                        <div key={idx} className="p-4 rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700">
+                          <h4 className="font-bold text-gray-900 dark:text-gray-100">{member.name}</h4>
+                          <p className="text-sm text-blue-600 dark:text-blue-400 font-bold">{member.designation}</p>
+                          <p className="text-sm text-gray-700 dark:text-gray-300">{member.institution}</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{member.location}</p>
+                          <div className="flex flex-wrap items-center gap-3 mt-3">
+                            <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400">
+                              <Mail className="h-3 w-3" />
+                              <a href={`mailto:${member.email}`} className="text-xs hover:underline">{member.email}</a>
+                            </div>
+                            {member.profileUrl && (
+                              <Button asChild variant="ghost" size="sm" className="h-6 text-[10px] font-bold text-blue-700 hover:bg-blue-50 p-0 hover:px-2 transition-all">
+                                <a href={member.profileUrl} target="_blank" rel="noopener noreferrer">
+                                  <Users className="h-3 w-3 mr-1" /> View Profile
+                                </a>
+                              </Button>
+                            )}
                           </div>
-                          {editorInChief.profileUrl && (
-                            <Button asChild variant="outline" size="sm" className="h-7 text-[10px] font-bold border-blue-200 text-blue-700 hover:bg-blue-50">
-                              <a href={editorInChief.profileUrl} target="_blank" rel="noopener noreferrer">
-                                <Users className="h-3 w-3 mr-1.5" /> View Profile
-                              </a>
-                            </Button>
-                          )}
                         </div>
-                      </div>
+                      ))}
                     </div>
                   </CardContent>
                 </Card>
               )}
 
-              {managingEditor && (
+              {(managingEditor || dbManagingEditor.length > 0) && (
                 <Card className="bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 overflow-hidden">
                   <CardHeader className="bg-[#213361] border-0 py-3 px-6">
                     <CardTitle className="text-2xl font-serif text-white">Managing Editor</CardTitle>
                   </CardHeader>
                   <CardContent className="pt-6">
-                    <div className="space-y-4">
-                      <div>
-                        <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">{managingEditor.name}</h3>
-                        <p className="text-blue-600 dark:text-blue-400 font-medium">{managingEditor.designation}</p>
-                        <p className="text-gray-700 dark:text-gray-300">{managingEditor.institution}</p>
-                        <p className="text-gray-500 dark:text-gray-400 text-sm">{managingEditor.location}</p>
-                      </div>
-                      <div className="flex flex-col gap-4">
-                        <div className="flex flex-wrap gap-2">
-                          {managingEditor.email.split("/").map((email, idx) => (
-                            <div key={idx} className="flex items-center gap-2 text-blue-600 dark:text-blue-400">
-                              <Mail className="h-4 w-4" />
-                              <a href={`mailto:${email.trim()}`} className="text-sm hover:underline">{email.trim()}</a>
+                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {Array.from(new Map([...(managingEditor ? [managingEditor] : []), ...dbManagingEditor].map(m => [m.name, m])).values()).map((member, idx) => (
+                        <div key={idx} className="p-4 rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700">
+                          <h4 className="font-bold text-gray-900 dark:text-gray-100">{member.name}</h4>
+                          <p className="text-sm text-blue-600 dark:text-blue-400 font-bold">{member.designation}</p>
+                          <p className="text-sm text-gray-700 dark:text-gray-300">{member.institution}</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{member.location}</p>
+                          <div className="flex flex-wrap items-center gap-3 mt-3">
+                            <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400">
+                              <Mail className="h-3 w-3" />
+                              <a href={`mailto:${member.email}`} className="text-xs hover:underline">{member.email}</a>
                             </div>
-                          ))}
-                        </div>
-                        {managingEditor.profileUrl && (
-                          <div className="flex items-center">
-                            <Button asChild variant="outline" size="sm" className="h-7 text-[10px] font-bold border-blue-200 text-blue-700 hover:bg-blue-50">
-                              <a href={managingEditor.profileUrl} target="_blank" rel="noopener noreferrer">
-                                <Users className="h-3 w-3 mr-1.5" /> View Profile
-                              </a>
-                            </Button>
+                            {member.profileUrl && (
+                              <Button asChild variant="ghost" size="sm" className="h-6 text-[10px] font-bold text-blue-700 hover:bg-blue-50 p-0 hover:px-2 transition-all">
+                                <a href={member.profileUrl} target="_blank" rel="noopener noreferrer">
+                                  <Users className="h-3 w-3 mr-1" /> View Profile
+                                </a>
+                              </Button>
+                            )}
                           </div>
-                        )}
-                      </div>
+                        </div>
+                      ))}
                     </div>
                   </CardContent>
                 </Card>
               )}
 
-              {associateEditors.length > 0 && (
+              {(associateEditors.length > 0 || dbAssociateEditors.length > 0) && (
                 <Card className="bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 overflow-hidden">
                   <CardHeader className="bg-[#213361] border-0 py-3 px-6">
                     <CardTitle className="text-2xl font-serif text-white">Associate Editors</CardTitle>
                   </CardHeader>
                   <CardContent className="pt-6">
-                    <div className="grid md:grid-cols-2 gap-6">
-                      {associateEditors.map((member, idx) => (
+                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {Array.from(new Map([...associateEditors, ...dbAssociateEditors].map(m => [m.name, m])).values()).map((member, idx) => (
                         <div key={idx} className="p-4 rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700">
                           <h4 className="font-bold text-gray-900 dark:text-gray-100">{member.name}</h4>
-                          <p className="text-sm text-blue-600 dark:text-blue-400">{member.designation}</p>
+                          <p className="text-sm text-blue-600 dark:text-blue-400 font-bold">{member.designation}</p>
                           <p className="text-sm text-gray-700 dark:text-gray-300">{member.institution}</p>
                           <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{member.location}</p>
                           <div className="flex flex-wrap items-center gap-3 mt-3">
@@ -504,7 +646,7 @@ export default function TabbedJournalPage({
                             {member.profileUrl && (
                               <Button asChild variant="ghost" size="sm" className="h-6 text-[10px] font-bold text-blue-700 hover:bg-blue-50 p-0 hover:px-2 transition-all">
                                 <a href={member.profileUrl} target="_blank" rel="noopener noreferrer">
-                                  <Users className="h-3 w-3 mr-1" /> Profile
+                                  <Users className="h-3 w-3 mr-1" /> View Profile
                                 </a>
                               </Button>
                             )}
@@ -516,30 +658,28 @@ export default function TabbedJournalPage({
                 </Card>
               )}
 
-              {boardMembers.length > 0 ? (
+              {(boardMembers.length > 0 || dbBoardMembers.length > 0) && (
                 <Card className="bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 overflow-hidden">
                   <CardHeader className="bg-[#213361] border-0 py-3 px-6">
                     <CardTitle className="text-2xl font-serif text-white">Editorial Board Members</CardTitle>
                   </CardHeader>
                   <CardContent className="pt-6">
-                    <div className="grid md:grid-cols-2 gap-6">
-                      {boardMembers.map((member, idx) => (
-                        <div key={idx} className="p-4 rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700">
+                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {Array.from(new Map([...boardMembers, ...dbBoardMembers].map(m => [m.name, m])).values()).map((member, idx) => (
+                        <div key={idx} className="p-4 rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700 hover:border-blue-200 transition-colors">
                           <h4 className="font-bold text-gray-900 dark:text-gray-100">{member.name}</h4>
-                          <p className="text-sm text-blue-600 dark:text-blue-400">{member.designation}</p>
-                          <p className="text-sm text-gray-700 dark:text-gray-300">{member.institution}</p>
-                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{member.location}</p>
-                          <div className="flex flex-wrap items-center gap-3 mt-3">
-                            <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400">
+                          <p className="text-[11px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider">{member.designation}</p>
+                          <p className="text-xs text-gray-700 dark:text-gray-300 mt-1">{member.institution}</p>
+                          <p className="text-[10px] text-gray-500 dark:text-gray-400">{member.location}</p>
+                          <div className="flex flex-wrap items-center gap-3 mt-3 pt-3 border-t border-gray-200/50">
+                            <div className="flex items-center gap-1.5 text-blue-600 dark:text-blue-400">
                               <Mail className="h-3 w-3" />
-                              <a href={`mailto:${member.email}`} className="text-xs hover:underline">{member.email}</a>
+                              <a href={`mailto:${member.email}`} className="text-[10px] hover:underline font-medium">{member.email}</a>
                             </div>
                             {member.profileUrl && (
-                              <Button asChild variant="ghost" size="sm" className="h-6 text-[10px] font-bold text-blue-700 hover:bg-blue-50 p-0 hover:px-2 transition-all">
-                                <a href={member.profileUrl} target="_blank" rel="noopener noreferrer">
-                                  <Users className="h-3 w-3 mr-1" /> Profile
-                                </a>
-                              </Button>
+                              <a href={member.profileUrl} target="_blank" rel="noopener noreferrer" className="text-[10px] font-bold text-blue-700 hover:underline flex items-center gap-1">
+                                <Users size={10} /> Profile
+                              </a>
                             )}
                           </div>
                         </div>
@@ -547,24 +687,35 @@ export default function TabbedJournalPage({
                     </div>
                   </CardContent>
                 </Card>
-              ) : (
+              )}
+
+              {dbReviewers.length > 0 && (
                 <Card className="bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 overflow-hidden">
                   <CardHeader className="bg-[#213361] border-0 py-3 px-6">
-                    <CardTitle className="text-2xl font-serif text-white">Editorial Board Members</CardTitle>
+                    <CardTitle className="text-2xl font-serif text-white">Reviewer Board</CardTitle>
                   </CardHeader>
-                  <CardContent className="pt-16 pb-16 text-center">
-                    <Users className="h-20 w-20 text-blue-400 mx-auto mb-6" />
-                    <h3 className="text-2xl font-semibold mb-3 text-blue-900 dark:text-blue-300">Join Our Editorial Board</h3>
-                    <p className="text-base text-blue-600 dark:text-blue-400 max-w-md mx-auto mb-8">
-                      We are currently in the process of forming the editorial board for this journal. If you are a qualified academic professional interested in joining, we invite you to apply.
-                    </p>
-                    <Button 
-                      onClick={() => handleTabChange("reviewers")}
-                      className="bg-blue-900 hover:bg-blue-800 text-white"
-                      size="lg"
-                    >
-                      Apply for Editorial Board / Reviewer
-                    </Button>
+                  <CardContent className="pt-6">
+                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {Array.from(new Map(dbReviewers.map(m => [m.name, m])).values()).map((member, idx) => (
+                        <div key={idx} className="p-4 rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700 hover:border-blue-200 transition-colors">
+                          <h4 className="font-bold text-gray-900 dark:text-gray-100">{member.name}</h4>
+                          <p className="text-[11px] font-bold text-blue-600/70 dark:text-blue-400/70 uppercase tracking-wider">{member.designation}</p>
+                          <p className="text-xs text-gray-700 dark:text-gray-300 mt-1">{member.institution}</p>
+                          <p className="text-[10px] text-gray-500 dark:text-gray-400">{member.location}</p>
+                          <div className="flex flex-wrap items-center gap-3 mt-3 pt-3 border-t border-gray-200/50">
+                            <div className="flex items-center gap-1.5 text-blue-600/70 dark:text-blue-400/70">
+                              <Mail className="h-3 w-3" />
+                              <a href={`mailto:${member.email}`} className="text-[10px] hover:underline font-medium">{member.email}</a>
+                            </div>
+                            {member.profileUrl && (
+                              <a href={member.profileUrl} target="_blank" rel="noopener noreferrer" className="text-[10px] font-bold text-blue-700/70 hover:underline flex items-center gap-1">
+                                <Users size={10} /> Profile
+                              </a>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </CardContent>
                 </Card>
               )}
@@ -1224,6 +1375,39 @@ export default function TabbedJournalPage({
                           <p className="text-[10px] md:text-xs text-gray-500 uppercase tracking-widest mt-1">Days Total Process</p>
                         </div>
                       </div>
+
+                      {/* Distinguished Reviewers List */}
+                      {dbReviewers.length > 0 && (
+                        <div className="space-y-6 pt-12 border-t border-gray-100 dark:border-gray-800">
+                          <div className="flex items-center gap-3">
+                            <div className="h-10 w-10 rounded-xl bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center">
+                              <UserCheck className="h-5 w-5 text-blue-600" />
+                            </div>
+                            <div>
+                              <h4 className="text-xl font-serif font-bold text-blue-900 dark:text-blue-300">Distinguished Reviewers</h4>
+                              <p className="text-sm text-gray-500">Panel of expert reviewers for {title}</p>
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {dbReviewers.map((rev, idx) => (
+                              <div key={idx} className="p-4 rounded-xl bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-md transition-all group">
+                                <div className="flex items-start justify-between">
+                                  <h5 className="font-bold text-gray-900 dark:text-gray-100 group-hover:text-blue-600 transition-colors">{rev.name}</h5>
+                                  <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                                </div>
+                                <p className="text-[10px] font-bold text-blue-600/70 dark:text-blue-400/70 uppercase tracking-widest mt-1">{rev.designation}</p>
+                                <p className="text-[11px] text-gray-600 dark:text-gray-400 mt-2 line-clamp-1">{rev.institution}</p>
+                                <p className="text-[10px] text-gray-400 mt-0.5">{rev.location}</p>
+                                {rev.profileUrl && (
+                                  <a href={rev.profileUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 mt-3 text-[10px] font-bold text-blue-700 hover:underline">
+                                    <Users size={10} /> View Profile
+                                  </a>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
 
                     {/* Directory Info */}
@@ -1304,51 +1488,19 @@ export default function TabbedJournalPage({
                     )}
                     
                     {selectedSpecialIssue.description && (
-                      <p className="text-lg text-gray-600 dark:text-gray-400 leading-relaxed mb-8">
-                        {selectedSpecialIssue.description}
+                      <p className="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-2">
+                        📅 Published: {selectedSpecialIssue.description}
+                      </p>
+                    )}
+                    {selectedSpecialIssue.guest_editor && (
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
+                        <span className="font-bold">Guest Editor:</span> {selectedSpecialIssue.guest_editor}
                       </p>
                     )}
 
                     <div className="space-y-4">
-                      <h4 className="text-xl font-bold text-[#213361] border-b pb-2">Files & Resources</h4>
-                      {(() => {
-                        let files: { title: string; url: string }[] = [];
-                        if (selectedSpecialIssue.file_url) {
-                          try {
-                            files = JSON.parse(selectedSpecialIssue.file_url);
-                          } catch (e) {}
-                        } else if (selectedSpecialIssue.cover_image_url) {
-                          files = [{ title: 'View Full PDF', url: selectedSpecialIssue.cover_image_url }];
-                        }
-
-                        if (files.length === 0) {
-                          return <p className="text-gray-500 italic">No files available for this special issue yet.</p>;
-                        }
-
-                        return (
-                          <div className="grid gap-3">
-                            {files.map((file, idx) => (
-                              <a
-                                key={idx}
-                                href={file.url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex items-center justify-between p-4 bg-gray-50 hover:bg-emerald-50 border border-gray-200 hover:border-emerald-200 rounded-xl transition-all group"
-                              >
-                                <div className="flex items-center gap-4">
-                                  <div className="h-10 w-10 bg-white border border-gray-200 rounded-lg flex items-center justify-center group-hover:bg-emerald-100 group-hover:border-emerald-200 group-hover:text-emerald-600 transition-colors">
-                                    <FileText className="h-5 w-5 text-gray-400 group-hover:text-emerald-600" />
-                                  </div>
-                                  <span className="font-bold text-gray-800 group-hover:text-emerald-700 text-base">{file.title || `Document ${idx + 1}`}</span>
-                                </div>
-                                <div className="text-sm font-bold text-emerald-600 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                  View <ExternalLink className="h-4 w-4" />
-                                </div>
-                              </a>
-                            ))}
-                          </div>
-                        );
-                      })()}
+                      <h4 className="text-xl font-bold text-[#213361] border-b pb-2">Articles</h4>
+                      <SIArticlesList specialIssueId={selectedSpecialIssue.id} />
                     </div>
                   </div>
                 </div>
@@ -1390,8 +1542,8 @@ export default function TabbedJournalPage({
                               </div>
                             )}
                             {si.description && (
-                              <p className="text-base text-gray-600 dark:text-gray-400 leading-relaxed">
-                                {si.description}
+                              <p className="text-sm font-semibold text-gray-500 dark:text-gray-400">
+                                Published: {si.description}
                               </p>
                             )}
                           </div>
@@ -1425,7 +1577,7 @@ export default function TabbedJournalPage({
                                 onClick={() => setSelectedSpecialIssue(si)}
                                 className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 text-sm font-bold px-5 py-2.5 rounded-xl transition-all active:scale-95"
                               >
-                                View Details & Files <ChevronRight className="h-4 w-4" />
+                                View Articles <ChevronRight className="h-4 w-4" />
                               </button>
                             </div>
                           </div>

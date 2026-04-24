@@ -832,34 +832,39 @@ export function AdminArchives({ isMainAdmin = true, subAdminJournals = [] }: { i
               <label className="text-xs font-bold text-slate-700">Abstract</label>
               <Textarea value={articleForm.abstract} onChange={e => setArticleForm({...articleForm, abstract: e.target.value})} placeholder="Paste the article abstract here..." className="bg-slate-50 min-h-[100px] text-sm" />
             </div>
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-700">Article PDF</label>
+            <div className="space-y-1.5 pt-2">
+              <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">Article PDF URL</label>
+              <p className="text-[10px] text-slate-400 mb-1">Paste a direct link (e.g. Google Drive, Dropbox) or upload to S3.</p>
               <div className="flex gap-2 items-center">
                 <Input
                   value={articleForm.pdf_url}
                   onChange={e => setArticleForm({...articleForm, pdf_url: e.target.value})}
-                  placeholder="S3 URL (auto-filled on upload)"
-                  className="h-10 bg-slate-50 text-xs"
+                  placeholder="Paste direct PDF URL here..."
+                  className="h-10 bg-white border-slate-300 flex-1 text-xs font-mono"
                 />
                 <div className="relative shrink-0">
                   <input type="file" accept=".pdf" id="article-pdf" className="hidden"
                     onChange={e => e.target.files?.[0] && handlePdfUpload(e.target.files[0])} />
-                  <Button asChild variant="outline" disabled={uploadingPdf} className="h-10 gap-2 border-dashed border-slate-300 hover:border-blue-500 hover:bg-blue-50 whitespace-nowrap">
+                  <Button asChild variant="outline" disabled={uploadingPdf} className="h-10 gap-2 border-slate-300 hover:border-blue-500 hover:bg-blue-50 whitespace-nowrap">
                     <label htmlFor="article-pdf" className="cursor-pointer">
-                      {uploadingPdf ? <Loader2 className="h-4 w-4 animate-spin" /> : <UploadCloud size={14} />}
-                      {uploadingPdf ? 'Uploading...' : 'Upload PDF'}
+                      {uploadingPdf ? <Loader2 className="h-4 w-4 animate-spin text-blue-600" /> : <UploadCloud size={14} className="text-slate-500" />}
+                      <span className="font-bold text-xs">{uploadingPdf ? 'Uploading...' : 'Upload PDF'}</span>
                     </label>
                   </Button>
                 </div>
-                {articleForm.pdf_url && (
-                  <a href={articleForm.pdf_url} target="_blank" rel="noopener noreferrer"
-                    className="shrink-0 text-blue-600 hover:text-blue-800">
-                    <ExternalLink size={16} />
-                  </a>
-                )}
               </div>
               {articleForm.pdf_url && (
-                <p className="text-[10px] text-emerald-600 font-medium mt-1">✓ PDF uploaded successfully</p>
+                <div className="flex items-center justify-between mt-1.5">
+                  <a href={articleForm.pdf_url} target="_blank" rel="noopener noreferrer"
+                    className="text-[11px] text-blue-600 hover:underline flex items-center gap-1 font-medium">
+                    <ExternalLink size={11} /> Preview current link
+                  </a>
+                  {articleForm.pdf_url.includes('amazonaws.com') && (
+                    <p className="text-[10px] text-emerald-600 font-bold flex items-center gap-1 italic">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> S3 Hosted
+                    </p>
+                  )}
+                </div>
               )}
             </div>
           </div>

@@ -36,6 +36,21 @@ export default function PublicSpecialIssueArchive({ specialIssue, onBack }: Publ
   async function loadVolumes() {
     setLoading(true);
     try {
+      // First try to load direct articles (the new simplified hierarchy)
+      const { data: directArticles, error: articleErr } = await supabase
+        .from("si_articles")
+        .select("*")
+        .eq("special_issue_id", specialIssue.id)
+        .order("sort_order", { ascending: true });
+        
+      if (!articleErr && directArticles && directArticles.length > 0) {
+        setArticles(directArticles);
+        // By setting selectedIssue to a dummy object, we trigger the articles view directly
+        setSelectedIssue({ label: "Special Issue Articles", directMode: true });
+        return;
+      }
+
+      // Fallback to legacy volumes if no direct articles
       const { data, error } = await supabase
         .from("si_volumes")
         .select("*")
@@ -116,8 +131,8 @@ export default function PublicSpecialIssueArchive({ specialIssue, onBack }: Publ
               <ArrowLeft className="h-6 w-6 text-white" />
             </button>
             <div>
-              <h2 className="text-2xl font-serif font-bold text-white">{selectedIssue.label || `Issue ${selectedIssue.issue_number}`}</h2>
-              <p className="text-sm font-medium text-blue-100 mt-1">{selectedVolume.label || `Volume ${selectedVolume.volume_number}`} • {articles.length} Article(s)</p>
+              <h2 className="text-2xl font-serif font-bold text-white">{selectedIssue.directMode ? specialIssue.title : (selectedIssue.label || `Issue ${selectedIssue.issue_number}`)}</h2>
+              <p className="text-sm font-medium text-blue-100 mt-1">{selectedIssue.directMode ? specialIssue.theme : (selectedVolume?.label || `Volume ${selectedVolume?.volume_number}`)} • {articles.length} Article(s)</p>
             </div>
           </div>
         </div>

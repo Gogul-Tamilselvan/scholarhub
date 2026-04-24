@@ -14,6 +14,8 @@ export default function Footer() {
 
   const MAIL_SERVER_URL = "https://scholar-hub-server-seven.vercel.app";
   const MAIL_API_KEY = "scholar_india_mail_secret_2026";
+  const footerLinkClass = "text-gray-300 hover:text-blue-200 transition-all duration-300 hover:translate-x-1.5 inline-block";
+  const yellowLinkClass = "text-yellow-300 hover:text-yellow-100 font-medium transition-all duration-300 hover:translate-x-1.5 inline-block";
 
   const { data: visitorData } = useQuery<{ count: number }>({
     queryKey: ['/api/visitor-count'],
@@ -71,8 +73,8 @@ export default function Footer() {
           <div>
             <h3 className="text-lg font-semibold mb-4 text-blue-100">Journals</h3>
             <ul className="space-y-2 text-sm">
-              <li><Link href="/commerce-management" className="text-gray-300 hover:text-blue-200 transition">Commerce &amp; Management</Link></li>
-              <li><Link href="/humanities" className="text-gray-300 hover:text-blue-200 transition">Humanities &amp; Social Sciences</Link></li>
+              <li><Link href="/commerce-management" className={footerLinkClass}>Commerce &amp; Management</Link></li>
+              <li><Link href="/humanities" className={footerLinkClass}>Humanities &amp; Social Sciences</Link></li>
             </ul>
           </div>
 
@@ -80,14 +82,14 @@ export default function Footer() {
           <div>
             <h3 className="text-lg font-semibold mb-4 text-blue-100">Publications</h3>
             <ul className="space-y-2 text-sm">
-              <li><Link href="/submit" className="text-gray-300 hover:text-blue-200 transition">Submit Manuscript</Link></li>
-              <li><Link href="/manuscript-track" className="text-yellow-300 hover:text-yellow-100 font-medium transition">Track Manuscript</Link></li>
-              <li><Link href="/call-for-books" className="text-gray-300 hover:text-blue-200 transition">Call for Books</Link></li>
-              <li><Link href="/published-books" className="text-gray-300 hover:text-blue-200 transition">Published Books</Link></li>
-              <li><Link href="/join-reviewer" className="text-gray-300 hover:text-blue-200 transition">Join as Editor/Reviewer</Link></li>
-              <li><Link href="/reviewer-search" className="text-gray-300 hover:text-blue-200 transition">Editor &amp; Reviewer Track Portal</Link></li>
-              <li><Link href="/reviewer-login" className="text-yellow-300 hover:text-yellow-100 font-medium transition">Reviewer Login Portal</Link></li>
-              <li><Link href="/certificate-verification" className="text-yellow-300 hover:text-yellow-100 font-medium transition">Certificate Verification</Link></li>
+              <li><Link href="/submit" className={footerLinkClass}>Submit Manuscript</Link></li>
+              <li><Link href="/manuscript-track" className={yellowLinkClass}>Track Manuscript</Link></li>
+              <li><Link href="/call-for-books" className={footerLinkClass}>Call for Books</Link></li>
+              <li><Link href="/published-books" className={footerLinkClass}>Published Books</Link></li>
+              <li><Link href="/join-reviewer" className={footerLinkClass}>Join as Editor/Reviewer</Link></li>
+              <li><Link href="/reviewer-search" className={footerLinkClass}>Editor &amp; Reviewer Track Portal</Link></li>
+              <li><Link href="/reviewer-login" className={yellowLinkClass}>Reviewer Login Portal</Link></li>
+              <li><Link href="/certificate-verification" className={yellowLinkClass}>Certificate Verification</Link></li>
             </ul>
           </div>
 
@@ -95,9 +97,9 @@ export default function Footer() {
           <div>
             <h3 className="text-lg font-semibold mb-4 text-blue-100">Services</h3>
             <ul className="space-y-2 text-sm">
-              <li><Link href="/book-publication-info" className="text-gray-300 hover:text-blue-200 transition">Book Publication Info</Link></li>
-              <li><Link href="/conference-seminars" className="text-gray-300 hover:text-blue-200 transition">Conference &amp; Seminars</Link></li>
-              <li><Link href="/other-services" className="text-gray-300 hover:text-blue-200 transition">Other Services</Link></li>
+              <li><Link href="/book-publication-info" className={footerLinkClass}>Book Publication Info</Link></li>
+              <li><Link href="/conference-seminars" className={footerLinkClass}>Conference &amp; Seminars</Link></li>
+              <li><Link href="/other-services" className={footerLinkClass}>Other Services</Link></li>
             </ul>
           </div>
 
@@ -105,9 +107,9 @@ export default function Footer() {
           <div>
             <h3 className="text-lg font-semibold mb-4 text-blue-100">About</h3>
             <ul className="space-y-2 text-sm mb-6">
-              <li><Link href="/about" className="text-gray-300 hover:text-blue-200 transition">About Us</Link></li>
-              <li><Link href="/contact" className="text-gray-300 hover:text-blue-200 transition">Contact Us</Link></li>
-              <li><Link href="/payment" className="text-gray-300 hover:text-blue-200 transition">Payment &amp; APC</Link></li>
+              <li><Link href="/about" className={footerLinkClass}>About Us</Link></li>
+              <li><Link href="/contact" className={footerLinkClass}>Contact Us</Link></li>
+              <li><Link href="/payment" className={footerLinkClass}>Payment &amp; APC</Link></li>
             </ul>
             {/* Newsletter Subscribe */}
             <form onSubmit={handleSubscribe} className="flex flex-col gap-2">

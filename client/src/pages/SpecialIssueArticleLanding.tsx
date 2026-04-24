@@ -23,9 +23,10 @@ export default function SpecialIssueArticleLanding() {
       if (!articleId) return;
       setLoading(true);
       try {
+        // Step 1: Fetch the article itself (safe — no joins that may not exist)
         const { data: articleData, error: articleError } = await supabase
           .from("si_articles")
-          .select("*, si_issues(*, si_volumes(*))")
+          .select("*")
           .eq("id", articleId)
           .single();
 
@@ -34,19 +35,41 @@ export default function SpecialIssueArticleLanding() {
           return;
         }
 
-        setArticle(articleData);
-
-        const jId = articleData.si_issues?.si_volumes?.journal_id;
-        if (jId) {
-           if (jId === '__sjcm__') {
-               setJournalTitle('Scholar Journal of Commerce and Management');
-           } else if (jId === '__sjhss__') {
-               setJournalTitle('Scholar Journal of Humanities and Social Sciences');
-           } else {
-               const { data: jData } = await supabase.from('journals').select('title').eq('id', jId).single();
-               if (jData) setJournalTitle(jData.title);
-           }
+        // Step 2: Try to get special issue info from special_issue_id (new system)
+        if (articleData.special_issue_id) {
+          const { data: siData } = await supabase
+            .from("journal_special_issues")
+            .select("*, journals(title)")
+            .eq("id", articleData.special_issue_id)
+            .single();
+          if (siData) {
+            articleData.journal_special_issues = siData;
+            if (siData.journals?.title) setJournalTitle(siData.journals.title);
+          }
         }
+
+        // Step 3: Fallback — try legacy si_issues → si_volumes join
+        if (!articleData.journal_special_issues && articleData.si_issue_id) {
+          const { data: issueData } = await supabase
+            .from("si_issues")
+            .select("*, si_volumes(*)")
+            .eq("id", articleData.si_issue_id)
+            .single();
+          if (issueData) {
+            articleData.si_issues = issueData;
+            const jId = issueData.si_volumes?.journal_id;
+            if (jId) {
+              if (jId === '__sjcm__') setJournalTitle('Scholar Journal of Commerce and Management');
+              else if (jId === '__sjhss__') setJournalTitle('Scholar Journal of Humanities and Social Sciences');
+              else {
+                const { data: jData } = await supabase.from('journals').select('title').eq('id', jId).single();
+                if (jData) setJournalTitle(jData.title);
+              }
+            }
+          }
+        }
+
+        setArticle(articleData);
       } catch (err) {
         console.error("Failed to load article", err);
         setNotFound(true);
@@ -91,9 +114,17 @@ export default function SpecialIssueArticleLanding() {
     return lower.charAt(0).toUpperCase() + lower.slice(1);
   };
 
-  const volumeLabel = article.si_issues?.si_volumes?.label || `Volume ${article.si_issues?.si_volumes?.volume_number || 1}`;
-  const issueLabel = article.si_issues?.label || `Issue ${article.si_issues?.issue_number || 1}`;
-  const year = article.si_issues?.period?.match(/\d{4}/)?.[0] || new Date().getFullYear().toString();
+  const volumeLabel = article.journal_special_issues ? 'Special Issue' : (article.si_issues?.si_volumes?.label || `Volume ${article.si_issues?.si_volumes?.volume_number || 1}`);
+  const issueLabel = article.journal_special_issues ? article.journal_special_issues.title : (article.si_issues?.label || `Issue ${article.si_issues?.issue_number || 1}`);
+  
+  let year = new Date().getFullYear().toString();
+  if (article.journal_special_issues?.description) {
+      const match = article.journal_special_issues.description.match(/\d{4}/);
+      if (match) year = match[0];
+  } else if (article.si_issues?.period) {
+      const match = article.si_issues.period.match(/\d{4}/);
+      if (match) year = match[0];
+  }
 
   const generateAPA7Citation = () => {
     const authors = cleanAuthorsForCitation(article.authors);
@@ -228,7 +259,7 @@ export default function SpecialIssueArticleLanding() {
                   <CardHeader className="bg-gray-50 dark:bg-gray-800/50 px-4 py-3"><CardTitle className="text-sm font-bold text-gray-900 dark:text-gray-100 uppercase tracking-wider">Journal Information</CardTitle></CardHeader>
                   <CardContent className="px-4 py-3 space-y-3 text-xs">
                     <div><p className="font-semibold text-gray-700 dark:text-gray-300 mb-1">Journal</p><p className="text-gray-600 dark:text-gray-400">{journalTitle}</p></div>
-                    <div><p className="font-semibold text-gray-700 dark:text-gray-300 mb-1">Special Issue</p><p className="text-gray-600 dark:text-gray-400">{article.si_issues?.title}</p></div>
+                    <div><p className="font-semibold text-gray-700 dark:text-gray-300 mb-1">Special Issue</p><p className="text-gray-600 dark:text-gray-400">{article.journal_special_issues?.title || article.si_issues?.title}</p></div>
                     <div><p className="font-semibold text-gray-700 dark:text-gray-300 mb-1">Volume/Issue</p><p className="text-gray-600 dark:text-gray-400">{volumeLabel}, {issueLabel}</p></div>
                     <div><p className="font-semibold text-gray-700 dark:text-gray-300 mb-1">Publication Year</p><p className="text-gray-600 dark:text-gray-400">{year}</p></div>
                   </CardContent>

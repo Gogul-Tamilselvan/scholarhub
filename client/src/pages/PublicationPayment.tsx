@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { CreditCard, Copy, Check, Upload, Loader2, QrCode } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import upiQrPath from "@assets/IMG-20260120-WA0001_1768957901426.jpg";
+import { MAIL_SERVER_URL, MAIL_API_KEY } from "@/lib/config";
 
 export default function PublicationPayment() {
   const [formData, setFormData] = useState({
@@ -124,11 +125,11 @@ export default function PublicationPayment() {
 
       // 3. Send email via Scholar Hub Server
       try {
-        await fetch('http://localhost:4001/send/third-party-receipt', {
+        await fetch(`${MAIL_SERVER_URL}/send/third-party-receipt`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'x-api-key': 'scholar_india_mail_secret_2026'
+            'x-api-key': MAIL_API_KEY
           },
           body: JSON.stringify({
             name: formData.name.trim(),

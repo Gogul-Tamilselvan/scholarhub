@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+import { MAIL_SERVER_URL, MAIL_API_KEY } from "@/lib/config";
 import { 
   LogOut, User, FileText, Upload, Mail, Phone, 
   Building, Globe, Award, Calendar, CheckCircle,
@@ -101,8 +102,6 @@ interface PasswordForm {
   confirmPassword: '';
 }
 const triggerEmail = async (endpoint: string, payload: any) => {
-  const MAIL_SERVER_URL = "https://scholar-hub-server-seven.vercel.app";
-  const MAIL_API_KEY = "scholar_india_mail_secret_2026";
   try {
     const res = await fetch(`${MAIL_SERVER_URL}${endpoint}`, {
       method: "POST",

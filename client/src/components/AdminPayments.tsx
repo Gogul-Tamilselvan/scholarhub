@@ -18,6 +18,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { MAIL_SERVER_URL, MAIL_API_KEY } from '@/lib/config';
 
 export function AdminPayments() {
   const { toast } = useToast();
@@ -170,8 +171,6 @@ export function AdminPayments() {
   const totalAmount = filteredData.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0);
 
   // ── Mail Server Trigger Helper ──────────────────────────────────────────────
-  const MAIL_SERVER_URL = "https://scholar-hub-server-seven.vercel.app";
-  const MAIL_API_KEY = "scholar_india_mail_secret_2026";
 
   const triggerEmail = async (endpoint: string, payload: any) => {
     try {

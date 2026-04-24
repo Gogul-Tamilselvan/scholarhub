@@ -18,6 +18,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { MAIL_SERVER_URL, MAIL_API_KEY } from '@/lib/config';
 
 export function AdminThirdPartyPayments() {
   const { toast } = useToast();
@@ -95,8 +96,6 @@ export function AdminThirdPartyPayments() {
     return matchSearch && matchStatus;
   });
 
-  const MAIL_SERVER_URL = "http://localhost:4001"; // "https://scholar-hub-server-seven.vercel.app";
-  const MAIL_API_KEY = "scholar_india_mail_secret_2026";
 
   const triggerEmail = async (endpoint: string, payload: any) => {
     try {

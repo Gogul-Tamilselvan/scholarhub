@@ -6,14 +6,13 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
+import { MAIL_SERVER_URL, MAIL_API_KEY } from "@/lib/config";
 
 export default function Footer() {
   const [email, setEmail] = useState("");
   const [isSubscribing, setIsSubscribing] = useState(false);
   const { toast } = useToast();
 
-  const MAIL_SERVER_URL = "https://scholar-hub-server-seven.vercel.app";
-  const MAIL_API_KEY = "scholar_india_mail_secret_2026";
   const footerLinkClass = "text-gray-300 hover:text-blue-200 transition-all duration-300 hover:translate-x-1.5 inline-block";
   const yellowLinkClass = "text-yellow-300 hover:text-yellow-100 font-medium transition-all duration-300 hover:translate-x-1.5 inline-block";
 

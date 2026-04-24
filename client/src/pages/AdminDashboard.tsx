@@ -17,7 +17,8 @@ import {
   Medal, Ban, GraduationCap, FileWarning, Wallet, Zap,
   Edit, Check, X, Pause, PlusCircle, Globe, Archive, BookMarked, ScrollText, Shield
 } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from "@/hooks/use-toast";
+import { MAIL_SERVER_URL, MAIL_API_KEY } from "@/lib/config";
 import { supabase as authClient, supabaseAdmin as supabase } from '@/lib/supabase';
 import SEO from '@/components/SEO';
 import { AdminSubAdmins } from '@/components/AdminSubAdmins';
@@ -73,8 +74,6 @@ export default function AdminDashboard() {
   const [subAdminJournals, setSubAdminJournals] = useState<string[]>([]);
   
   // ── Mail Server Trigger Helper ──────────────────────────────────────────────
-  const MAIL_SERVER_URL = "https://scholar-hub-server-seven.vercel.app";
-  const MAIL_API_KEY = "scholar_india_mail_secret_2026";
 
   const triggerEmail = async (endpoint: string, payload: any) => {
     try {

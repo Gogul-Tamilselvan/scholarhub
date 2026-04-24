@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { MAIL_SERVER_URL, MAIL_API_KEY } from "@/lib/config";
 import { Send, UserCheck, CheckCircle, AlertCircle, Upload, ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
 import { Link } from "wouter";
@@ -400,8 +401,6 @@ export default function ReviewerApplicationForm({ journalTitle, onCancel }: Revi
       });
 
       // ── Trigger Confirmation Email ──────────────────────────────────────────
-      const MAIL_SERVER_URL = "https://scholar-hub-server-seven.vercel.app";
-      const MAIL_API_KEY = "scholar_india_mail_secret_2026";
 
       try {
         const mailRes = await fetch(`${MAIL_SERVER_URL}/send/reviewer-applied`, {

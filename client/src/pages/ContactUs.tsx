@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import Header from "@/components/Header";
 import SEO from "@/components/SEO";
 import { supabase } from "@/lib/supabase";
+import { MAIL_SERVER_URL, MAIL_API_KEY } from "@/lib/config";
 
 export default function ContactUs() {
   const { toast } = useToast();
@@ -22,8 +23,6 @@ export default function ContactUs() {
     message: ""
   });
 
-  const MAIL_SERVER_URL = "https://scholar-hub-server-seven.vercel.app";
-  const MAIL_API_KEY = "scholar_india_mail_secret_2026";
 
   const triggerEmail = async (endpoint: string, payload: any) => {
     try {

@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Send, Upload, FileText, Plus, X } from "lucide-react";
+import { MAIL_SERVER_URL, MAIL_API_KEY } from "@/lib/config";
 
 interface ManuscriptSubmissionFormProps {
   journalName?: string;
@@ -202,8 +203,6 @@ export default function ManuscriptSubmissionForm({ journalName }: ManuscriptSubm
       });
 
       // ── Trigger Confirmation Email ──────────────────────────────────────────
-      const MAIL_SERVER_URL = "https://scholar-hub-server-seven.vercel.app";
-      const MAIL_API_KEY = "scholar_india_mail_secret_2026";
 
       try {
         const payload = {

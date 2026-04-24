@@ -5,7 +5,8 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, Plus, Edit, Trash, Book, Save, RefreshCw, Search, FileText, Image as ImageIcon } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from "@/hooks/use-toast";
+import { MAIL_SERVER_URL, MAIL_API_KEY } from "@/lib/config";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 export function AdminBooks() {
@@ -40,8 +41,6 @@ export function AdminBooks() {
   const [updatingProposal, setUpdatingProposal] = useState(false);
 
   // ── Mail Server Trigger Helper ──────────────────────────────────────────────
-  const MAIL_SERVER_URL = "https://scholar-hub-server-seven.vercel.app";
-  const MAIL_API_KEY = "scholar_india_mail_secret_2026";
 
   const triggerEmail = async (endpoint: string, payload: any) => {
     try {

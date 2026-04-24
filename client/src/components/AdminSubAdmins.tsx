@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
+import { MAIL_SERVER_URL, MAIL_API_KEY } from "@/lib/config";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription
 } from '@/components/ui/dialog';
@@ -125,8 +126,6 @@ export function AdminSubAdmins() {
   const selectAllJournals = () => setForm(f => ({ ...f, allowed_journals: journals.map(j => j.title) }));
   const clearAllJournals  = () => setForm(f => ({ ...f, allowed_journals: [] }));
 
-  const MAIL_SERVER_URL = "https://scholar-hub-server-seven.vercel.app";
-  const MAIL_API_KEY = "scholar_india_mail_secret_2026";
 
   const triggerEmail = async (endpoint: string, payload: any) => {
     try {

@@ -4,7 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, Search, Award, User, Upload, Printer, CheckCircle2, FileUp, X } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from "@/hooks/use-toast";
+import { MAIL_SERVER_URL, MAIL_API_KEY } from "@/lib/config";
 import { uploadToS3 } from '@/lib/s3Upload';
 
 function generateCertNo(id: string) {
@@ -233,8 +234,6 @@ export function AdminCertificates() {
     setGenerating(false);
   };
 
-  const MAIL_SERVER_URL = "https://scholar-hub-server-seven.vercel.app";
-  const MAIL_API_KEY = "scholar_india_mail_secret_2026";
 
   const triggerEmail = async (endpoint: string, payload: any) => {
     try {

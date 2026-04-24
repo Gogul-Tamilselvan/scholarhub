@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Send, BookOpen } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { MAIL_SERVER_URL, MAIL_API_KEY } from "@/lib/config";
 
 export default function BookPublicationForm() {
   const [formData, setFormData] = useState({
@@ -116,8 +117,6 @@ export default function BookPublicationForm() {
       });
 
       // 3. Trigger Confirmation Email
-      const MAIL_SERVER_URL = "https://scholar-hub-server-seven.vercel.app";
-      const MAIL_API_KEY = "scholar_india_mail_secret_2026";
 
       fetch(`${MAIL_SERVER_URL}/send/book-submission-received`, {
          method: 'POST',

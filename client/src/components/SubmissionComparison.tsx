@@ -221,8 +221,6 @@ export function SubmissionComparison() {
   const selectedMsIndex = selectedMs ? filteredData.findIndex(item => item.displayId === selectedMs.displayId) : -1;
 
   // ── Mail Server Trigger Helper ──────────────────────────────────────────────
-  const MAIL_SERVER_URL = "https://scholar-hub-server-seven.vercel.app";
-  const MAIL_API_KEY = "scholar_india_mail_secret_2026";
 
   const triggerEmail = async (endpoint: string, payload: any) => {
     try {

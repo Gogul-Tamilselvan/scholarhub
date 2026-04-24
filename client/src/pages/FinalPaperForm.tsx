@@ -14,6 +14,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { FileText, Download, Upload, CheckCircle, Loader2, AlertCircle, CreditCard, Image as ImageIcon, QrCode, Check, Copy } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { MAIL_SERVER_URL, MAIL_API_KEY } from "@/lib/config";
 import upiQrPath from "@assets/IMG-20260120-WA0001_1768957901426.jpg";
 
 const commerceTemplate = "/downloads/template-sjcm.docx";
@@ -47,8 +48,6 @@ const unifiedFormSchema = z.object({
 type UnifiedFormData = z.infer<typeof unifiedFormSchema>;
 
 const triggerEmail = async (endpoint: string, payload: any) => {
-  const MAIL_SERVER_URL = "https://scholar-hub-server-seven.vercel.app";
-  const MAIL_API_KEY = "scholar_india_mail_secret_2026";
   try {
     const res = await fetch(`${MAIL_SERVER_URL}${endpoint}`, {
       method: "POST",

@@ -452,21 +452,27 @@ export default function ArticleLanding() {
         }
 
         // Get issue
-        const { data: issData } = await supabase
-          .from('journal_issues')
-          .select('*')
-          .eq('id', artData.issue_id)
-          .single();
+        const { data: issData } = artData.issue_id 
+          ? await supabase.from('journal_issues').select('*').eq('id', artData.issue_id).maybeSingle()
+          : { data: null };
 
         // Get volume
-        const { data: volData } = issData
-          ? await supabase.from('journal_volumes').select('*').eq('id', issData.volume_id).single()
+        const { data: volData } = issData?.volume_id
+          ? await supabase.from('journal_volumes').select('*').eq('id', issData.volume_id).maybeSingle()
           : { data: null };
 
         // Get journal
-        const { data: jData } = volData
-          ? await supabase.from('journals').select('*').eq('id', volData.journal_id).single()
-          : { data: null };
+        let jData = null;
+        if (volData?.journal_id) {
+          if (volData.journal_id === '__sjcm__') {
+            jData = { title: 'Scholar Journal of Commerce and Management', starting_year: '2025' };
+          } else if (volData.journal_id === '__sjhss__') {
+            jData = { title: 'Scholar Journal of Humanities and Social Sciences', starting_year: '2026' };
+          } else {
+            const { data } = await supabase.from('journals').select('*').eq('id', volData.journal_id).maybeSingle();
+            jData = data;
+          }
+        }
 
         setArticle({
           id: artData.article_id,

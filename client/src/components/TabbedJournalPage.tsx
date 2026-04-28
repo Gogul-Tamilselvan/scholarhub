@@ -325,10 +325,10 @@ export default function TabbedJournalPage({
     fetchSpecialArchives();
   }, [journalId, title]);
 
-  // Track visit on mount
+  // Track visit on mount (Disabled: Backend route /api/track-visit no longer exists on Vercel)
   useEffect(() => {
-    const journalId = title.toLowerCase().includes('commerce') ? 'sjcm' : 'sjhss';
-    apiRequest('POST', `/api/track-visit/${journalId}`).catch(console.error);
+    // const journalId = title.toLowerCase().includes('commerce') ? 'sjcm' : 'sjhss';
+    // apiRequest('POST', `/api/track-visit/${journalId}`).catch(console.error);
   }, [title]);
 
   useEffect(() => {

@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Send, Upload, FileText, Plus, X } from "lucide-react";
+import { Send, Upload, FileText, Plus, X, CheckCircle, AlertCircle } from "lucide-react";
 import { MAIL_SERVER_URL, MAIL_API_KEY } from "@/lib/config";
 
 // S3 Client logic removed because AWS keys are now secured inside Supabase Edge Functions.

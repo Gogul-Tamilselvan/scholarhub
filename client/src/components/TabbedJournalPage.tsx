@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
+import { downloadPdf } from "@/lib/downloadPdf";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -106,9 +107,12 @@ function SIArticlesList({ specialIssueId }: { specialIssueId: string }) {
                 Abstract
               </a>
               {article.pdf_url && (
-                <a href={article.pdf_url} target="_blank" rel="noopener noreferrer" className="w-full text-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5">
+                <button
+                  onClick={() => downloadPdf(article.pdf_url!)}
+                  className="w-full text-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5"
+                >
                   <FileText className="h-3.5 w-3.5" /> PDF Full Text
-                </a>
+                </button>
               )}
             </div>
           </div>
@@ -229,6 +233,7 @@ export default function TabbedJournalPage({
   const [dbAssociateEditors, setDbAssociateEditors] = useState<EditorialMember[]>([]);
   const [dbBoardMembers, setDbBoardMembers] = useState<EditorialMember[]>([]);
   const [dbReviewers, setDbReviewers] = useState<EditorialMember[]>([]);
+  const [dbIndexingPartners, setDbIndexingPartners] = useState<{ name: string; subtext: string; imageUrl: string }[]>([]);
   const [loadingMembers, setLoadingMembers] = useState(false);
 
   useEffect(() => {
@@ -272,12 +277,20 @@ export default function TabbedJournalPage({
         const ae = results.filter(r => r.role === 'associate-editor' || r.role === 'Associate Editor').map(toMember);
         const board = results.filter(r => r.role === 'board-member' || r.role === 'Editorial Board Member').map(toMember);
         const revs = results.filter(r => r.role === 'reviewer' || r.role === 'Reviewer').map(toMember);
+        const indexing = results
+          .filter(r => r.role === 'indexing')
+          .map((r: any) => ({
+            name: r.name || '',
+            subtext: r.designation || '',
+            imageUrl: r.institution || '',
+          }));
 
         setDbEditorInChief(eic);
         setDbManagingEditor(me);
         setDbAssociateEditors(ae);
         setDbBoardMembers(board);
         setDbReviewers(revs);
+        setDbIndexingPartners(indexing);
       } catch (err) {
         console.error("Error fetching members:", err);
       } finally {
@@ -758,8 +771,28 @@ export default function TabbedJournalPage({
               </CardHeader>
               <CardContent className="pt-6">
                 {(() => {
-                  // Use currentIssueArticles if available (dynamic journals), else fall back to articles prop
-                  const displayArticles = currentIssueArticles && currentIssueArticles.length > 0 ? currentIssueArticles : articles;
+                  let displayArticles = articles || [];
+                  if (currentIssueArticles && currentIssueArticles.length > 0) {
+                    const isCommerce = title.toLowerCase().includes('commerce');
+                    const isHss = title.toLowerCase().includes('humanities');
+                    const isLegacyCurrentIssue = (isCommerce && currentIssueMeta?.volume === '2' && currentIssueMeta?.issue === '2') ||
+                                                 (isHss && currentIssueMeta?.volume === '1' && currentIssueMeta?.issue === '2');
+                    
+                    if (isLegacyCurrentIssue) {
+                       displayArticles = [...displayArticles, ...currentIssueArticles].map((art, idx) => ({ ...art, id: idx + 1 }));
+                    } else {
+                       displayArticles = [...currentIssueArticles].map((art, idx) => ({ ...art, id: idx + 1 }));
+                    }
+                  } else if (dynamicArchives && dynamicArchives.volumes.length > 0) {
+                    const isCommerce = title.toLowerCase().includes('commerce');
+                    const isHss = title.toLowerCase().includes('humanities');
+                    const isLegacyCurrentIssue = (isCommerce && currentIssueMeta?.volume === '2' && currentIssueMeta?.issue === '2') ||
+                                                 (isHss && currentIssueMeta?.volume === '1' && currentIssueMeta?.issue === '2');
+                    if (!isLegacyCurrentIssue) {
+                      displayArticles = [];
+                    }
+                  }
+
                   return displayArticles && displayArticles.length > 0 ? (
                   <div className="space-y-4">
                     {displayArticles.map((article) => (
@@ -821,10 +854,8 @@ export default function TabbedJournalPage({
                                     </Link>
                                   </Button>
                                   {(article as any).pdf_url && (
-                                    <Button asChild variant="ghost" className="h-8 text-xs font-bold text-blue-900 hover:text-blue-800 hover:bg-blue-50 px-3 border border-transparent hover:border-blue-100">
-                                      <a href={(article as any).pdf_url} target="_blank" rel="noopener noreferrer" download>
-                                        <FileText className="h-3.5 w-3.5 mr-2" /> Full PDF
-                                      </a>
+                                    <Button variant="ghost" className="h-8 text-xs font-bold text-blue-900 hover:text-blue-800 hover:bg-blue-50 px-3 border border-transparent hover:border-blue-100" onClick={() => downloadPdf((article as any).pdf_url)}>
+                                      <FileText className="h-3.5 w-3.5 mr-2" /> Full PDF
                                     </Button>
                                   )}
                                 </div>
@@ -879,12 +910,30 @@ export default function TabbedJournalPage({
                             pdf_url: a.pdf_url || '',
                             abstract: a.abstract || '',
                           }));
+
+                        const isCommerce = title.toLowerCase().includes('commerce');
+                        let legacyArticles: any[] = [];
+                        
+                        if (isCommerce) {
+                          if (v.volume_number === 2 && i.issue_number === 1) legacyArticles = v2i1Articles || [];
+                          if (v.volume_number === 2 && i.issue_number === 2) legacyArticles = articles || [];
+                          if (v.volume_number === 1 && i.issue_number === 1) legacyArticles = archivedArticles || [];
+                        } else {
+                          if (v.volume_number === 1 && i.issue_number === 1) legacyArticles = archivedArticles || [];
+                          if (v.volume_number === 1 && i.issue_number === 2) legacyArticles = articles || [];
+                        }
+
+                        const mergedArticles = [...legacyArticles, ...issueArticles].map((art, idx) => ({
+                          ...art,
+                          id: idx + 1
+                        }));
+
                         return {
                           num: i.issue_number,
                           label: i.label || `Issue ${i.issue_number}`,
                           period: i.period || '',
-                          hasArticles: issueArticles.length > 0,
-                          getArticles: () => issueArticles,
+                          hasArticles: mergedArticles.length > 0,
+                          getArticles: () => mergedArticles,
                         };
                       }),
                   }));
@@ -1100,10 +1149,8 @@ export default function TabbedJournalPage({
                                           </Link>
                                         </Button>
                                         {article.pdf_url && (
-                                          <Button asChild variant="ghost" className="h-8 text-xs font-bold text-blue-900 hover:text-blue-800 hover:bg-blue-50 px-3 border border-transparent hover:border-blue-100">
-                                            <a href={article.pdf_url} target="_blank" rel="noopener noreferrer" download>
-                                              <FileText className="h-3.5 w-3.5 mr-2" /> Full PDF
-                                            </a>
+                                          <Button variant="ghost" className="h-8 text-xs font-bold text-blue-900 hover:text-blue-800 hover:bg-blue-50 px-3 border border-transparent hover:border-blue-100" onClick={() => downloadPdf(article.pdf_url!)}>
+                                            <FileText className="h-3.5 w-3.5 mr-2" /> Full PDF
                                           </Button>
                                         )}
                                       </div>
@@ -1858,29 +1905,35 @@ export default function TabbedJournalPage({
                 <CardTitle className="text-2xl font-serif text-white">Indexing & Abstracting</CardTitle>
               </CardHeader>
               <CardContent className="pt-8 bg-blue-50/10">
-                {indexingPartners.length > 0 ? (
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-8">
-                    {indexingPartners.map((idx, i) => (
-                      <div key={i} className="flex flex-col items-center p-6 bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 hover-elevate transition-all shadow-sm">
-                        {idx.imageUrl ? (
-                           <div className="h-16 w-32 mb-4 flex items-center justify-center">
+                {(() => {
+                  // Prefer DB-sourced indexing partners; fall back to prop only when no DB entries
+                  const displayPartners = dbIndexingPartners.length > 0 ? dbIndexingPartners : indexingPartners;
+                  // Only show the "pending" state if there truly are no partners at all
+                  const hasPartners = displayPartners.length > 0;
+                  return hasPartners ? (
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-8">
+                      {displayPartners.map((idx, i) => (
+                        <div key={i} className="flex flex-col items-center p-6 bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 hover-elevate transition-all shadow-sm">
+                          {idx.imageUrl ? (
+                            <div className="h-16 w-32 mb-4 flex items-center justify-center">
                               <img src={idx.imageUrl} alt={idx.name} className="max-h-full max-w-full object-contain" />
-                           </div>
-                        ) : (
-                           <Database className="h-12 w-12 text-blue-600 mb-4" />
-                        )}
-                        <span className="text-base font-bold text-[#213361] dark:text-blue-300 text-center">{idx.name}</span>
-                        {idx.subtext && <span className="text-[11px] text-gray-500 uppercase tracking-widest mt-1 text-center">{idx.subtext}</span>}
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center p-12 bg-white dark:bg-gray-900 rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-700">
-                    <Database className="h-12 w-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
-                    <h3 className="text-lg font-bold text-gray-500 dark:text-gray-400">Indexing Information Pending</h3>
-                    <p className="text-sm text-gray-400 mt-1">This journal's indexing partners will be updated shortly.</p>
-                  </div>
-                )}
+                            </div>
+                          ) : (
+                            <Database className="h-12 w-12 text-blue-600 mb-4" />
+                          )}
+                          <span className="text-base font-bold text-[#213361] dark:text-blue-300 text-center">{idx.name}</span>
+                          {idx.subtext && <span className="text-[11px] text-gray-500 uppercase tracking-widest mt-1 text-center">{idx.subtext}</span>}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center p-12 bg-white dark:bg-gray-900 rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-700">
+                      <Database className="h-12 w-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+                      <h3 className="text-lg font-bold text-gray-500 dark:text-gray-400">Indexing Information Pending</h3>
+                      <p className="text-sm text-gray-400 mt-1">This journal's indexing partners will be updated shortly.</p>
+                    </div>
+                  );
+                })()}
               </CardContent>
             </Card>
           </TabsContent>

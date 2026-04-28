@@ -10,16 +10,64 @@ import { supabase } from "@/lib/supabase";
 
 export default function SocialSciencesJournal() {
   const [coverImage, setCoverImage] = useState<string | null>(null);
+  const [journalId, setJournalId] = useState<string | undefined>(undefined);
+  const [dynamicArchives, setDynamicArchives] = useState<{ volumes: any[]; issues: any[]; articles: any[] } | null>(null);
+  const [currentIssueArticles, setCurrentIssueArticles] = useState<any[]>([]);
+  const [currentIssueMeta, setCurrentIssueMeta] = useState<{ volume: string; issue: string; period: string } | undefined>(undefined);
 
   useEffect(() => {
-    async function fetchCover() {
-      // Use sjhss cover since this is essentially part of Humanities and Social Sciences
-      const { data } = await supabase.from('journals').select('cover_image').eq('slug', 'sjhss').single();
-      if (data?.cover_image) {
-        setCoverImage(data.cover_image);
+    async function fetchJournalData() {
+      // Try 'sjhss' slug (shares journal with Humanities & Social Sciences)
+      const { data: journalData } = await supabase
+        .from('journals')
+        .select('id, cover_image')
+        .eq('slug', 'sjhss')
+        .single();
+
+      if (journalData?.cover_image) setCoverImage(journalData.cover_image);
+      if (!journalData?.id) return;
+
+      const jid = journalData.id;
+      setJournalId(jid);
+
+      const [volRes, issRes, artRes] = await Promise.all([
+        supabase.from('journal_volumes').select('*').eq('journal_id', jid).order('volume_number', { ascending: false }),
+        supabase.from('journal_issues').select('*').eq('journal_id', jid).order('issue_number', { ascending: true }),
+        supabase.from('journal_articles').select('*').eq('journal_id', jid).order('sort_order', { ascending: true }),
+      ]);
+
+      const volumes = volRes.data || [];
+      const issues = issRes.data || [];
+      const articles = artRes.data || [];
+
+      if (volumes.length > 0) {
+        setDynamicArchives({ volumes, issues, articles });
+
+        const currentIssue = issues.find((i: any) => i.is_current);
+        if (currentIssue) {
+          const currentVol = volumes.find((v: any) => v.id === currentIssue.volume_id);
+          const ciArticles = articles
+            .filter((a: any) => a.issue_id === currentIssue.id)
+            .map((a: any, idx: number) => ({
+              id: idx + 1,
+              articleId: a.article_id,
+              title: a.title,
+              authors: a.authors,
+              affiliation: a.affiliation || '',
+              pages: a.pages || '',
+              doi: a.doi || undefined,
+              pdf_url: a.pdf_url || undefined,
+            }));
+          setCurrentIssueArticles(ciArticles);
+          setCurrentIssueMeta({
+            volume: String(currentVol?.volume_number || '1'),
+            issue: String(currentIssue.issue_number || '1'),
+            period: currentIssue.period || currentIssue.label || '',
+          });
+        }
       }
     }
-    fetchCover();
+    fetchJournalData();
   }, []);
 
   return (
@@ -94,6 +142,10 @@ export default function SocialSciencesJournal() {
         researchFocus="Priority is given to research that addresses pressing social issues such as inequality and social justice, migration and globalization, technology and social change, environmental sociology, health and wellbeing, education and social mobility, political participation and governance, and cross-cultural social dynamics within both national and international contexts."
         targetAudience="The journal serves social scientists, policy researchers, practitioners in social services, educators, graduate students, and professionals working in government, NGOs, and international organizations focused on social development and policy implementation."
         subject="Social Sciences"
+        dynamicArchives={dynamicArchives}
+        currentIssueArticles={currentIssueArticles}
+        currentIssueMeta={currentIssueMeta}
+        journalId={journalId}
       />
     </>
   );

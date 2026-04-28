@@ -10,15 +10,63 @@ import { supabase } from "@/lib/supabase";
 
 export default function HumanitiesJournal() {
   const [coverImage, setCoverImage] = useState<string | null>(null);
+  const [journalId, setJournalId] = useState<string | undefined>(undefined);
+  const [dynamicArchives, setDynamicArchives] = useState<{ volumes: any[]; issues: any[]; articles: any[] } | null>(null);
+  const [currentIssueArticles, setCurrentIssueArticles] = useState<any[]>([]);
+  const [currentIssueMeta, setCurrentIssueMeta] = useState<{ volume: string; issue: string; period: string } | undefined>(undefined);
 
   useEffect(() => {
-    async function fetchCover() {
-      const { data } = await supabase.from('journals').select('cover_image').eq('slug', 'sjhss').single();
-      if (data?.cover_image) {
-        setCoverImage(data.cover_image);
+    async function fetchJournalData() {
+      const { data: journalData } = await supabase
+        .from('journals')
+        .select('id, cover_image')
+        .eq('slug', 'sjhss')
+        .single();
+
+      if (journalData?.cover_image) setCoverImage(journalData.cover_image);
+      if (!journalData?.id) return;
+
+      const jid = journalData.id;
+      setJournalId(jid);
+
+      const [volRes, issRes, artRes] = await Promise.all([
+        supabase.from('journal_volumes').select('*').eq('journal_id', jid).order('volume_number', { ascending: false }),
+        supabase.from('journal_issues').select('*').eq('journal_id', jid).order('issue_number', { ascending: true }),
+        supabase.from('journal_articles').select('*').eq('journal_id', jid).order('sort_order', { ascending: true }),
+      ]);
+
+      const volumes = volRes.data || [];
+      const issues = issRes.data || [];
+      const articles = artRes.data || [];
+
+      if (volumes.length > 0) {
+        setDynamicArchives({ volumes, issues, articles });
+
+        const currentIssue = issues.find((i: any) => i.is_current);
+        if (currentIssue) {
+          const currentVol = volumes.find((v: any) => v.id === currentIssue.volume_id);
+          const ciArticles = articles
+            .filter((a: any) => a.issue_id === currentIssue.id)
+            .map((a: any, idx: number) => ({
+              id: idx + 1,
+              articleId: a.article_id,
+              title: a.title,
+              authors: a.authors,
+              affiliation: a.affiliation || '',
+              pages: a.pages || '',
+              doi: a.doi || undefined,
+              pdf_url: a.pdf_url || undefined,
+            }));
+          setCurrentIssueArticles(ciArticles);
+          setCurrentIssueMeta({
+            volume: String(currentVol?.volume_number || '1'),
+            issue: String(currentIssue.issue_number || '1'),
+            period: currentIssue.period || currentIssue.label || '',
+          });
+        }
       }
     }
-    fetchCover();
+    fetchJournalData();
   }, []);
 
   const boardMembers = [
@@ -121,7 +169,8 @@ export default function HumanitiesJournal() {
       authors: "Ganesan V¹",
       affiliation: "1. Centre of Online and Distance Education (CDOE), Bharathidasan University, Tiruchirappalli, India",
       pages: "01 - 05",
-      doi: "10.65219/sjhss.20260101001"
+      doi: "10.65219/sjhss.20260101001",
+      pdf_url: "/downloads/sjhss-v1i1-001.pdf"
     },
     {
       id: 2,
@@ -130,7 +179,8 @@ export default function HumanitiesJournal() {
       authors: "P. Rajini¹, Ariharan S²",
       affiliation: "1. Assistant Professor of English, Government Arts and Science College, Idappadi, India\n2. Ph.D. Research Scholar, School of Liberal Arts and Humanities, Woxsen University, Hyderabad",
       pages: "06 – 11",
-      doi: "10.65219/sjhss.20260101002"
+      doi: "10.65219/sjhss.20260101002",
+      pdf_url: "/downloads/sjhss-v1i1-002.pdf"
     },
     {
       id: 3,
@@ -139,7 +189,8 @@ export default function HumanitiesJournal() {
       authors: "Ariharan S¹, P. Rajini²",
       affiliation: "1. Ph.D. Research Scholar, School of Liberal Arts and Humanities, Woxsen University, Hyderabad, India\n2. Assistant Professor of English, Government Arts and Science College, Idappadi, India",
       pages: "12 – 18",
-      doi: "10.65219/sjhss.20260101003"
+      doi: "10.65219/sjhss.20260101003",
+      pdf_url: "/downloads/sjhss-v1i1-003.pdf"
     },
     {
       id: 4,
@@ -148,7 +199,8 @@ export default function HumanitiesJournal() {
       authors: "R. Salman¹, S. Srikumaran¹, K. Nagalakshmi²",
       affiliation: "1. Ph.D. Research Scholar, Department of Psychology, Annamalai University\n2. Associate Professor, Department of Psychology, Annamalai University, Annamalai Nagar, Cuddalore",
       pages: "19 – 25",
-      doi: "10.65219/sjhss.20260101004"
+      doi: "10.65219/sjhss.20260101004",
+      pdf_url: "/downloads/sjhss-v1i1-004.pdf"
     },
     {
       id: 5,
@@ -157,7 +209,8 @@ export default function HumanitiesJournal() {
       authors: "Devi K¹, Ariharan S², P. Rajini³",
       affiliation: "1. B.Ed. Student, Avinashilingam Institute for Home Science & Higher Education for Women, Coimbatore, India\n2. Ph.D. Research Scholar, School of Liberal Arts and Humanities, Woxsen University, Hyderabad, India\n3. Assistant Professor of English, Government Arts and Science College, Idappadi, India",
       pages: "26 – 34",
-      doi: "10.65219/sjhss.20260101005"
+      doi: "10.65219/sjhss.20260101005",
+      pdf_url: "/downloads/sjhss-v1i1-005.pdf"
     },
     {
       id: 6,
@@ -166,7 +219,8 @@ export default function HumanitiesJournal() {
       authors: "Karthika G¹, Ariharan S²",
       affiliation: "1. Assistant Professor of English, Kailash Women's College, Nangavalli, India\n2. Ph.D. Research Scholar, School of Liberal Arts and Humanities, Woxsen University, Hyderabad, India",
       pages: "35 – 41",
-      doi: "10.65219/sjhss.20260101006"
+      doi: "10.65219/sjhss.20260101006",
+      pdf_url: "/downloads/sjhss-v1i1-006.pdf"
     },
     {
       id: 7,
@@ -175,7 +229,8 @@ export default function HumanitiesJournal() {
       authors: "S. Srikumaran¹, K. Nagalakshmi²",
       affiliation: "1. Ph.D. Research Scholar, Department of Psychology, Annamalai University\n2. Associate Professor, Department of Psychology, Annamalai University, Annamalai Nagar, Cuddalore",
       pages: "42 – 47",
-      doi: "10.65219/sjhss.20260101007"
+      doi: "10.65219/sjhss.20260101007",
+      pdf_url: "/downloads/sjhss-v1i1-007.pdf"
     },
     {
       id: 8,
@@ -184,7 +239,8 @@ export default function HumanitiesJournal() {
       authors: "S. Vasanth¹, S. Srikumaran², K. Nagalakshmi³",
       affiliation: "1. M.Sc. Applied Psychology, Department of Psychology, Annamalai University\n2. Ph.D. Research Scholar, Department of Psychology, Annamalai University\n3. Associate Professor, Department of Psychology, Annamalai University, Annamalai Nagar, Cuddalore",
       pages: "48 – 58",
-      doi: "10.65219/sjhss.20260101008"
+      doi: "10.65219/sjhss.20260101008",
+      pdf_url: "/downloads/sjhss-v1i1-008.pdf"
     },
     {
       id: 9,
@@ -193,7 +249,8 @@ export default function HumanitiesJournal() {
       authors: "S. Srikumaran¹, K. Nagalakshmi²",
       affiliation: "1. Ph.D. Research Scholar, Department of Psychology, Annamalai University\n2. Associate Professor, Department of Psychology, Annamalai University, Annamalai Nagar, Cuddalore",
       pages: "59 – 65",
-      doi: "10.65219/sjhss.20260101009"
+      doi: "10.65219/sjhss.20260101009",
+      pdf_url: "/downloads/sjhss-v1i1-009.pdf"
     },
     {
       id: 10,
@@ -202,7 +259,8 @@ export default function HumanitiesJournal() {
       authors: "Siva Kumar V¹, R. Mathaiyan²",
       affiliation: "1. Research Scholar, Department of Politics and Public Administration, IDE, University of Madras, Chennai, India\n2. Professor, Department of Politics and Public Administration, IDE, University of Madras, Chennai, India",
       pages: "66 – 72",
-      doi: "10.65219/sjhss.20260101010"
+      doi: "10.65219/sjhss.20260101010",
+      pdf_url: "/downloads/sjhss-v1i1-010.pdf"
     }
   ];
 
@@ -215,7 +273,8 @@ export default function HumanitiesJournal() {
       authors: "S. Sakthi Devi¹, M. Arivanandan²",
       affiliation: "1. Research Scholar, Department of Social Science, Tamil University, Thanjavur, Tamil Nadu, India\n2. Assistant Professor, Department of Social Science, Tamil University, Thanjavur, Tamil Nadu, India",
       pages: "01 – 08",
-      doi: "10.65219/sjhss.20260102001"
+      doi: "10.65219/sjhss.20260102001",
+      pdf_url: "/downloads/sjhss-v1i2-001.pdf"
     },
     {
       id: 2,
@@ -224,7 +283,8 @@ export default function HumanitiesJournal() {
       authors: "B Kalaiyarasan¹",
       affiliation: "1. Assistant Professor, Department of MBA, School of Management Studies, Vels Institute of Science Technology & Advanced Studies (VISTAS), Pallavaram, Chennai, Tamil Nadu, India",
       pages: "09 – 14",
-      doi: "10.65219/sjhss.20260102002"
+      doi: "10.65219/sjhss.20260102002",
+      pdf_url: "/downloads/sjhss-v1i2-002.pdf"
     },
   ];
 
@@ -347,6 +407,10 @@ export default function HumanitiesJournal() {
         currentVolume="1"
         currentIssue="2"
         referenceStyle="APA_MLA"
+        dynamicArchives={dynamicArchives}
+        currentIssueArticles={currentIssueArticles}
+        currentIssueMeta={currentIssueMeta}
+        journalId={journalId}
       />
     </>
   );

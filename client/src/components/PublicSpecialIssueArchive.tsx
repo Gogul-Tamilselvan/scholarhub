@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Archive, Calendar, ChevronRight, FileText, ArrowLeft, ExternalLink, BookMarked } from "lucide-react";
+import { downloadPdf } from "@/lib/downloadPdf";
 
 interface PublicSpecialIssueArchiveProps {
   specialIssue: any;
@@ -181,14 +182,12 @@ export default function PublicSpecialIssueArchive({ specialIssue, onBack }: Publ
                         Abstract
                       </a>
                       {article.pdf_url && (
-                        <a
-                          href={article.pdf_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
+                        <button
+                          onClick={() => downloadPdf(article.pdf_url, (article.title || 'article').replace(/[^a-z0-9]/gi, '_') + '.pdf')}
                           className="w-full text-center px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white text-sm font-bold rounded-xl transition-all shadow-md flex items-center justify-center gap-2"
                         >
                           <FileText className="h-4 w-4" /> PDF Full Text
-                        </a>
+                        </button>
                       )}
                     </div>
                   </div>

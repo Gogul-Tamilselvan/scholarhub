@@ -10,15 +10,63 @@ import { supabase } from "@/lib/supabase";
 
 export default function CommerceJournal() {
   const [coverImage, setCoverImage] = useState<string | null>(null);
+  const [journalId, setJournalId] = useState<string | undefined>(undefined);
+  const [dynamicArchives, setDynamicArchives] = useState<{ volumes: any[]; issues: any[]; articles: any[] } | null>(null);
+  const [currentIssueArticles, setCurrentIssueArticles] = useState<any[]>([]);
+  const [currentIssueMeta, setCurrentIssueMeta] = useState<{ volume: string; issue: string; period: string } | undefined>(undefined);
 
   useEffect(() => {
-    async function fetchCover() {
-      const { data } = await supabase.from('journals').select('cover_image').eq('slug', 'sjcm').single();
-      if (data?.cover_image) {
-        setCoverImage(data.cover_image);
+    async function fetchJournalData() {
+      const { data: journalData } = await supabase
+        .from('journals')
+        .select('id, cover_image')
+        .eq('slug', 'sjcm')
+        .single();
+
+      if (journalData?.cover_image) setCoverImage(journalData.cover_image);
+      if (!journalData?.id) return;
+
+      const jid = journalData.id;
+      setJournalId(jid);
+
+      const [volRes, issRes, artRes] = await Promise.all([
+        supabase.from('journal_volumes').select('*').eq('journal_id', jid).order('volume_number', { ascending: false }),
+        supabase.from('journal_issues').select('*').eq('journal_id', jid).order('issue_number', { ascending: true }),
+        supabase.from('journal_articles').select('*').eq('journal_id', jid).order('sort_order', { ascending: true }),
+      ]);
+
+      const volumes = volRes.data || [];
+      const issues = issRes.data || [];
+      const articles = artRes.data || [];
+
+      if (volumes.length > 0) {
+        setDynamicArchives({ volumes, issues, articles });
+
+        const currentIssue = issues.find((i: any) => i.is_current);
+        if (currentIssue) {
+          const currentVol = volumes.find((v: any) => v.id === currentIssue.volume_id);
+          const ciArticles = articles
+            .filter((a: any) => a.issue_id === currentIssue.id)
+            .map((a: any, idx: number) => ({
+              id: idx + 1,
+              articleId: a.article_id,
+              title: a.title,
+              authors: a.authors,
+              affiliation: a.affiliation || '',
+              pages: a.pages || '',
+              doi: a.doi || undefined,
+              pdf_url: a.pdf_url || undefined,
+            }));
+          setCurrentIssueArticles(ciArticles);
+          setCurrentIssueMeta({
+            volume: String(currentVol?.volume_number || '1'),
+            issue: String(currentIssue.issue_number || '1'),
+            period: currentIssue.period || currentIssue.label || '',
+          });
+        }
       }
     }
-    fetchCover();
+    fetchJournalData();
   }, []);
 
   // Editorial board data - unique to Commerce journal
@@ -134,7 +182,8 @@ export default function CommerceJournal() {
       authors: "Bhuriya Jignesh Subhashbhai¹, Chanduji Popatji Thakor²",
       affiliation: "1. Assistant Professor of Commerce and Management, Shri Govind Guru University, Vinzol-Godhra, Gujarat, India\n2. Assistant Professor of Commerce and Management, Shri Govind Guru University, Vinzol-Godhra, Gujarat, India",
       pages: "1-10",
-      doi: "10.65219/sjcm.20250101001"
+      doi: "10.65219/sjcm.20250101001",
+      pdf_url: "/downloads/sjcm-v1i1-001.pdf"
     },
     {
       id: 2,
@@ -143,7 +192,8 @@ export default function CommerceJournal() {
       authors: "A. Vini Infanta¹",
       affiliation: "1. Assistant Professor of Professional Accounting and Finance, School of Commerce, Accounting and Finance, Kristu Jayanti Deemed to be University, Bengaluru, India",
       pages: "11-18",
-      doi: "10.65219/sjcm.20250101002"
+      doi: "10.65219/sjcm.20250101002",
+      pdf_url: "/downloads/sjcm-v1i1-002.pdf"
     },
     {
       id: 3,
@@ -152,7 +202,8 @@ export default function CommerceJournal() {
       authors: "M. Suganya¹",
       affiliation: "1. Assistant Professor, BBA Department, DDGD Vaishnav College, Arumbakkam, Chennai, India",
       pages: "19-25",
-      doi: "10.65219/sjcm.20250101003"
+      doi: "10.65219/sjcm.20250101003",
+      pdf_url: "/downloads/sjcm-v1i1-003.pdf"
     },
     {
       id: 4,
@@ -161,7 +212,8 @@ export default function CommerceJournal() {
       authors: "Chanduji Popatji Thakor¹",
       affiliation: "1. Assistant Professor of Commerce and Management, Shri Govind Guru University, Vinzol-Godhra, Gujarat, India",
       pages: "26-30",
-      doi: "10.65219/sjcm.20250101004"
+      doi: "10.65219/sjcm.20250101004",
+      pdf_url: "/downloads/sjcm-v1i1-004.pdf"
     },
     {
       id: 5,
@@ -170,7 +222,8 @@ export default function CommerceJournal() {
       authors: "R. Ramki¹, R. M. Uma²",
       affiliation: "1. Assistant Professor, Department of Commerce, Hindustan Institute of Technology & Science, Padur, Chennai, India\n2. Assistant Professor, Department of Commerce, Hindustan Institute of Technology & Science, Padur, Chennai, India",
       pages: "31-35",
-      doi: "10.65219/sjcm.20250101005"
+      doi: "10.65219/sjcm.20250101005",
+      pdf_url: "/downloads/sjcm-v1i1-005.pdf"
     }
   ];
 
@@ -183,7 +236,8 @@ export default function CommerceJournal() {
       authors: "Samuel Jayaraman¹",
       affiliation: "1. Assistant Professor, Department of B.Com (Accounting & Finance), Loyola College (Autonomous), Chennai, India",
       pages: "1-5",
-      doi: "10.65219/sjcm.20260201001"
+      doi: "10.65219/sjcm.20260201001",
+      pdf_url: "/downloads/sjcm-v2i1-001.pdf"
     },
     {
       id: 2,
@@ -192,7 +246,8 @@ export default function CommerceJournal() {
       authors: "N. Purusothaman¹, Nirmala²",
       affiliation: "1. Assistant Professor & Research Supervisor, Department of Commerce, Patrician College of Arts and Science, Chennai, India\n2. Student, Department of Commerce, Patrician College of Arts and Science, Chennai, India",
       pages: "06–13",
-      doi: "10.65219/sjcm.20260201002"
+      doi: "10.65219/sjcm.20260201002",
+      pdf_url: "/downloads/sjcm-v2i1-002.pdf"
     },
     {
       id: 3,
@@ -201,7 +256,8 @@ export default function CommerceJournal() {
       authors: "P. Shanmugam¹, T. Praveena²",
       affiliation: "1. Associate Professor, Department of Economics, Bharathiar University\n2. Ph.D. Research Scholar, Department of Economics, Bharathiar University, Tamil Nadu, India",
       pages: "14 - 21",
-      doi: "10.65219/sjcm.20260201003"
+      doi: "10.65219/sjcm.20260201003",
+      pdf_url: "/downloads/sjcm-v2i1-003.pdf"
     },
     {
       id: 4,
@@ -210,7 +266,8 @@ export default function CommerceJournal() {
       authors: "Kalaiarasan C¹, Kamalesh G², Kovid Raghav R², Ishit Agarwal², Shanmugapriyan J², Joi Levis A²",
       affiliation: "1. Assistant Professor, Department of B.Com Computer Applications, Loyola College (Autonomous), Chennai, India\n2. Student, Department of B.Com Computer Applications, Loyola College (Autonomous), Chennai, India",
       pages: "22 - 28",
-      doi: "10.65219/sjcm.20260201004"
+      doi: "10.65219/sjcm.20260201004",
+      pdf_url: "/downloads/sjcm-v2i1-004.pdf"
     },
     {
       id: 5,
@@ -219,7 +276,8 @@ export default function CommerceJournal() {
       authors: "S. Shilpa¹, N. Purusothaman²",
       affiliation: "1. Research Scholar of Commerce, Patrician College of Arts and Science, Chennai, India\n2. Assistant Professor and Research Supervisor, Patrician College of Arts and Science, Chennai, India",
       pages: "29 - 37",
-      doi: "10.65219/sjcm.20260201005"
+      doi: "10.65219/sjcm.20260201005",
+      pdf_url: "/downloads/sjcm-v2i1-005.pdf"
     },
     {
       id: 6,
@@ -228,7 +286,8 @@ export default function CommerceJournal() {
       authors: "R Indumathi¹, C. Revathy²",
       affiliation: "1. Research Scholar, PG & Research Department of Commerce, Guru Nanak College, Chennai, India\n2. Assistant Professor of PG & Research Department of Commerce, Guru Nanak College, Chennai, India",
       pages: "38 - 44",
-      doi: "10.65219/sjcm.20260201006"
+      doi: "10.65219/sjcm.20260201006",
+      pdf_url: "/downloads/sjcm-v2i1-006.pdf"
     },
     {
       id: 7,
@@ -237,7 +296,8 @@ export default function CommerceJournal() {
       authors: "B.Hariswaran¹",
       affiliation: "1. Assistant Professor of Commerce, Vel Tech Ranga Sanku Arts College, Chennai, India",
       pages: "45 - 51",
-      doi: "10.65219/sjcm.20260201007"
+      doi: "10.65219/sjcm.20260201007",
+      pdf_url: "/downloads/sjcm-v2i1-007.pdf"
     },
     {
       id: 8,
@@ -246,7 +306,8 @@ export default function CommerceJournal() {
       authors: "P. Murali¹",
       affiliation: "1. Head, Department of Commerce, Aditya Institute of Management, Science and Research, Pondicherry, India",
       pages: "52 - 56",
-      doi: "10.65219/sjcm.20260201008"
+      doi: "10.65219/sjcm.20260201008",
+      pdf_url: "/downloads/sjcm-v2i1-008.pdf"
     }
   ];
 
@@ -258,7 +319,8 @@ export default function CommerceJournal() {
       authors: "B Kalaiyarasan¹",
       affiliation: "1. Assistant Professor, Department of MBA, School of Management Studies, Vels Institute of Science Technology & Advanced Studies (VISTAS), Pallavaram, Chennai, India",
       pages: "1-6",
-      doi: "https://doi.org/10.65219/sjcm.20260202001"
+      doi: "https://doi.org/10.65219/sjcm.20260202001",
+      pdf_url: "/downloads/sjcm-v2i2-001.pdf"
     }
   ];
 
@@ -365,6 +427,10 @@ export default function CommerceJournal() {
         currentVolume="2"
         currentIssue="2"
         referenceStyle="APA"
+        dynamicArchives={dynamicArchives}
+        currentIssueArticles={currentIssueArticles}
+        currentIssueMeta={currentIssueMeta}
+        journalId={journalId}
       />
     </>
   );

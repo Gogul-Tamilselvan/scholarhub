@@ -9,6 +9,7 @@ import {
   Eye,
   Download as DownloadIcon,
 } from "lucide-react";
+import { downloadPdf } from "@/lib/downloadPdf";
 import Header from "@/components/Header";
 import SEO from "@/components/SEO";
 import { useEffect } from "react";
@@ -562,26 +563,21 @@ export default function IssueLanding() {
                             </Link>
                           </Button>
                           <Button
-                            asChild
                             variant="default"
                             size="sm"
                             className="text-sm bg-[#213361] hover:bg-[#2a4078] text-white"
                             data-testid={`button-download-pdf-${article.id}`}
+                            onClick={() => downloadPdf(
+                              article.articleId === "sjhss-v1i2-001"
+                                ? "/downloads/SIPHSv1i201.pdf"
+                                : article.articleId === "sjhss-v1i2-002"
+                                  ? "/downloads/SIPHSv1i202.pdf"
+                                  : `/downloads/${article.articleId}.pdf`,
+                              `${article.articleId}.pdf`
+                            )}
                           >
-                            <a
-                              href={
-                                article.articleId === "sjhss-v1i2-001"
-                                  ? "/downloads/SIPHSv1i201.pdf"
-                                  : article.articleId === "sjhss-v1i2-002"
-                                    ? "/downloads/SIPHSv1i202.pdf"
-                                    : `/downloads/${article.articleId}.pdf`
-                              }
-                              target="_blank"
-                              rel="noopener noreferrer"
-                            >
-                              <FileText className="h-4 w-4 mr-2" />
-                              Download PDF
-                            </a>
+                            <FileText className="h-4 w-4 mr-2" />
+                            Download PDF
                           </Button>
                         </div>
                       </div>

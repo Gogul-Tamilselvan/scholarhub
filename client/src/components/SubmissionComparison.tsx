@@ -566,32 +566,34 @@ export function SubmissionComparison() {
 
       {/* Review Modal */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="max-w-4xl bg-white border-slate-200 shadow-xl overflow-hidden p-0 rounded-2xl h-[90vh] md:h-auto flex flex-col md:block">
-          <DialogHeader className="px-6 py-5 border-b border-slate-100 bg-slate-50/80 sticky top-0 z-10 shrink-0">
-            <DialogTitle className="flex items-center gap-2.5 text-lg font-bold text-slate-800 tracking-tight">
-              <CheckCheck size={20} className="text-blue-600" />
-              Review &amp; Approve for Production
+        <DialogContent className="max-w-5xl bg-[#f8fafc] border-slate-200 shadow-2xl p-0 overflow-hidden rounded-[24px]">
+          <DialogHeader className="px-8 py-6 bg-white border-b border-slate-100 flex flex-row items-center justify-between sticky top-0 z-10 shrink-0">
+            <DialogTitle className="flex items-center gap-3 text-xl font-extrabold text-slate-800 tracking-tight">
+              <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600">
+                <CheckCheck size={22} />
+              </div>
+              Review & Approve for Production
             </DialogTitle>
           </DialogHeader>
 
           {selectedMs && (
-            <div className="px-6 py-6 overflow-y-auto grow custom-scrollbar bg-white" style={{ maxHeight: '70vh' }}>
+            <div className="p-8 overflow-y-auto custom-scrollbar" style={{ maxHeight: '70vh' }}>
               
               {selectedMs.isProdApproved ? (
-                <div className="bg-emerald-50 text-emerald-700 p-4 rounded-xl mb-6 font-bold flex items-center justify-center gap-2 border border-emerald-100 shadow-sm text-sm">
-                  <CheckCircle size={18} className="text-emerald-500" /> This manuscript has already been approved for production.
+                <div className="bg-emerald-500/10 text-emerald-700 p-5 rounded-2xl mb-8 font-bold flex items-center gap-3 border border-emerald-500/20 shadow-sm text-sm">
+                  <CheckCircle size={20} className="text-emerald-500" /> This manuscript has already been approved for production.
                 </div>
               ) : selectedMs.isReady ? (
-                <div className="bg-blue-50 text-blue-700 p-4 rounded-xl mb-6 font-bold flex items-center justify-center gap-2 border border-blue-100 shadow-sm text-sm">
-                  <CheckCircle size={18} className="text-blue-500" /> All requirements met. Ready for production approval.
+                <div className="bg-blue-500/10 text-blue-700 p-5 rounded-2xl mb-8 font-bold flex items-center gap-3 border border-blue-500/20 shadow-sm text-sm">
+                  <CheckCircle size={20} className="text-blue-500" /> All requirements met. Ready for production approval.
                 </div>
               ) : (
-                <div className="bg-amber-50 text-amber-800 p-5 rounded-xl mb-6 font-medium border border-amber-200/60 shadow-sm text-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div className="bg-amber-500/10 text-amber-800 p-6 rounded-2xl mb-8 font-medium border border-amber-500/20 shadow-sm text-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
                   <div>
-                    <div className="flex items-center gap-2 font-bold mb-3 text-amber-700">
-                      <AlertTriangle size={18} className="text-amber-500" /> Cannot approve yet. Missing requirements:
+                    <div className="flex items-center gap-2 font-extrabold mb-3 text-amber-700 text-base">
+                      <AlertTriangle size={20} className="text-amber-500" /> Cannot approve yet. Missing requirements:
                     </div>
-                    <ul className="list-disc pl-8 space-y-1.5 text-amber-700/90 font-semibold marker:text-amber-400">
+                    <ul className="list-disc pl-9 space-y-2 text-amber-700/90 font-semibold marker:text-amber-400">
                       {!selectedMs.copyright && <li>Copyright Form is missing</li>}
                       {!selectedMs.paper && <li>Final Manuscript is missing</li>}
                       {selectedMs.msStatus.toLowerCase() === 'accepted' && (!selectedMs.payment || String(selectedMs.payment.status).toLowerCase() !== 'approved') && <li>Payment is pending or missing</li>}
@@ -600,9 +602,9 @@ export function SubmissionComparison() {
                   <Button 
                     onClick={handleSendActionRequired} 
                     disabled={sendingActionReq}
-                    className="bg-amber-600 hover:bg-amber-700 text-white font-bold h-10 px-5 shadow-sm shrink-0 gap-2"
+                    className="bg-amber-500 hover:bg-amber-600 text-white font-bold h-11 px-6 shadow-md shrink-0 gap-2 rounded-xl transition-all hover:shadow-lg"
                   >
-                    {sendingActionReq ? <Loader2 size={16} className="animate-spin" /> : <Mail size={16} />}
+                    {sendingActionReq ? <Loader2 size={18} className="animate-spin" /> : <Mail size={18} />}
                     Send Action Required Email
                   </Button>
                 </div>
@@ -611,106 +613,101 @@ export function SubmissionComparison() {
               <div className={`grid grid-cols-1 ${selectedMs.msStatus.toLowerCase() === 'accepted' ? 'md:grid-cols-3' : 'md:grid-cols-2'} gap-6`}>
                 
                 {selectedMs.msStatus.toLowerCase() === 'accepted' && (
-                  <div className="border border-slate-200 rounded-xl bg-white shadow-sm overflow-hidden group hover:border-slate-300 transition-colors">
-                    <div className="font-bold text-xs bg-slate-50/80 px-4 py-3 border-b border-slate-100 flex items-center gap-2 text-slate-700 tracking-wide">
-                      <div className="w-6 h-6 rounded-md bg-blue-100 text-blue-600 flex items-center justify-center"><CheckCheck size={12} /></div>
-                      PAYMENT STATUS
+                  <div className="bg-white border border-slate-200/60 rounded-[20px] shadow-sm hover:shadow-md transition-all flex flex-col">
+                    <div className="px-6 py-4 border-b border-slate-100 flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center"><CheckCheck size={16} /></div>
+                      <span className="font-extrabold text-xs text-slate-500 tracking-widest uppercase">Payment Status</span>
                     </div>
-                    <div className="p-5 text-sm space-y-4">
+                    <div className="p-6 text-sm flex-1 flex flex-col">
                       {selectedMs.payment ? (
-                        <>
-                          <div><span className="text-[10px] font-black text-slate-400 block uppercase tracking-widest mb-1">Amount Paid</span> <span className="font-bold text-slate-800">₹{selectedMs.payment.amount_paid || selectedMs.payment.amount || 'N/A'}</span></div>
-                          <div><span className="text-[10px] font-black text-slate-400 block uppercase tracking-widest mb-1">Mode</span> <span className="font-semibold text-slate-700">{selectedMs.payment.payment_mode || selectedMs.payment.payment_method || selectedMs.payment.mode_of_payment || 'N/A'}</span></div>
-                          <div><span className="text-[10px] font-black text-slate-400 block uppercase tracking-widest mb-1">Date</span> <span className="font-semibold text-slate-700">{parseSafeDate(selectedMs.payment.payment_date || selectedMs.payment.date_of_payment || selectedMs.payment.submitted_at)}</span></div>
-                          <div><span className="text-[10px] font-black text-slate-400 block uppercase tracking-widest mb-1">Status</span> {renderPaymentBadge(selectedMs)}</div>
-                          {selectedMs.payment.payment_proof_link || selectedMs.payment.payment_proof_url ? (
-                            <a href={selectedMs.payment.payment_proof_link || selectedMs.payment.payment_proof_url} target="_blank" rel="noreferrer" className="w-full mt-4 flex items-center justify-center gap-2 text-blue-600 bg-blue-50 hover:bg-blue-100 text-xs font-bold py-2.5 rounded-lg transition-colors border border-blue-100">
-                              <ExternalLink size={14} /> View Proof
-                            </a>
-                          ) : null}
+                        <div className="space-y-5 flex-1">
+                          <div><span className="text-[10px] font-black text-slate-400 block uppercase tracking-widest mb-1.5">Amount Paid</span> <span className="font-bold text-slate-800 text-base">₹{selectedMs.payment.amount_paid || selectedMs.payment.amount || 'N/A'}</span></div>
+                          <div><span className="text-[10px] font-black text-slate-400 block uppercase tracking-widest mb-1.5">Mode</span> <span className="font-semibold text-slate-700">{selectedMs.payment.payment_mode || selectedMs.payment.payment_method || selectedMs.payment.mode_of_payment || 'N/A'}</span></div>
+                          <div><span className="text-[10px] font-black text-slate-400 block uppercase tracking-widest mb-1.5">Date</span> <span className="font-semibold text-slate-700">{parseSafeDate(selectedMs.payment.payment_date || selectedMs.payment.date_of_payment || selectedMs.payment.submitted_at)}</span></div>
+                          <div><span className="text-[10px] font-black text-slate-400 block uppercase tracking-widest mb-1.5">Status</span> {renderPaymentBadge(selectedMs)}</div>
                           
-                          {(selectedMs.payment.status === 'Pending' || selectedMs.payment.status === 'Under Review' || selectedMs.payment.status === 'Under Process') && (
-                            <div className="flex gap-2 w-full mt-2 border-t border-slate-100 pt-3">
-                              <Button 
-                                size="sm" 
-                                className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-[10px] h-8"
-                                onClick={() => updatePaymentStatus(selectedMs.payment.id, 'Approved')}
-                              >
-                                Approve
-                              </Button>
-                              <Button 
-                                size="sm" 
-                                className="w-full bg-rose-500 hover:bg-rose-600 text-white font-bold text-[10px] h-8"
-                                onClick={() => updatePaymentStatus(selectedMs.payment.id, 'Rejected')}
-                              >
-                                Reject
-                              </Button>
-                            </div>
-                          )}
-                        </>
+                          <div className="pt-4 mt-auto">
+                            {selectedMs.payment.payment_proof_link || selectedMs.payment.payment_proof_url ? (
+                              <a href={selectedMs.payment.payment_proof_link || selectedMs.payment.payment_proof_url} target="_blank" rel="noreferrer" className="w-full flex items-center justify-center gap-2 text-blue-600 bg-blue-50 hover:bg-blue-100 text-xs font-bold py-3 rounded-xl transition-colors border border-blue-100 mb-3">
+                                <ExternalLink size={14} /> View Proof
+                              </a>
+                            ) : null}
+                            
+                            {(selectedMs.payment.status === 'Pending' || selectedMs.payment.status === 'Under Review' || selectedMs.payment.status === 'Under Process') && (
+                              <div className="flex gap-3 w-full">
+                                <Button size="sm" className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white font-bold h-9 rounded-lg" onClick={() => updatePaymentStatus(selectedMs.payment.id, 'Approved')}>Approve</Button>
+                                <Button size="sm" className="flex-1 bg-rose-500 hover:bg-rose-600 text-white font-bold h-9 rounded-lg" onClick={() => updatePaymentStatus(selectedMs.payment.id, 'Rejected')}>Reject</Button>
+                              </div>
+                            )}
+                          </div>
+                        </div>
                       ) : (
-                        <div className="text-center py-6 text-rose-500 font-bold border-2 border-dashed border-rose-100 rounded-xl bg-rose-50/30">Not Submitted</div>
+                        <div className="h-full flex items-center justify-center py-10">
+                          <span className="text-rose-500 font-bold bg-rose-50 px-4 py-2 rounded-lg border border-rose-100">Not Submitted</span>
+                        </div>
                       )}
                     </div>
                   </div>
                 )}
 
-                <div className="border border-slate-200 rounded-xl bg-white shadow-sm overflow-hidden group hover:border-slate-300 transition-colors">
-                  <div className="font-bold text-xs bg-slate-50/80 px-4 py-3 border-b border-slate-100 flex items-center gap-2 text-slate-700 tracking-wide">
-                    <div className="w-6 h-6 rounded-md bg-purple-100 text-purple-600 flex items-center justify-center"><FileSearch size={12} /></div>
-                    COPYRIGHT FORM
+                <div className="bg-white border border-slate-200/60 rounded-[20px] shadow-sm hover:shadow-md transition-all flex flex-col">
+                  <div className="px-6 py-4 border-b border-slate-100 flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center"><FileSearch size={16} /></div>
+                    <span className="font-extrabold text-xs text-slate-500 tracking-widest uppercase">Copyright Form</span>
                   </div>
-                  <div className="p-5 text-sm space-y-4">
+                  <div className="p-6 text-sm flex-1 flex flex-col">
                     {selectedMs.copyright ? (
-                      <>
-                        <div><span className="text-[10px] font-black text-slate-400 block uppercase tracking-widest mb-1">Author / Name</span> <span className="font-bold text-slate-800">{selectedMs.copyright.corresponding_author || selectedMs.copyright.author_names || selectedMs.copyright.author_name || 'N/A'}</span></div>
-                        <div><span className="text-[10px] font-black text-slate-400 block uppercase tracking-widest mb-1">Email</span> <span className="font-semibold text-slate-700 truncate block">{selectedMs.copyright.email || 'N/A'}</span></div>
-                        <div><span className="text-[10px] font-black text-slate-400 block uppercase tracking-widest mb-1">Submitted On</span> <span className="font-semibold text-slate-700">{parseSafeDate(selectedMs.copyright.submission_date || selectedMs.copyright.submitted_at)}</span></div>
-                        <div className="flex gap-2 w-full mt-4">
-                          <a href={selectedMs.copyright.file_url || selectedMs.copyright.file_link} target="_blank" rel="noreferrer" className="flex-1 flex items-center justify-center gap-2 text-purple-600 bg-purple-50 hover:bg-purple-100 text-xs font-bold py-2.5 rounded-lg transition-colors border border-purple-100">
-                            <Download size={14} /> View Form
-                          </a>
-                          <Button 
-                            variant="outline" 
-                            className="flex-1 text-rose-600 hover:bg-rose-50 border-rose-200 hover:border-rose-300 text-xs font-bold py-2.5 h-auto rounded-lg"
-                            onClick={() => rejectDocument('Copyright Form', selectedMs.copyright)}
-                          >
-                            Reject &amp; Notify
-                          </Button>
+                      <div className="space-y-5 flex-1 flex flex-col">
+                        <div><span className="text-[10px] font-black text-slate-400 block uppercase tracking-widest mb-1.5">Author / Name</span> <span className="font-bold text-slate-800">{selectedMs.copyright.corresponding_author || selectedMs.copyright.author_names || selectedMs.copyright.author_name || 'N/A'}</span></div>
+                        <div><span className="text-[10px] font-black text-slate-400 block uppercase tracking-widest mb-1.5">Email</span> <span className="font-semibold text-slate-700 truncate block">{selectedMs.copyright.email || 'N/A'}</span></div>
+                        <div><span className="text-[10px] font-black text-slate-400 block uppercase tracking-widest mb-1.5">Submitted On</span> <span className="font-semibold text-slate-700">{parseSafeDate(selectedMs.copyright.submission_date || selectedMs.copyright.submitted_at)}</span></div>
+                        
+                        <div className="pt-4 mt-auto">
+                          <div className="flex gap-3 w-full">
+                            <a href={selectedMs.copyright.file_url || selectedMs.copyright.file_link} target="_blank" rel="noreferrer" className="flex-1 flex items-center justify-center gap-2 text-purple-600 bg-purple-50 hover:bg-purple-100 text-xs font-bold py-3 rounded-xl transition-colors border border-purple-100">
+                              <Download size={14} /> View Form
+                            </a>
+                            <Button variant="outline" className="flex-1 text-rose-600 hover:bg-rose-50 border-rose-200 hover:border-rose-300 text-xs font-bold h-auto py-3 rounded-xl" onClick={() => rejectDocument('Copyright Form', selectedMs.copyright)}>
+                              Reject &amp; Notify
+                            </Button>
+                          </div>
                         </div>
-                      </>
+                      </div>
                     ) : (
-                      <div className="text-center py-6 text-rose-500 font-bold border-2 border-dashed border-rose-100 rounded-xl bg-rose-50/30">Not Submitted</div>
+                      <div className="h-full flex items-center justify-center py-10">
+                         <span className="text-rose-500 font-bold bg-rose-50 px-4 py-2 rounded-lg border border-rose-100">Not Submitted</span>
+                      </div>
                     )}
                   </div>
                 </div>
 
-                <div className="border border-slate-200 rounded-xl bg-white shadow-sm overflow-hidden group hover:border-slate-300 transition-colors">
-                  <div className="font-bold text-xs bg-slate-50/80 px-4 py-3 border-b border-slate-100 flex items-center gap-2 text-slate-700 tracking-wide">
-                    <div className="w-6 h-6 rounded-md bg-emerald-100 text-emerald-600 flex items-center justify-center"><CheckCheck size={12} /></div>
-                    FINAL MANUSCRIPT
+                <div className="bg-white border border-slate-200/60 rounded-[20px] shadow-sm hover:shadow-md transition-all flex flex-col">
+                  <div className="px-6 py-4 border-b border-slate-100 flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center"><CheckCheck size={16} /></div>
+                    <span className="font-extrabold text-xs text-slate-500 tracking-widest uppercase">Final Manuscript</span>
                   </div>
-                  <div className="p-5 text-sm space-y-4">
+                  <div className="p-6 text-sm flex-1 flex flex-col">
                     {selectedMs.paper ? (
-                      <>
-                        <div><span className="text-[10px] font-black text-slate-400 block uppercase tracking-widest mb-1">Author / Name</span> <span className="font-bold text-slate-800">{selectedMs.paper.corresponding_author || selectedMs.paper.author_name || 'N/A'}</span></div>
-                        <div><span className="text-[10px] font-black text-slate-400 block uppercase tracking-widest mb-1">Contact</span> <span className="font-semibold text-slate-700 truncate block">{selectedMs.paper.email || 'N/A'}</span></div>
-                        <div><span className="text-[10px] font-black text-slate-400 block uppercase tracking-widest mb-1">Submitted On</span> <span className="font-semibold text-slate-700">{parseSafeDate(selectedMs.paper.submission_date || selectedMs.paper.submitted_at)}</span></div>
-                        <div className="flex gap-2 w-full mt-4">
-                          <a href={selectedMs.paper.file_url || selectedMs.paper.file_link} target="_blank" rel="noreferrer" className="flex-1 flex items-center justify-center gap-2 text-emerald-600 bg-emerald-50 hover:bg-emerald-100 text-xs font-bold py-2.5 rounded-lg transition-colors border border-emerald-100">
-                            <Download size={14} /> View Paper
-                          </a>
-                          <Button 
-                            variant="outline" 
-                            className="flex-1 text-rose-600 hover:bg-rose-50 border-rose-200 hover:border-rose-300 text-xs font-bold py-2.5 h-auto rounded-lg"
-                            onClick={() => rejectDocument('Final Manuscript', selectedMs.paper)}
-                          >
-                            Reject &amp; Notify
-                          </Button>
+                      <div className="space-y-5 flex-1 flex flex-col">
+                        <div><span className="text-[10px] font-black text-slate-400 block uppercase tracking-widest mb-1.5">Author / Name</span> <span className="font-bold text-slate-800">{selectedMs.paper.corresponding_author || selectedMs.paper.author_name || 'N/A'}</span></div>
+                        <div><span className="text-[10px] font-black text-slate-400 block uppercase tracking-widest mb-1.5">Contact</span> <span className="font-semibold text-slate-700 truncate block">{selectedMs.paper.email || 'N/A'}</span></div>
+                        <div><span className="text-[10px] font-black text-slate-400 block uppercase tracking-widest mb-1.5">Submitted On</span> <span className="font-semibold text-slate-700">{parseSafeDate(selectedMs.paper.submission_date || selectedMs.paper.submitted_at)}</span></div>
+                        
+                        <div className="pt-4 mt-auto">
+                          <div className="flex gap-3 w-full">
+                            <a href={selectedMs.paper.file_url || selectedMs.paper.file_link} target="_blank" rel="noreferrer" className="flex-1 flex items-center justify-center gap-2 text-emerald-600 bg-emerald-50 hover:bg-emerald-100 text-xs font-bold py-3 rounded-xl transition-colors border border-emerald-100">
+                              <Download size={14} /> View Paper
+                            </a>
+                            <Button variant="outline" className="flex-1 text-rose-600 hover:bg-rose-50 border-rose-200 hover:border-rose-300 text-xs font-bold h-auto py-3 rounded-xl" onClick={() => rejectDocument('Final Manuscript', selectedMs.paper)}>
+                              Reject &amp; Notify
+                            </Button>
+                          </div>
                         </div>
-                      </>
+                      </div>
                     ) : (
-                      <div className="text-center py-6 text-rose-500 font-bold border-2 border-dashed border-rose-100 rounded-xl bg-rose-50/30">Not Submitted</div>
+                      <div className="h-full flex items-center justify-center py-10">
+                        <span className="text-rose-500 font-bold bg-rose-50 px-4 py-2 rounded-lg border border-rose-100">Not Submitted</span>
+                      </div>
                     )}
                   </div>
                 </div>
@@ -719,17 +716,17 @@ export function SubmissionComparison() {
             </div>
           )}
 
-          <div className="px-6 py-4 bg-slate-50/80 border-t border-slate-100 flex items-center justify-end gap-3 sticky bottom-0 shrink-0">
-            <Button variant="ghost" onClick={() => setIsModalOpen(false)} className="font-bold text-xs hover:bg-slate-200">
+          <div className="px-8 py-5 bg-white border-t border-slate-100 flex items-center justify-end gap-4 sticky bottom-0 shrink-0">
+            <Button variant="ghost" onClick={() => setIsModalOpen(false)} className="font-bold text-sm text-slate-500 hover:bg-slate-100 rounded-xl px-6 h-11">
               Cancel
             </Button>
             {selectedMs?.isReady && !selectedMs?.isProdApproved && (
               <Button 
                 onClick={handleApproveProduction} 
                 disabled={approving} 
-                className="bg-emerald-600 hover:bg-emerald-700 font-bold text-xs gap-2 px-6 h-10 shadow-md"
+                className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-sm gap-2 px-8 h-11 rounded-xl shadow-lg hover:shadow-xl transition-all"
               >
-                {approving ? <Loader2 size={16} className="animate-spin" /> : <CheckCheck size={16} />}
+                {approving ? <Loader2 size={18} className="animate-spin" /> : <CheckCheck size={18} />}
                 Approve for Production
               </Button>
             )}

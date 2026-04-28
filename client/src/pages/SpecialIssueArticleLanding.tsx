@@ -2,6 +2,7 @@ import { useRoute } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Download, ArrowLeft, FileText, Loader2 } from "lucide-react";
+import { downloadPdf } from "@/lib/downloadPdf";
 import { Link } from "wouter";
 import ArticleSEO from "@/components/ArticleSEO";
 import Header from "@/components/Header";
@@ -202,9 +203,12 @@ export default function SpecialIssueArticleLanding() {
                           <span className="font-semibold text-[#213361] dark:text-blue-400">DOI: </span>
                           {article.doi ? <a href={`https://doi.org/${article.doi}`} target="_blank" rel="noopener noreferrer" className="text-[#213361] dark:text-blue-400 hover:underline font-medium">{article.doi}</a> : <span className="text-gray-400 italic">(will be added later)</span>}
                         </p>
-                        <Button size="sm" className="bg-[#213361] hover:bg-[#2a4078] text-white font-semibold shadow-sm transition-all w-full md:w-auto" onClick={() => window.open(article.pdf_url, "_blank")}>
-                          <Download className="h-4 w-4 mr-2" /> Download Full Article PDF
-                        </Button>
+                        <button
+                          onClick={() => downloadPdf(article.pdf_url, article.title?.replace(/[^a-z0-9]/gi, '_') + '.pdf')}
+                          className="inline-flex items-center gap-2 bg-[#213361] hover:bg-[#2a4078] text-white font-semibold shadow-sm transition-all w-full md:w-auto px-4 py-2 rounded-md text-sm"
+                        >
+                          <Download className="h-4 w-4" /> Download Full Article PDF
+                        </button>
                       </div>
                     </div>
                   </div>

@@ -770,11 +770,17 @@ export default function ArticleLanding() {
                   <div className="h-1 w-full bg-[#213361]" />
                   <CardHeader className="bg-gray-50 dark:bg-gray-800/50 px-4 py-3">
                     <CardTitle className="text-sm font-bold text-gray-900 dark:text-gray-100 uppercase tracking-wider">
-                      More from This Journal
+                      Our Journals
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="px-4 py-3">
-                    <Button variant="ghost" className="w-full justify-start text-xs text-[#213361] hover:bg-slate-100" asChild>
+                  <CardContent className="px-4 py-3 flex flex-col gap-1">
+                    <Button variant="ghost" className="w-full justify-start text-xs text-[#213361] hover:bg-slate-100 h-auto py-2 px-2 whitespace-normal text-left leading-tight" asChild>
+                      <Link href="/commerce-management">Scholar Journal of Commerce and Management</Link>
+                    </Button>
+                    <Button variant="ghost" className="w-full justify-start text-xs text-[#213361] hover:bg-slate-100 h-auto py-2 px-2 whitespace-normal text-left leading-tight" asChild>
+                      <Link href="/humanities">Scholar Journal of Humanities and Social Sciences</Link>
+                    </Button>
+                    <Button variant="ghost" className="w-full justify-start text-xs text-[#213361] hover:bg-slate-100 h-auto py-2 px-2 whitespace-normal text-left leading-tight" asChild>
                       <Link href="/journals">View All Journals</Link>
                     </Button>
                   </CardContent>

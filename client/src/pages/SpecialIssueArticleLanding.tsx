@@ -104,7 +104,20 @@ export default function SpecialIssueArticleLanding() {
     );
   }
 
-  const cleanAuthors = (raw: string) => raw.replace(/[*†‡§¶]/g, "").replace(/\s+,/g, ",").replace(/\s{2,}/g, " ").trim();
+  const renderAuthorsWithSuperscripts = (raw: string) => {
+    const cleaned = raw.replace(/\s+,/g, ",").replace(/\s{2,}/g, " ").trim();
+    const parts = cleaned.split(/([0-9*†‡§¶]+)/);
+    return (
+      <>
+        {parts.map((part, index) => {
+          if (/^[0-9*†‡§¶]+$/.test(part)) {
+            return <sup key={index}>{part}</sup>;
+          }
+          return <span key={index}>{part}</span>;
+        })}
+      </>
+    );
+  };
   const cleanAuthorsForCitation = (raw: string) => raw.replace(/[*†‡§¶]/g, "").replace(/[\d⁰¹²³⁴⁵⁶⁷⁸⁹⁺⁻⁼⁽⁾]/g, "").replace(/\s+,/g, ",").replace(/\s{2,}/g, " ").trim();
   const toTitleCase = (str: string) => {
     const minor = new Set(["a","an","the","and","but","or","for","nor","on","at","to","by","in","of","up","as","with","from","into","through","during","before","after","above","below","between","against"]);
@@ -192,7 +205,7 @@ export default function SpecialIssueArticleLanding() {
                     </div>
                     <CardTitle className="text-xl md:text-2xl font-serif leading-relaxed text-gray-900 dark:text-gray-50 font-bold">{article.title}</CardTitle>
                     <div className="space-y-2 pt-1">
-                      <p className="text-base font-semibold text-gray-800 dark:text-gray-200">{cleanAuthors(article.authors)}</p>
+                      <p className="text-base font-semibold text-[#005587] dark:text-blue-400">{renderAuthorsWithSuperscripts(article.authors)}</p>
                       <div className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
                         {article.affiliation?.split('\n').map((aff: string, idx: number) => (
                           aff.trim() && <div key={idx} className="leading-relaxed">{aff.trim()}</div>

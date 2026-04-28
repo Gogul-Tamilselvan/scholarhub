@@ -528,12 +528,20 @@ export default function ArticleLanding() {
     );
   }
 
-  const cleanAuthors = (raw: string) =>
-    raw
-      .replace(/[*†‡§¶]/g, "")
-      .replace(/\s+,/g, ",")
-      .replace(/\s{2,}/g, " ")
-      .trim();
+  const renderAuthorsWithSuperscripts = (raw: string) => {
+    const cleaned = raw.replace(/\s+,/g, ",").replace(/\s{2,}/g, " ").trim();
+    const parts = cleaned.split(/([0-9*†‡§¶]+)/);
+    return (
+      <>
+        {parts.map((part, index) => {
+          if (/^[0-9*†‡§¶]+$/.test(part)) {
+            return <sup key={index}>{part}</sup>;
+          }
+          return <span key={index}>{part}</span>;
+        })}
+      </>
+    );
+  };
 
   const cleanAuthorsForCitation = (raw: string) =>
     raw
@@ -638,8 +646,8 @@ export default function ArticleLanding() {
                       {article.title}
                     </CardTitle>
                     <div className="space-y-2 pt-1">
-                      <p className="text-base font-semibold text-gray-800 dark:text-gray-200">
-                        {cleanAuthors(article.authors)}
+                      <p className="text-base font-semibold text-[#005587] dark:text-blue-400">
+                        {renderAuthorsWithSuperscripts(article.authors)}
                       </p>
                       <div className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
                         {article.affiliation.split('\n').map((aff, idx) => (

@@ -175,8 +175,8 @@ export default function SpecialIssueArticleLanding() {
         articleUrl={`/si-article/${article.id}`}
       />
       <Header />
-      <div className="min-h-screen bg-white dark:bg-gray-900 pt-28">
-        <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 py-8">
+      <div className="min-h-screen bg-white dark:bg-gray-900 pt-8">
+        <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 pb-8 pt-4">
           <Button variant="ghost" className="mb-6 text-blue-600 hover:text-blue-900 dark:text-blue-400" onClick={() => window.history.back()}>
             <ArrowLeft className="h-4 w-4 mr-2" /> Back
           </Button>

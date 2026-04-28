@@ -339,10 +339,10 @@ export default function GeneralManuscriptSubmissionForm({ journalTitle, subject 
       });
 
       // 4. Trigger Email Confirmation
-      await triggerEmail('/send/manuscript-submission', {
+      await triggerEmail('/send/manuscript-submitted', {
         name: firstAuthor.name,
         email: firstAuthor.email,
-        msId: id,
+        mID: id,
         title: formData.manuscriptTitle,
         journal: formData.journal
       });

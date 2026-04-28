@@ -773,24 +773,9 @@ export default function TabbedJournalPage({
                 {(() => {
                   let displayArticles = articles || [];
                   if (currentIssueArticles && currentIssueArticles.length > 0) {
-                    const isCommerce = title.toLowerCase().includes('commerce');
-                    const isHss = title.toLowerCase().includes('humanities');
-                    const isLegacyCurrentIssue = (isCommerce && currentIssueMeta?.volume === '2' && currentIssueMeta?.issue === '2') ||
-                                                 (isHss && currentIssueMeta?.volume === '1' && currentIssueMeta?.issue === '2');
-                    
-                    if (isLegacyCurrentIssue) {
-                       displayArticles = [...displayArticles, ...currentIssueArticles].map((art, idx) => ({ ...art, id: idx + 1 }));
-                    } else {
-                       displayArticles = [...currentIssueArticles].map((art, idx) => ({ ...art, id: idx + 1 }));
-                    }
+                     displayArticles = [...currentIssueArticles].map((art, idx) => ({ ...art, id: idx + 1 }));
                   } else if (dynamicArchives && dynamicArchives.volumes.length > 0) {
-                    const isCommerce = title.toLowerCase().includes('commerce');
-                    const isHss = title.toLowerCase().includes('humanities');
-                    const isLegacyCurrentIssue = (isCommerce && currentIssueMeta?.volume === '2' && currentIssueMeta?.issue === '2') ||
-                                                 (isHss && currentIssueMeta?.volume === '1' && currentIssueMeta?.issue === '2');
-                    if (!isLegacyCurrentIssue) {
-                      displayArticles = [];
-                    }
+                     displayArticles = [];
                   }
 
                   return displayArticles && displayArticles.length > 0 ? (
@@ -911,19 +896,7 @@ export default function TabbedJournalPage({
                             abstract: a.abstract || '',
                           }));
 
-                        const isCommerce = title.toLowerCase().includes('commerce');
-                        let legacyArticles: any[] = [];
-                        
-                        if (isCommerce) {
-                          if (v.volume_number === 2 && i.issue_number === 1) legacyArticles = v2i1Articles || [];
-                          if (v.volume_number === 2 && i.issue_number === 2) legacyArticles = articles || [];
-                          if (v.volume_number === 1 && i.issue_number === 1) legacyArticles = archivedArticles || [];
-                        } else {
-                          if (v.volume_number === 1 && i.issue_number === 1) legacyArticles = archivedArticles || [];
-                          if (v.volume_number === 1 && i.issue_number === 2) legacyArticles = articles || [];
-                        }
-
-                        const mergedArticles = [...legacyArticles, ...issueArticles].map((art, idx) => ({
+                        const finalArticles = issueArticles.map((art, idx) => ({
                           ...art,
                           id: idx + 1
                         }));
@@ -932,8 +905,8 @@ export default function TabbedJournalPage({
                           num: i.issue_number,
                           label: i.label || `Issue ${i.issue_number}`,
                           period: i.period || '',
-                          hasArticles: mergedArticles.length > 0,
-                          getArticles: () => mergedArticles,
+                          hasArticles: finalArticles.length > 0,
+                          getArticles: () => finalArticles,
                         };
                       }),
                   }));

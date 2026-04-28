@@ -440,16 +440,18 @@ export default function ArticleLanding() {
         }
 
         // 2. Check DB
-        const { data: artData, error: artErr } = await supabase
+        const { data: artList, error: artErr } = await supabase
           .from('journal_articles')
           .select('*')
           .eq('article_id', articleId)
-          .single();
+          .limit(1);
 
-        if (artErr || !artData) {
+        if (artErr || !artList || artList.length === 0) {
           setNotFound(true);
           return;
         }
+        
+        const artData = artList[0];
 
         // Get issue
         const { data: issData } = artData.issue_id 
